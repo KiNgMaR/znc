@@ -4,9 +4,9 @@
 // this is something like a config.h for MSVC
 // it's force-included using /FI in upstream ZNC code
 
-//#if defined(_WIN32) && defined(_MSC_VER)
-//#define WIN_MSVC
-//#endif
+#if defined(_WIN32) && defined(_MSC_VER)
+#define WIN_MSVC
+#endif
 
 // some basic Windows headers:
 #ifndef _TARGET_WINVER_H
@@ -23,6 +23,7 @@
 #include <direct.h>
 #include <time.h>
 #include <process.h>
+#include <string>
 
 // map some general types:
 #define ssize_t SSIZE_T
@@ -56,7 +57,7 @@ typedef short gid_t;
 // define this as empty:
 #define __MINGW_NOTHROW
 
-// fake some includes that just appear in other headers on POSIX:
+// fake some includes that "just appear" in other headers on POSIX:
 #include <sys/stat.h>
 
 // some other things that are not provided by MinGW headers:
@@ -66,10 +67,25 @@ typedef short gid_t;
 __inline int fchmod(int, mode_t) { return 0; } // always pretend it worked
 __inline int chmod(const char*, mode_t) { return 0; } // always pretend it worked
 
-
-#define ZNC_API // *TODO*
+#include "znc/exports.h"
 
 // gettimeofday from dh_time.c:
-int ZNC_API gettimeofday(struct timeval *, struct timezone *);
+ZNC_API int gettimeofday(struct timeval*, struct timezone*);
+
+// from znc_msvc_platform.cpp:
+ZNC_API struct tm* localtime_r(const time_t*, struct tm*);
+ZNC_API struct tm* gmtime_r(const time_t*, struct tm*);
+ZNC_API char* ctime_r(const time_t*, char*);
+ZNC_API int setenv(const char*, const char*, int overwrite);
+ZNC_API int unsetenv(const char *);
+ZNC_API std::string getpass(const char* prompt);
+ZNC_API size_t strftime_validating(char* strDest, size_t maxsize, const char* format, const struct tm* timeptr);
+
+// suppress some warnings from ZNC code:
+#pragma warning(disable:4996) // disable "The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name"
+
+// suppress some warnings related to DLL exporting classes:
+#pragma warning(disable:4251) // disable "... needs to have dll-interface to be used by clients of class ..."
+#pragma warning(disable:4275) // disable "non dll-interface class ... used as base for dll-interface class ..."
 
 #endif // _ZNC_MSVC_H

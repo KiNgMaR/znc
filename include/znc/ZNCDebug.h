@@ -39,7 +39,7 @@
 	} \
 } while (0)
 
-class CDebug {
+class ZNC_API CDebug {
 public:
 	static void SetStdoutIsTTY(bool b) { stdoutIsTTY = b; }
 	static bool StdoutIsTTY() { return stdoutIsTTY; }
@@ -51,7 +51,7 @@ protected:
 	static bool debug;
 };
 
-class CDebugStream : public std::ostringstream {
+class ZNC_API CDebugStream : public std::ostringstream {
 public:
 	~CDebugStream();
 };

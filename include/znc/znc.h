@@ -32,7 +32,7 @@ class CConnectQueueTimer;
 class CConfig;
 class CFile;
 
-class CZNC {
+class ZNC_API CZNC {
 public:
 	CZNC();
 	~CZNC();

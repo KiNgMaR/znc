@@ -47,10 +47,10 @@ EXPRESSLY ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 		#pragma message("Warning static builds of getopt violate the Lesser GNU Public License")
 		#define _GETOPT_API
 	#elif defined(EXPORTS_GETOPT)
-		#pragma message("Exporting getopt library")
+		//#pragma message("Exporting getopt library")
 		#define _GETOPT_API __declspec(dllexport)
 	#else
-		#pragma message("Importing getopt library")
+		//#pragma message("Importing getopt library")
 		#define _GETOPT_API __declspec(dllimport)
 	#endif
 
@@ -116,8 +116,6 @@ _END_EXTERN_C
 
 	#undef _BEGIN_EXTERN_C
 	#undef _END_EXTERN_C
-	#undef _GETOPT_THROW
-	#undef _GETOPT_API
 
 	#ifdef _UNICODE
 		#define getopt getopt_w

@@ -43,7 +43,7 @@ static inline void SetFdCloseOnExec(int fd)
 
 static const char g_HexDigits[] = "0123456789abcdef";
 
-class CUtils {
+class ZNC_API CUtils {
 public:
 	CUtils();
 	~CUtils();

@@ -18,34 +18,36 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\main.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{3C1FBC79-7578-4B6E-85F4-C78EF02A63D1}</ProjectGuid>
+    <ProjectGuid>{26838D35-DAF6-4E46-8CEF-148941CA95F3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>ZNC</RootNamespace>
-    <ProjectName>ZNC_DLL</ProjectName>
+    <RootNamespace>ZNC_CLI</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110_xp</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v110_xp</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -97,15 +99,16 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;EXPORTS_GETOPT;_DEBUG;_WINDOWS;_USRDLL;ZNC_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../include;../platform</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>target_winver.h; znc_msvc.h</ForcedIncludeFiles>
+      <AdditionalIncludeDirectories>../../include;../platform</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;advapi32.lib;shell32.lib;shlwapi.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;advapi32.lib;shell32.lib;shlwapi.lib;Ws2_32.lib;ZNC.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\build\$(Configuration)-$(Platform)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -114,15 +117,16 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;EXPORTS_GETOPT;_DEBUG;_WINDOWS;_USRDLL;ZNC_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../include;../platform</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>target_winver.h; znc_msvc.h</ForcedIncludeFiles>
+      <AdditionalIncludeDirectories>../../include;../platform</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;advapi32.lib;shell32.lib;shlwapi.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;advapi32.lib;shell32.lib;shlwapi.lib;Ws2_32.lib;ZNC.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\build\$(Configuration)-$(Platform)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -133,18 +137,18 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;EXPORTS_GETOPT;NDEBUG;_WINDOWS;_USRDLL;ZNC_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <StringPooling>true</StringPooling>
-      <AdditionalIncludeDirectories>../../include;../platform</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>target_winver.h; znc_msvc.h</ForcedIncludeFiles>
+      <AdditionalIncludeDirectories>../../include;../platform</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;advapi32.lib;shell32.lib;shlwapi.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;advapi32.lib;shell32.lib;shlwapi.lib;Ws2_32.lib;ZNC.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\build\$(Configuration)-$(Platform)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -155,84 +159,20 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;EXPORTS_GETOPT;NDEBUG;_WINDOWS;_USRDLL;ZNC_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <StringPooling>true</StringPooling>
-      <AdditionalIncludeDirectories>../../include;../platform</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>target_winver.h; znc_msvc.h</ForcedIncludeFiles>
+      <AdditionalIncludeDirectories>../../include;../platform</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;advapi32.lib;shell32.lib;shlwapi.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;advapi32.lib;shell32.lib;shlwapi.lib;Ws2_32.lib;ZNC.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\build\$(Configuration)-$(Platform)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\src\Buffer.cpp" />
-    <ClCompile Include="..\..\src\Chan.cpp" />
-    <ClCompile Include="..\..\src\Client.cpp" />
-    <ClCompile Include="..\..\src\ClientCommand.cpp" />
-    <ClCompile Include="..\..\src\Config.cpp" />
-    <ClCompile Include="..\..\src\Csocket.cpp" />
-    <ClCompile Include="..\..\src\FileUtils.cpp" />
-    <ClCompile Include="..\..\src\HTTPSock.cpp" />
-    <ClCompile Include="..\..\src\IRCNetwork.cpp" />
-    <ClCompile Include="..\..\src\IRCSock.cpp" />
-    <ClCompile Include="..\..\src\Listener.cpp" />
-    <ClCompile Include="..\..\src\MD5.cpp" />
-    <ClCompile Include="..\..\src\Modules.cpp" />
-    <ClCompile Include="..\..\src\Nick.cpp" />
-    <ClCompile Include="..\..\src\Server.cpp" />
-    <ClCompile Include="..\..\src\SHA256.cpp" />
-    <ClCompile Include="..\..\src\Socket.cpp" />
-    <ClCompile Include="..\..\src\Template.cpp" />
-    <ClCompile Include="..\..\src\Threads.cpp" />
-    <ClCompile Include="..\..\src\User.cpp" />
-    <ClCompile Include="..\..\src\Utils.cpp" />
-    <ClCompile Include="..\..\src\WebModules.cpp" />
-    <ClCompile Include="..\..\src\znc.cpp" />
-    <ClCompile Include="..\..\src\ZNCDebug.cpp" />
-    <ClCompile Include="..\..\src\ZNCString.cpp" />
-    <ClCompile Include="..\platform\dh_time.cpp" />
-    <ClCompile Include="..\platform\dirent.cpp" />
-    <ClCompile Include="..\platform\dlfcn.cpp" />
-    <ClCompile Include="..\platform\getopt.cpp" />
-    <ClCompile Include="..\platform\znc_msvc.cpp" />
-    <ClCompile Include="..\platform\znc_msvc_platform.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\include\znc\Buffer.h" />
-    <ClInclude Include="..\..\include\znc\Chan.h" />
-    <ClInclude Include="..\..\include\znc\Client.h" />
-    <ClInclude Include="..\..\include\znc\Config.h" />
-    <ClInclude Include="..\..\include\znc\Csocket.h" />
-    <ClInclude Include="..\..\include\znc\defines.h" />
-    <ClInclude Include="..\..\include\znc\ExecSock.h" />
-    <ClInclude Include="..\..\include\znc\exports.h" />
-    <ClInclude Include="..\..\include\znc\FileUtils.h" />
-    <ClInclude Include="..\..\include\znc\HTTPSock.h" />
-    <ClInclude Include="..\..\include\znc\IRCNetwork.h" />
-    <ClInclude Include="..\..\include\znc\IRCSock.h" />
-    <ClInclude Include="..\..\include\znc\Listener.h" />
-    <ClInclude Include="..\..\include\znc\main.h" />
-    <ClInclude Include="..\..\include\znc\MD5.h" />
-    <ClInclude Include="..\..\include\znc\Modules.h" />
-    <ClInclude Include="..\..\include\znc\Nick.h" />
-    <ClInclude Include="..\..\include\znc\Server.h" />
-    <ClInclude Include="..\..\include\znc\SHA256.h" />
-    <ClInclude Include="..\..\include\znc\Socket.h" />
-    <ClInclude Include="..\..\include\znc\Template.h" />
-    <ClInclude Include="..\..\include\znc\Threads.h" />
-    <ClInclude Include="..\..\include\znc\User.h" />
-    <ClInclude Include="..\..\include\znc\Utils.h" />
-    <ClInclude Include="..\..\include\znc\version.h" />
-    <ClInclude Include="..\..\include\znc\WebModules.h" />
-    <ClInclude Include="..\..\include\znc\znc.h" />
-    <ClInclude Include="..\..\include\znc\ZNCDebug.h" />
-    <ClInclude Include="..\..\include\znc\ZNCString.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -15,6 +15,7 @@
  */
 
 #include <znc/FileUtils.h>
+#include <znc/ZNCDebug.h>
 #include <znc/ExecSock.h>
 #include <znc/Utils.h>
 #include <fcntl.h>

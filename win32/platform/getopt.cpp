@@ -41,15 +41,17 @@ EXPRESSLY ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 #include "getopt.h"
 
 #ifdef __cplusplus
-	#define _GETOPT_THROW throw()
-#else
-	#define _GETOPT_THROW
+extern "C" {
 #endif
 
 int optind = 1;
 int opterr = 1;
 int optopt = '?';
 enum ENUM_ORDERING { REQUIRE_ORDER, PERMUTE, RETURN_IN_ORDER };
+
+#ifdef __cplusplus
+}
+#endif
 
 //
 //

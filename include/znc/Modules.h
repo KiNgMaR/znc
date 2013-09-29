@@ -132,7 +132,7 @@ class CFPTimer;
 class CSockManager;
 // !Forward Declarations
 
-class CTimer : public CCron {
+class ZNC_API CTimer : public CCron {
 public:
 	CTimer(CModule* pModule, unsigned int uInterval, unsigned int uCycles, const CString& sLabel, const CString& sDescription);
 
@@ -255,7 +255,7 @@ protected:
 };
 
 /** A helper class for handling commands in modules. */
-class CModCommand {
+class ZNC_API CModCommand {
 public:
 	/// Type for the callback function that handles the actual command.
 	typedef void (CModule::*ModCmdFunc)(const CString& sLine);
@@ -319,7 +319,7 @@ private:
  *
  *  @see MODCONSTRUCTOR and MODULEDEFS
  */
-class CModule {
+class ZNC_API CModule {
 public:
 	CModule(ModHandle pDLL, CUser* pUser, CIRCNetwork* pNetwork, const CString& sModName,
 			const CString& sDataDir);
@@ -1029,7 +1029,7 @@ private:
 	std::map<CString, CModCommand> m_mCommands;
 };
 
-class CModules : public std::vector<CModule*> {
+class ZNC_API CModules : public std::vector<CModule*> {
 public:
 	CModules();
 	~CModules();

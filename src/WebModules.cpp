@@ -500,9 +500,12 @@ CString CWebSock::GetSkinPath(const CString& sSkinName) {
 	if (!CFile::IsDir(sRet)) {
 		sRet = CZNC::Get().GetCurPath() + "/webskins/" + sSkinName;
 
+#ifndef _WIN32
+		/* no prefix-type dirs on Win32, GetCurPath() is always the .exe folder */
 		if (!CFile::IsDir(sRet)) {
 			sRet = CString(_SKINDIR_) + "/" + sSkinName;
 		}
+#endif
 	}
 
 	return sRet + "/";

@@ -133,7 +133,11 @@ int main(int argc, char** argv) {
 	CString sDataDir = "";
 
 	seedPRNG();
+#ifdef _WIN32
+	CDebug::SetStdoutIsTTY(false);
+#else
 	CDebug::SetStdoutIsTTY(isatty(1));
+#endif
 
 	int iArg, iOptIndex = -1;
 	bool bMakeConf = false;

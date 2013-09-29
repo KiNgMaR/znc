@@ -1142,8 +1142,10 @@ CModules::ModDirList CModules::GetModDirs() {
 	sDir = CZNC::Get().GetModPath() + "/";
 	ret.push(std::make_pair(sDir, sDir));
 
+#ifndef _WIN32
 	// <moduledir> and <datadir> (<prefix>/lib/znc)
 	ret.push(std::make_pair(_MODDIR_ + CString("/"), _DATADIR_ + CString("/modules/")));
+#endif
 
 	return ret;
 }

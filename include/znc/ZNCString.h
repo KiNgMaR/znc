@@ -63,7 +63,7 @@ static const unsigned char base64_table[256] = {
  * class. It provides helpful functions for parsing input like Token() and
  * Split().
  */
-class CString : public std::string {
+class ZNC_API CString : public std::string {
 public:
 	typedef enum {
 		EASCII,

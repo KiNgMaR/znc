@@ -428,6 +428,7 @@ CString CUtils::FormatTime(time_t t, const CString& sFormat, const CString& sTim
 	return s;
 }
 
+#if 0
 namespace {
 	void FillTimezones(const CString& sPath, SCString& result, const CString& sPrefix) {
 		CDir Dir;
@@ -456,6 +457,7 @@ SCString CUtils::GetTimezones() {
 	FillTimezones("/usr/share/zoneinfo", result, "");
 	return result;
 }
+#endif
 
 bool CTable::AddColumn(const CString& sName) {
 	for (unsigned int a = 0; a < m_vsHeaders.size(); a++) {
