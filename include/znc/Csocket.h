@@ -61,12 +61,6 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <sys/timeb.h>
-#define ECONNREFUSED WSAECONNREFUSED
-#define EINPROGRESS WSAEINPROGRESS
-#define ETIMEDOUT WSAETIMEDOUT
-#define EADDRNOTAVAIL WSAEADDRNOTAVAIL
-#define ECONNABORTED WSAECONNABORTED
-#define ENETUNREACH WSAENETUNREACH
 
 #endif /* _WIN32 */
 
@@ -338,7 +332,7 @@ inline void TFD_SET( cs_sock_t iSock, fd_set *set )
 
 inline bool TFD_ISSET( cs_sock_t iSock, fd_set *set )
 {
-	return( FD_ISSET( iSock, set ) );
+	return( FD_ISSET( iSock, set ) != 0 );
 }
 
 inline void TFD_CLR( cs_sock_t iSock, fd_set *set )
@@ -1473,8 +1467,8 @@ public:
 		ECT_Write = 2
 	};
 
-	void FDSetCheck( int iFd, std::map< int, short > & miiReadyFds, ECheckType eType );
-	bool FDHasCheck( int iFd, std::map< int, short > & miiReadyFds, ECheckType eType );
+	void FDSetCheck( cs_sock_t iFd, std::map< int, short > & miiReadyFds, ECheckType eType );
+	bool FDHasCheck( cs_sock_t iFd, std::map< int, short > & miiReadyFds, ECheckType eType );
 
 protected:
 

@@ -55,6 +55,13 @@ void CFile::SetFileName(const CString& sLongName) {
 	} else
 		m_sLongName = sLongName;
 
+#ifdef _WIN32
+ 	// :TODO: Try to convert CFile to Unicode. See Issue 1.
+ 	m_sLongName = m_sLongName.Replace_n("/", "\\");
+ 	m_sLongName.TrimRight("\\");
+ 
+ 	m_sShortName = ::PathFindFileName(m_sLongName.c_str());
+#else
 	m_sShortName = sLongName;
 	m_sShortName.TrimRight("/");
 
@@ -62,6 +69,7 @@ void CFile::SetFileName(const CString& sLongName) {
 	if (uPos != CString::npos) {
 		m_sShortName = m_sShortName.substr(uPos +1);
 	}
+#endif
 }
 
 bool CFile::IsDir(const CString& sLongName, bool bUseLstat) {
@@ -90,7 +98,7 @@ bool CFile::IsSock(bool bUseLstat) const { return CFile::IsSock(m_sLongName, bUs
 
 // for gettin file types, using fstat instead
 bool CFile::FType(const CString& sFileName, EFileTypes eType, bool bUseLstat) {
-	struct stat st;
+	struct stat st = {0};
 
 	if (!bUseLstat) {
 		if (stat(sFileName.c_str(), &st) != 0) {
@@ -134,12 +142,12 @@ time_t CFile::GetCTime() const { return CFile::GetCTime(m_sLongName); }
 uid_t CFile::GetUID() const { return CFile::GetUID(m_sLongName); }
 gid_t CFile::GetGID() const { return CFile::GetGID(m_sLongName); }
 bool CFile::Exists(const CString& sFile) {
-	struct stat st;
+	struct stat st = {0};
 	return (stat(sFile.c_str(), &st) == 0);
 }
 
 off_t CFile::GetSize(const CString& sFile) {
-	struct stat st;
+	struct stat st = {0};
 	if (stat(sFile.c_str(), &st) != 0) {
 		return 0;
 	}
@@ -148,27 +156,27 @@ off_t CFile::GetSize(const CString& sFile) {
 }
 
 time_t CFile::GetATime(const CString& sFile) {
-	struct stat st;
+	struct stat st = {0};
 	return (stat(sFile.c_str(), &st) != 0) ? 0 : st.st_atime;
 }
 
 time_t CFile::GetMTime(const CString& sFile) {
-	struct stat st;
+	struct stat st = {0};
 	return (stat(sFile.c_str(), &st) != 0) ? 0 : st.st_mtime;
 }
 
 time_t CFile::GetCTime(const CString& sFile) {
-	struct stat st;
+	struct stat st = {0};
 	return (stat(sFile.c_str(), &st) != 0) ? 0 : st.st_ctime;
 }
 
 uid_t CFile::GetUID(const CString& sFile) {
-	struct stat st;
+	struct stat st = {0};
 	return (stat(sFile.c_str(), &st) != 0) ? -1 : (int) st.st_uid;
 }
 
 gid_t CFile::GetGID(const CString& sFile) {
-	struct stat st;
+	struct stat st = {0};
 	return (stat(sFile.c_str(), &st) != 0) ? -1 : (int) st.st_gid;
 }
 int CFile::GetInfo(const CString& sFile, struct stat& st) {
@@ -204,15 +212,27 @@ bool CFile::Delete(const CString& sFileName) {
 }
 
 bool CFile::Move(const CString& sOldFileName, const CString& sNewFileName, bool bOverwrite) {
+#ifndef _WIN32
 	if ((!bOverwrite) && (CFile::Exists(sNewFileName))) {
 		errno = EEXIST;
 		return false;
 	}
 
 	return (rename(sOldFileName.c_str(), sNewFileName.c_str()) == 0);
+#else
+	// msvc's rename() doesn't seem to overwrite files. d'oh.
+
+	DWORD dFlags = MOVEFILE_WRITE_THROUGH | MOVEFILE_COPY_ALLOWED;
+	if (bOverwrite) {
+		dFlags |= MOVEFILE_REPLACE_EXISTING;
+	}
+
+	return (::MoveFileEx(sOldFileName.c_str(), sNewFileName.c_str(), dFlags) != 0);
+#endif
 }
 
 bool CFile::Copy(const CString& sOldFileName, const CString& sNewFileName, bool bOverwrite) {
+#ifndef _WIN32
 	if ((!bOverwrite) && (CFile::Exists(sNewFileName))) {
 		errno = EEXIST;
 		return false;
@@ -248,8 +268,13 @@ bool CFile::Copy(const CString& sOldFileName, const CString& sNewFileName, bool 
 
 	OldFile.Close();
 	NewFile.Close();
+#else
+	if (::CopyFile(sOldFileName.c_str(), sNewFileName.c_str(), !bOverwrite) == 0) {
+		return false;
+	}
+#endif
 
-	struct stat st;
+	struct stat st = {0};
 	GetInfo(sOldFileName, st);
 	Chmod(sNewFileName, st.st_mode);
 
@@ -461,6 +486,10 @@ bool CFile::UnLock() {
 }
 
 bool CFile::Lock(short iType, bool bBlocking) {
+#ifdef _WIN32
+	// could do some tricks here, some day. for now, always pretend it worked.
+	return true;
+#else
 	struct flock fl;
 
 	if (m_iFD == -1) {
@@ -472,6 +501,7 @@ bool CFile::Lock(short iType, bool bBlocking) {
 	fl.l_start  = 0;
 	fl.l_len    = 0;
 	return (fcntl(m_iFD, (bBlocking ? F_SETLKW : F_SETLK), &fl) != -1);
+#endif
 }
 
 bool CFile::IsOpen() const { return (m_iFD != -1); }
@@ -488,6 +518,7 @@ CString CFile::GetDir() const {
 }
 
 void CFile::InitHomePath(const CString& sFallback) {
+#ifndef _WIN32
 	const char *home = getenv("HOME");
 
 	m_sHomePath.clear();
@@ -502,12 +533,115 @@ void CFile::InitHomePath(const CString& sFallback) {
 			m_sHomePath = pUserInfo->pw_dir;
 		}
 	}
+#else
+	char strPath[MAX_PATH + 1] = {0};
+
+	// preferred home path = CSIDL_PERSONAL (= My Documents)
+	if (SUCCEEDED(::SHGetFolderPath(0, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, strPath)) && ::PathIsDirectory(strPath))
+	{
+		m_sHomePath = CDir::ChangeDir(strPath, "", "");
+	}
+#endif
 
 	if (m_sHomePath.empty()) {
 		m_sHomePath = sFallback;
 	}
 }
 
+#ifdef _WIN32
+CString CDir::ChangeDir(const CString& sPathIn, const CString& sAddIn, const CString& sHomeIn) {
+	/* this function is rather weird but required to make ZNC's strange way of handling file paths work */
+	CString sResult;
+	CString sPath(sPathIn);
+	CString sAdd(sAddIn);
+	CString sHomeDir(sHomeIn);
+
+	if (sHomeDir.empty())
+	{
+		// use the default home dir, if no custom home dir has been passed in.
+		sHomeDir = CFile::GetHomePath();
+	}
+
+	// we want to use backslashes for this function's inner workings.
+	sHomeDir.Replace("/", "\\");
+	sPath.Replace("/", "\\");
+	sAdd.Replace("/", "\\");
+
+	if (sAdd == "~")
+	{
+		// if the add dir is the home dir (why?!), use that as result...
+		sResult = sHomeDir;
+	}
+	else
+	{
+		if(!::PathIsRelative(sAdd.c_str()))
+		{
+			// if add already is an absolute path, use it for the result...
+			// ... however, it can still contain ./ or ../ stuff,
+			// which will be resolved later.
+			sResult = sAdd;
+		}
+		else
+		{
+			// if the first part of the path (sPath) is relative,
+			// make it absolute, starting from the znc.exe directory:
+			if(::PathIsRelative(sPath.c_str()))
+			{
+				char szLocalPath[1024] = {0};
+
+				// get the full path to znc.exe and strip off "znc.exe" from the end:
+				if(::GetModuleFileName(NULL, szLocalPath, 1023) != 0 && szLocalPath[0])
+				{
+					::PathRemoveFileSpec(szLocalPath);
+
+					if(::PathIsDirectory(szLocalPath))
+					{
+						// append the relative sPath to our znc.exe dir,
+						// thereby making it absolute.
+						char szAbsolutePathBuffer[1024] = {0};
+						::PathCombine(szAbsolutePathBuffer, szLocalPath, sPath.c_str());
+
+						// PathCombine will also resolve any ./ or ../ parts in the path.
+
+						// use the now-absolute path:
+						sPath = szAbsolutePathBuffer;
+					}
+				}
+			}
+
+			// append the (relative) sAdd path to the (absolute) sPath path:
+			char szAbsoluteResultBuffer[1024] = {0};
+			::PathCombine(szAbsoluteResultBuffer, sPath.c_str(), sAdd.c_str());
+
+			sResult = szAbsoluteResultBuffer;
+		}
+	}
+
+	char szResultBuffer[1024] = {0};
+	
+	// make sure no ./ or ../ stuff survives this function. never.
+	if(!sResult.empty() && ::PathCanonicalize(szResultBuffer, sResult.c_str()))
+	{
+		if(sAdd.empty() || sAdd[sAdd.length() - 1] != '\\')
+		{
+			::PathRemoveBackslash(szResultBuffer);
+		}
+		else
+		{
+			::PathAddBackslash(szResultBuffer);
+		}
+
+		sResult = szResultBuffer;
+		sResult.Replace("\\", "/");
+
+		return sResult;
+	}
+	else
+	{
+		abort();
+	}
+}
+#else
 CString CDir::ChangeDir(const CString& sPath, const CString& sAdd, const CString& sHome) {
 	CString sHomeDir(sHome);
 
@@ -553,10 +687,16 @@ CString CDir::ChangeDir(const CString& sPath, const CString& sAdd, const CString
 
 	return (sRet.empty()) ? "/" : sRet;
 }
+#endif
 
 CString CDir::CheckPathPrefix(const CString& sPath, const CString& sAdd, const CString& sHomeDir) {
+#ifndef _WIN32
 	CString sPrefix = sPath.Replace_n("//", "/").TrimRight_n("/") + "/";
 	CString sAbsolutePath = ChangeDir(sPrefix, sAdd, sHomeDir);
+#else
+	const CString sPrefix = ChangeDir(sPath, "./", sHomeDir);
+	const CString sAbsolutePath = ChangeDir(sPath, sAdd, sHomeDir);
+#endif
 
 	if (sAbsolutePath.Left(sPrefix.length()) != sPrefix)
 		return "";
@@ -564,6 +704,7 @@ CString CDir::CheckPathPrefix(const CString& sPath, const CString& sAdd, const C
 }
 
 bool CDir::MakeDir(const CString& sPath, mode_t iMode) {
+#ifndef _WIN32
 	CString sDir;
 	VCString dirs;
 	VCString::iterator it;
@@ -601,8 +742,20 @@ bool CDir::MakeDir(const CString& sPath, mode_t iMode) {
 
 	// All went well
 	return true;
+#else
+	if (sPath.empty())
+		return false;
+
+	CString sFixedPath = sPath;
+	sFixedPath.Replace("/", "\\");
+
+	int iResult = ::SHCreateDirectoryEx(0, sFixedPath.c_str(), NULL);
+
+	return (iResult == ERROR_SUCCESS || iResult == ERROR_FILE_EXISTS || iResult == ERROR_ALREADY_EXISTS);
+#endif
 }
 
+#ifdef HAVE_FORK
 int CExecSock::popen2(int & iReadFD, int & iWriteFD, const CString & sCommand) {
 	int rpipes[2] = { -1, -1 };
 	int wpipes[2] = { -1, -1 };
@@ -669,3 +822,4 @@ void CExecSock::close2(int iPid, int iReadFD, int iWriteFD) {
 	}
 	return;
 }
+#endif // HAVE_FORK

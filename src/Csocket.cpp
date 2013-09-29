@@ -3107,7 +3107,7 @@ uint64_t CSocketManager::GetBytesWritten() const
 	return( iRet );
 }
 
-void CSocketManager::FDSetCheck( int iFd, std::map< int, short > & miiReadyFds, ECheckType eType )
+void CSocketManager::FDSetCheck( cs_sock_t iFd, std::map< int, short > & miiReadyFds, ECheckType eType )
 {
 	std::map< int, short >::iterator it = miiReadyFds.find( iFd );
 	if( it != miiReadyFds.end() )
@@ -3116,7 +3116,7 @@ void CSocketManager::FDSetCheck( int iFd, std::map< int, short > & miiReadyFds, 
 		miiReadyFds[iFd] = eType;
 }
 
-bool CSocketManager::FDHasCheck( int iFd, std::map< int, short > & miiReadyFds, ECheckType eType )
+bool CSocketManager::FDHasCheck( cs_sock_t iFd, std::map< int, short > & miiReadyFds, ECheckType eType )
 {
 	std::map< int, short >::iterator it = miiReadyFds.find( iFd );
 	if( it != miiReadyFds.end() )

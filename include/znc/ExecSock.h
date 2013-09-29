@@ -17,6 +17,7 @@
 #ifndef EXEC_SOCK_H
 #define EXEC_SOCK_H
 
+#ifdef HAVE_FORK
 #include <znc/zncconfig.h>
 #include <znc/Socket.h>
 #include <signal.h>
@@ -53,5 +54,6 @@ public:
 private:
 	int  m_iPid;
 };
+#endif // HAVE_FORK
 
 #endif // !EXEC_SOCK_H

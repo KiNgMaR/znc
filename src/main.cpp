@@ -72,6 +72,7 @@ static void GenerateHelp(const char *appname) {
 	CUtils::PrintMessage("\t-d, --datadir      Set a different ZNC repository (default is ~/.znc)");
 }
 
+#ifdef HAVE_SIGNALS
 static void die(int sig) {
 	signal(SIGPIPE, SIG_DFL);
 
@@ -95,10 +96,15 @@ static void signalHandler(int sig) {
 		CUtils::PrintMessage("WTF? Signal handler called for a signal it doesn't know?");
 	}
 }
+#endif HAVE_SIGNALS
 
 static bool isRoot() {
+#ifndef _WIN32
 	// User root? If one of these were root, we could switch the others to root, too
 	return (geteuid() == 0 || getuid() == 0);
+#else
+	return false;
+#endif
 }
 
 static void seedPRNG() {
@@ -276,12 +282,15 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
+#ifdef HAVE_FORK
 	if (bForeground) {
+#endif
 		int iPid = getpid();
 		CUtils::PrintMessage("Staying open for debugging [pid: " + CString(iPid) + "]");
 
 		pZNC->WritePidFile(iPid);
 		CUtils::PrintMessage(CZNC::GetTag());
+#ifdef HAVE_FORK
 	} else {
 		CUtils::PrintAction("Forking into the background");
 
@@ -326,7 +335,9 @@ int main(int argc, char** argv) {
 		// Now we are in our own process group and session (no
 		// controlling terminal). We are independent!
 	}
+#endif
 
+#ifdef HAVE_SIGNALS
 	struct sigaction sa;
 	sa.sa_flags = 0;
 	sigemptyset(&sa.sa_mask);
@@ -345,6 +356,7 @@ int main(int argc, char** argv) {
 	sigaction(SIGINT,  &sa, (struct sigaction*) NULL);
 	sigaction(SIGQUIT, &sa, (struct sigaction*) NULL);
 	sigaction(SIGTERM, &sa, (struct sigaction*) NULL);
+#endif
 
 	int iRet = 0;
 
