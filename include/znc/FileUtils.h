@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <vector>
 
-class CFile {
+class ZNC_API CFile {
 public:
 	CFile();
 	CFile(const CString& sLongName);
@@ -148,7 +148,7 @@ protected:
 	CString m_sShortName; //!< Filename alone, without path
 };
 
-class CDir : public std::vector<CFile*> {
+class ZNC_API CDir : public std::vector<CFile*> {
 public:
 
 	CDir(const CString& sDir) {

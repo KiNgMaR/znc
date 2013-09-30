@@ -29,7 +29,15 @@ using std::vector;
 using std::list;
 
 static inline CString FormatBindError() {
-	CString sError = (errno == 0 ? CString("unknown error, check the host name") : CString(strerror(errno)));
+	CString sError;
+
+#ifdef _WIN32
+	if(!CUtils::Win32StringError(::WSAGetLastError(), sError))
+		sError = "unknown error, check the host name";
+#else
+	sError = (errno == 0 ? CString("unknown error, check the host name") : CString(strerror(errno)));
+#endif
+
 	return "Unable to bind [" + sError + "]";
 }
 
@@ -322,6 +330,7 @@ bool CZNC::AllowConnectionFrom(const CString& sIP) const {
 }
 
 void CZNC::InitDirs(const CString& sArgvPath, const CString& sDataDir) {
+#ifndef _WIN32
 	// If the bin was not ran from the current directory, we need to add that dir onto our cwd
 	CString::size_type uPos = sArgvPath.rfind('/');
 	if (uPos == CString::npos)
@@ -337,6 +346,36 @@ void CZNC::InitDirs(const CString& sArgvPath, const CString& sDataDir) {
 	} else {
 		m_sZNCPath = sDataDir;
 	}
+#else
+	char strPath[MAX_PATH + 1] = {0};
+
+	m_sCurPath = CDir::ChangeDir("./", "", "");
+
+	CFile::InitHomePath(m_sCurPath);
+
+	if (!sDataDir.empty())
+	{
+		// a custom datadir overrides everything else.
+		m_sZNCPath = CDir::ChangeDir("./", sDataDir, "");
+	}
+	else
+	{
+		// .znc dir in current folder overrides default
+		// to maintain backwards compatibility.
+		m_sZNCPath = CDir::ChangeDir(m_sCurPath, ".znc", "");
+
+		if (!::PathIsDirectory(m_sZNCPath.c_str()))
+		{
+			*strPath = 0;
+
+			// default config location = Application Data\ZNC.
+			if (SUCCEEDED(::SHGetFolderPath(0, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT, strPath)) && ::PathIsDirectory(strPath))
+			{
+				m_sZNCPath = CDir::ChangeDir(strPath, "ZNC", "");
+			}
+		}
+	}
+#endif
 
 	m_sSSLCertFile = m_sZNCPath + "/znc.pem";
 }
@@ -521,12 +560,25 @@ bool CZNC::WriteConfig() {
 	}
 
 	// We wrote to a temporary name, move it to the right place
+#ifdef _WIN32
+	// on win32, we need to close the ~ temp file first.
+	pFile->Close();
+	// we also need to close the file we are going to overwrite:
+	m_pLockFile->Close();
+#endif
+
 	if (!pFile->Move(GetConfigFile(), true)) {
 		DEBUG("Error while replacing the config file with a new version, errno says " << strerror(errno));
 		pFile->Delete();
 		delete pFile;
 		return false;
 	}
+
+#ifdef _WIN32
+	// re-open config to keep it from being deleted.
+	// aka restore state before entering this function.
+	pFile->Open(GetConfigFile());
+#endif
 
 	// Everything went fine, just need to update the saved path.
 	pFile->SetFileName(GetConfigFile());
@@ -1991,4 +2043,10 @@ void CZNC::LeakConnectQueueTimer(CConnectQueueTimer *pTimer) {
 
 bool CZNC::WaitForChildLock() {
 	return m_pLockFile && m_pLockFile->ExLock();
+}
+
+// it is important that this method doesn't have its body in an .h file.
+double CZNC::GetCoreDLLVersion()
+{
+	return VERSION;
 }

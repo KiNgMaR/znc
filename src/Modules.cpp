@@ -1083,7 +1083,7 @@ void CModules::GetAvailableMods(set<CModInfo>& ssMods, CModInfo::EModuleType eTy
 	ModDirList dirs = GetModDirs();
 
 	while (!dirs.empty()) {
-		Dir.FillByWildcard(dirs.front().first, "*.so");
+		Dir.FillByWildcard(dirs.front().first, "*" ZNC_MODULE_FILE_EXT);
 		dirs.pop();
 
 		for (a = 0; a < Dir.size(); a++) {
@@ -1091,7 +1091,7 @@ void CModules::GetAvailableMods(set<CModInfo>& ssMods, CModInfo::EModuleType eTy
 			CString sName = File.GetShortName();
 			CString sPath = File.GetLongName();
 			CModInfo ModInfo;
-			sName.RightChomp(3);
+			sName.RightChomp(strlen(ZNC_MODULE_FILE_EXT));
 
 			CString sIgnoreRetMsg;
 			if (GetModPathInfo(ModInfo, sName, sPath, sIgnoreRetMsg)) {
@@ -1110,7 +1110,7 @@ bool CModules::FindModPath(const CString& sModule, CString& sModPath,
 	CString sMod = sModule;
 	CString sDir = sMod;
 	if (sModule.find(".") == CString::npos)
-		sMod += ".so";
+		sMod += ZNC_MODULE_FILE_EXT;
 
 	ModDirList dirs = GetModDirs();
 

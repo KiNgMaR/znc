@@ -111,6 +111,11 @@ CString CTemplate::ExpandFile(const CString& sFilename, bool bFromInc) {
 	/*if (sFilename.Left(1) == "/" || sFilename.Left(2) == "./") {
 		return sFilename;
 	}*/
+#ifdef _WIN32
+	if(!::PathIsRelative(sFilename.c_str())) {
+		return sFilename;
+	}
+#endif
 
 	CString sFile(ResolveLiteral(sFilename).TrimLeft_n("/"));
 

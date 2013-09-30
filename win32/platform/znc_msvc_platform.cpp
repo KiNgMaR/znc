@@ -196,7 +196,7 @@ size_t strftime_validating(char *strDest, size_t maxsize, const char *format, co
 //
 int setenv(const char *envname, const char *envval, int overwrite)
 {
-	if (getenv(envname) != nullptr && !overwrite)
+	if (!overwrite && getenv(envname) != nullptr)
 	{
 		return 1;
 	}

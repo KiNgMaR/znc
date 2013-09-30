@@ -63,6 +63,7 @@ public:
 	static CString GetTag(bool bIncludeVersion = true, bool bHTML = false);
 	static CString GetCompileOptionsString();
 	CString GetUptime() const;
+	static double GetCoreDLLVersion();
 	void ClearBindHosts();
 	bool AddBindHost(const CString& sHost);
 	bool RemBindHost(const CString& sHost);

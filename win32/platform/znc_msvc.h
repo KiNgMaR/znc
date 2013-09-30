@@ -17,6 +17,7 @@
 #include <Winsock2.h> // do not use Winsock v1.
 #include <Shlwapi.h>
 #include <Shlobj.h>
+#include <Wincrypt.h>
 
 // C(++) headers:
 #include <stdint.h>
@@ -47,6 +48,12 @@ __inline void sleep(int seconds) { ::Sleep(seconds * 1000); }
 
 // getopt and getopt_long are provided via getopt.c, a Win32 getopt implementation
 #define HAVE_GETOPT_LONG
+
+// on Windows, load stuff from exe directory by default:
+#define RUN_FROM_SOURCE
+
+// we use .dll for modules:
+#define ZNC_MODULE_FILE_EXT ".dll"
 
 // set up some basics that are not provided in the MinGW headers that we ship:
 typedef int _mode_t;
@@ -80,6 +87,13 @@ ZNC_API int setenv(const char*, const char*, int overwrite);
 ZNC_API int unsetenv(const char *);
 ZNC_API std::string getpass(const char* prompt);
 ZNC_API size_t strftime_validating(char* strDest, size_t maxsize, const char* format, const struct tm* timeptr);
+
+// Win32 utility + feature code:
+class ZNC_API CZNCWin32Helpers
+{
+public:
+	static int RuntimeStartUp();
+};
 
 // suppress some warnings from ZNC code:
 #pragma warning(disable:4996) // disable "The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name"

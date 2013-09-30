@@ -489,7 +489,7 @@ protected:
  *
  * This class maps strings to other strings.
  */
-class MCString : public std::map<CString, CString> {
+class ZNC_API MCString : public std::map<CString, CString> {
 public:
 	/** Construct an empty MCString. */
 	MCString() : std::map<CString, CString>() {}

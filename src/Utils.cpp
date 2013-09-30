@@ -653,3 +653,75 @@ CString CBlowfish::Crypt(const CString & sData) {
 }
 
 #endif // HAVE_LIBSSL
+
+#ifdef _WIN32
+bool CUtils::Win32StringError(int iErrorCode, CString& strError)
+{
+	if (iErrorCode != 0)
+	{
+		LPSTR lpMsgBuf = NULL;
+		DWORD dwSize;
+		dwSize = ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+			NULL, iErrorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			(LPSTR)&lpMsgBuf, 0, NULL);
+
+		if (lpMsgBuf && dwSize)
+		{
+			strError = lpMsgBuf;
+			::LocalFree(lpMsgBuf);
+			strError.Trim();
+
+			return true;
+		}
+	}
+
+	return false;
+}
+#endif /* _WIN32 */
+
+void CUtils::SeedPRNG() {
+#ifdef _WIN32
+	HCRYPTPROV hProv;
+	bool failed = true;
+
+	if (::CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_SILENT))
+	{
+		unsigned int seed;
+
+		if (::CryptGenRandom(hProv, sizeof(unsigned int), (LPBYTE)&seed))
+		{
+			srand(seed);
+
+			failed = false;
+		}
+
+		::CryptReleaseContext(hProv, 0);
+	}
+
+	if (!failed)
+	{
+		return;
+	}
+
+#endif /* _WIN32 */
+
+	struct timeval tv;
+	unsigned int seed;
+
+	// Try to find a seed which can't be as easily guessed as only time()
+
+	if (gettimeofday(&tv, NULL) == 0) {
+		seed = (unsigned int)tv.tv_sec;
+
+		// This is in [0:1e6], which means that roughly 20 bits are
+		// actually used, let's try to shuffle the high bits.
+		seed ^= uint32_t((tv.tv_usec << 10) | tv.tv_usec);
+	} else
+		seed = (unsigned int)time(NULL);
+
+	seed ^= rand();
+	seed ^= getpid();
+
+	srand(seed);
+}
+

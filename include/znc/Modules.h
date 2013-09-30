@@ -55,7 +55,9 @@ template<class M> CModule* TModLoad(ModHandle p, CUser* pUser,
 	return new M(p, pUser, pNetwork, sModName, sModPath);
 }
 
-#if HAVE_VISIBILITY
+#ifdef _WIN32
+# define MODULE_EXPORT ZNC_HELPER_DLL_EXPORT
+#elif HAVE_VISIBILITY
 # define MODULE_EXPORT __attribute__((__visibility__("default")))
 #else
 # define MODULE_EXPORT

@@ -63,7 +63,9 @@ static void GenerateHelp(const char *appname) {
 	CUtils::PrintMessage("\t-f, --foreground   Don't fork into the background");
 	CUtils::PrintMessage("\t-D, --debug        Output debugging information (Implies -f)");
 	CUtils::PrintMessage("\t-n, --no-color     Don't use escape sequences in the output");
+#ifndef _WIN32
 	CUtils::PrintMessage("\t-r, --allow-root   Don't complain if ZNC is run as root");
+#endif /* _WIN32 */
 	CUtils::PrintMessage("\t-c, --makeconf     Interactively create a new config");
 	CUtils::PrintMessage("\t-s, --makepass     Generates a password for use in config");
 #ifdef HAVE_LIBSSL
@@ -96,7 +98,7 @@ static void signalHandler(int sig) {
 		CUtils::PrintMessage("WTF? Signal handler called for a signal it doesn't know?");
 	}
 }
-#endif HAVE_SIGNALS
+#endif /* HAVE_SIGNALS */
 
 static bool isRoot() {
 #ifndef _WIN32
@@ -107,37 +109,39 @@ static bool isRoot() {
 #endif
 }
 
-static void seedPRNG() {
-	struct timeval tv;
-	unsigned int seed;
-
-	// Try to find a seed which can't be as easily guessed as only time()
-
-	if (gettimeofday(&tv, NULL) == 0) {
-		seed = (unsigned int)tv.tv_sec;
-
-		// This is in [0:1e6], which means that roughly 20 bits are
-		// actually used, let's try to shuffle the high bits.
-		seed ^= uint32_t((tv.tv_usec << 10) | tv.tv_usec);
-	} else
-		seed = (unsigned int)time(NULL);
-
-	seed ^= rand();
-	seed ^= getpid();
-
-	srand(seed);
-}
-
 int main(int argc, char** argv) {
 	CString sConfig;
 	CString sDataDir = "";
 
-	seedPRNG();
 #ifdef _WIN32
-	CDebug::SetStdoutIsTTY(false);
-#else
+	if(CZNC::GetCoreDLLVersion() != VERSION) // check must not be in DLL for obvious reasons
+	{
+		CUtils::PrintError("The version number in ZNC.dll doesn't match. Aborting.");
+		return 1;
+	}
+	else
+	{
+		// console window setup:
+
+		const CString _sAnsiConPath = CDir::ChangeDir("./", "") + "\\ansicon.dll";
+		::LoadLibrary(_sAnsiConPath.c_str());
+
+		const CString sConsoleTitle = "ZNC " + CZNC::GetVersion();
+		::SetConsoleTitle(sConsoleTitle.c_str());
+
+		// *TODO* register Ctrl+C handler with SetConsoleCtrlHandler
+
+		int ret = CZNCWin32Helpers::RuntimeStartUp();
+
+		if (ret != 0)
+		{
+			return ret;
+		}
+	}
+#endif /* _WIN32 */
+
+	CUtils::SeedPRNG();
 	CDebug::SetStdoutIsTTY(isatty(1));
-#endif
 
 	int iArg, iOptIndex = -1;
 	bool bMakeConf = false;

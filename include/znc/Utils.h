@@ -48,6 +48,8 @@ public:
 	CUtils();
 	~CUtils();
 
+	static void SeedPRNG();
+
 	static CString GetIP(unsigned long addr);
 	static unsigned long GetLongIP(const CString& sIP);
 
@@ -87,6 +89,10 @@ public:
 	static CString CTime(time_t t, const CString& sTZ);
 	static CString FormatTime(time_t t, const CString& sFormat, const CString& sTZ);
 	static SCString GetTimezones();
+
+#ifdef _WIN32
+	static bool Win32StringError(int iErrorCode, CString& strError);
+#endif
 
 private:
 protected:
