@@ -5,8 +5,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZNC_DLL", "ZNC.vcxproj", "{
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZNC_CLI", "ZNC_CLI.vcxproj", "{26838D35-DAF6-4E46-8CEF-148941CA95F3}"
 	ProjectSection(ProjectDependencies) = postProject
+		{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B} = {119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}
 		{3C1FBC79-7578-4B6E-85F4-C78EF02A63D1} = {3C1FBC79-7578-4B6E-85F4-C78EF02A63D1}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ansicon", "ansicon.vcxproj", "{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,6 +45,18 @@ Global
 		{26838D35-DAF6-4E46-8CEF-148941CA95F3}.Release|Win32.Build.0 = Release|Win32
 		{26838D35-DAF6-4E46-8CEF-148941CA95F3}.Release|x64.ActiveCfg = Release|x64
 		{26838D35-DAF6-4E46-8CEF-148941CA95F3}.Release|x64.Build.0 = Release|x64
+		{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}.Debug|Win32.Build.0 = Debug|Win32
+		{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}.Debug|x64.ActiveCfg = Debug|x64
+		{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}.Debug|x64.Build.0 = Debug|x64
+		{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}.Release|Win32.ActiveCfg = Release|Win32
+		{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}.Release|Win32.Build.0 = Release|Win32
+		{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}.Release|x64.ActiveCfg = Release|x64
+		{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
