@@ -1,3 +1,5 @@
 *.opensdf
 *.sdf
 *.suo
+_*.rsp
+*.user

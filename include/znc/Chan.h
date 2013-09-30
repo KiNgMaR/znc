@@ -31,7 +31,7 @@ class CConfig;
 class CFile;
 // !Forward Declarations
 
-class CChan {
+class ZNC_API CChan {
 public:
 	typedef enum {
 		Voice   = '+',

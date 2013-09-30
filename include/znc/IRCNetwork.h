@@ -33,7 +33,7 @@ class CChan;
 class CServer;
 class CIRCSock;
 
-class CIRCNetwork {
+class ZNC_API CIRCNetwork {
 public:
 	static bool IsValidNetwork(const CString& sNetwork);
 

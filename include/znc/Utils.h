@@ -142,7 +142,7 @@ protected:
 | hello | world |
 +-------+-------+@endverbatim
  */
-class CTable : protected std::vector<std::vector<CString> > {
+class ZNC_API CTable : protected std::vector<std::vector<CString> > {
 public:
 	CTable() {}
 	virtual ~CTable() {}
@@ -207,7 +207,7 @@ protected:
 #include <openssl/blowfish.h>
 #include <openssl/md5.h>
 //! does Blowfish w/64 bit feedback, no padding
-class CBlowfish {
+class ZNC_API CBlowfish {
 public:
 	/**
 	 * @param sPassword key to encrypt with

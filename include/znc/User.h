@@ -34,7 +34,7 @@ class CIRCSock;
 class CUserTimer;
 class CServer;
 
-class CUser {
+class ZNC_API CUser {
 public:
 	CUser(const CString& sUserName);
 	~CUser();

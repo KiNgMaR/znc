@@ -26,7 +26,7 @@ class CIRCNetwork;
 class CChan;
 // !Forward Decl
 
-class CNick
+class ZNC_API CNick
 {
 public:
 	CNick();

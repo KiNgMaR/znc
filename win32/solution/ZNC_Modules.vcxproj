@@ -19,37 +19,36 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{3C1FBC79-7578-4B6E-85F4-C78EF02A63D1}</ProjectGuid>
+    <ProjectGuid>{5177E585-9F24-4ADC-AF85-B924AAAD3BE3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>ZNC</RootNamespace>
-    <ProjectName>ZNC_DLL</ProjectName>
+    <RootNamespace>ZNC_Modules</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110_xp</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v110_xp</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -71,25 +70,47 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)..\build\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\temp\$(ProjectName)-$(Configuration)-$(Platform)\</IntDir>
-    <TargetName>ZNC</TargetName>
+    <NMakeBuildCommandLine>nmake -f Modules.make CFG=$(Platform)-$(Configuration) build</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>nmake -f Modules.make CFG=$(Platform)-$(Configuration) rebuild</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>nmake -f Modules.make CFG=$(Platform)-$(Configuration) clean</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>..\..\include;..\platform</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>target_winver.h;znc_msvc.h</NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <NMakeBuildCommandLine>call "$(VCInstallDir)\vcvarsall.bat" amd64
+nmake -f Modules.make CFG=$(Platform)-$(Configuration) build</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>call "$(VCInstallDir)\vcvarsall.bat" amd64
+nmake -f Modules.make CFG=$(Platform)-$(Configuration) rebuild</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>call "$(VCInstallDir)\vcvarsall.bat" amd64
+nmake -f Modules.make CFG=$(Platform)-$(Configuration) clean</NMakeCleanCommandLine>
     <OutDir>$(SolutionDir)..\build\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\temp\$(ProjectName)-$(Configuration)-$(Platform)\</IntDir>
-    <TargetName>ZNC</TargetName>
+    <NMakeIncludeSearchPath>..\..\include;..\platform</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>target_winver.h;znc_msvc.h</NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)..\build\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\temp\$(ProjectName)-$(Configuration)-$(Platform)\</IntDir>
-    <TargetName>ZNC</TargetName>
+    <NMakeBuildCommandLine>nmake -f Modules.make CFG=$(Platform)-$(Configuration) build</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>nmake -f Modules.make CFG=$(Platform)-$(Configuration) rebuild</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>nmake -f Modules.make CFG=$(Platform)-$(Configuration) clean</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>..\..\include;..\platform</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>target_winver.h;znc_msvc.h</NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <NMakeBuildCommandLine>call "$(VCInstallDir)\vcvarsall.bat" amd64
+nmake -f Modules.make CFG=$(Platform)-$(Configuration) build</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>call "$(VCInstallDir)\vcvarsall.bat" amd64
+nmake -f Modules.make CFG=$(Platform)-$(Configuration) rebuild</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>call "$(VCInstallDir)\vcvarsall.bat" amd64
+nmake -f Modules.make CFG=$(Platform)-$(Configuration) clean</NMakeCleanCommandLine>
     <OutDir>$(SolutionDir)..\build\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\temp\$(ProjectName)-$(Configuration)-$(Platform)\</IntDir>
-    <TargetName>ZNC</TargetName>
+    <NMakeIncludeSearchPath>..\..\include;..\platform</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>target_winver.h;znc_msvc.h</NMakeForcedIncludes>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -97,16 +118,12 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;EXPORTS_GETOPT;_DEBUG;_WINDOWS;_USRDLL;ZNC_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../include;../platform</AdditionalIncludeDirectories>
-      <ForcedIncludeFiles>target_winver.h; znc_msvc.h</ForcedIncludeFiles>
-      <MinimalRebuild>true</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;advapi32.lib;shell32.lib;shlwapi.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -115,15 +132,12 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;EXPORTS_GETOPT;_DEBUG;_WINDOWS;_USRDLL;ZNC_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../include;../platform</AdditionalIncludeDirectories>
-      <ForcedIncludeFiles>target_winver.h; znc_msvc.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;advapi32.lib;shell32.lib;shlwapi.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -134,18 +148,14 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;EXPORTS_GETOPT;NDEBUG;_WINDOWS;_USRDLL;ZNC_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <StringPooling>true</StringPooling>
-      <AdditionalIncludeDirectories>../../include;../platform</AdditionalIncludeDirectories>
-      <ForcedIncludeFiles>target_winver.h; znc_msvc.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;advapi32.lib;shell32.lib;shlwapi.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -156,82 +166,70 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;EXPORTS_GETOPT;NDEBUG;_WINDOWS;_USRDLL;ZNC_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <StringPooling>true</StringPooling>
-      <AdditionalIncludeDirectories>../../include;../platform</AdditionalIncludeDirectories>
-      <ForcedIncludeFiles>target_winver.h; znc_msvc.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;advapi32.lib;shell32.lib;shlwapi.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\Buffer.cpp" />
-    <ClCompile Include="..\..\src\Chan.cpp" />
-    <ClCompile Include="..\..\src\Client.cpp" />
-    <ClCompile Include="..\..\src\ClientCommand.cpp" />
-    <ClCompile Include="..\..\src\Config.cpp" />
-    <ClCompile Include="..\..\src\Csocket.cpp" />
-    <ClCompile Include="..\..\src\FileUtils.cpp" />
-    <ClCompile Include="..\..\src\HTTPSock.cpp" />
-    <ClCompile Include="..\..\src\IRCNetwork.cpp" />
-    <ClCompile Include="..\..\src\IRCSock.cpp" />
-    <ClCompile Include="..\..\src\Listener.cpp" />
-    <ClCompile Include="..\..\src\MD5.cpp" />
-    <ClCompile Include="..\..\src\Modules.cpp" />
-    <ClCompile Include="..\..\src\Nick.cpp" />
-    <ClCompile Include="..\..\src\Server.cpp" />
-    <ClCompile Include="..\..\src\SHA256.cpp" />
-    <ClCompile Include="..\..\src\Socket.cpp" />
-    <ClCompile Include="..\..\src\Template.cpp" />
-    <ClCompile Include="..\..\src\Threads.cpp" />
-    <ClCompile Include="..\..\src\User.cpp" />
-    <ClCompile Include="..\..\src\Utils.cpp" />
-    <ClCompile Include="..\..\src\WebModules.cpp" />
-    <ClCompile Include="..\..\src\znc.cpp" />
-    <ClCompile Include="..\..\src\ZNCDebug.cpp" />
-    <ClCompile Include="..\..\src\ZNCString.cpp" />
-    <ClCompile Include="..\platform\dh_time.cpp" />
-    <ClCompile Include="..\platform\dirent.cpp" />
-    <ClCompile Include="..\platform\dlfcn.cpp" />
-    <ClCompile Include="..\platform\getopt.cpp" />
-    <ClCompile Include="..\platform\znc_msvc.cpp" />
-    <ClCompile Include="..\platform\znc_msvc_platform.cpp" />
+    <None Include="Modules.make" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\znc\Buffer.h" />
-    <ClInclude Include="..\..\include\znc\Chan.h" />
-    <ClInclude Include="..\..\include\znc\Client.h" />
-    <ClInclude Include="..\..\include\znc\Config.h" />
-    <ClInclude Include="..\..\include\znc\Csocket.h" />
-    <ClInclude Include="..\..\include\znc\defines.h" />
-    <ClInclude Include="..\..\include\znc\exports.h" />
-    <ClInclude Include="..\..\include\znc\FileUtils.h" />
-    <ClInclude Include="..\..\include\znc\HTTPSock.h" />
-    <ClInclude Include="..\..\include\znc\IRCNetwork.h" />
-    <ClInclude Include="..\..\include\znc\IRCSock.h" />
-    <ClInclude Include="..\..\include\znc\Listener.h" />
-    <ClInclude Include="..\..\include\znc\main.h" />
-    <ClInclude Include="..\..\include\znc\MD5.h" />
-    <ClInclude Include="..\..\include\znc\Modules.h" />
-    <ClInclude Include="..\..\include\znc\Nick.h" />
-    <ClInclude Include="..\..\include\znc\Server.h" />
-    <ClInclude Include="..\..\include\znc\SHA256.h" />
-    <ClInclude Include="..\..\include\znc\Socket.h" />
-    <ClInclude Include="..\..\include\znc\Template.h" />
-    <ClInclude Include="..\..\include\znc\Threads.h" />
-    <ClInclude Include="..\..\include\znc\User.h" />
-    <ClInclude Include="..\..\include\znc\Utils.h" />
-    <ClInclude Include="..\..\include\znc\version.h" />
-    <ClInclude Include="..\..\include\znc\WebModules.h" />
-    <ClInclude Include="..\..\include\znc\znc.h" />
-    <ClInclude Include="..\..\include\znc\ZNCDebug.h" />
-    <ClInclude Include="..\..\include\znc\ZNCString.h" />
+    <ClCompile Include="..\..\modules\adminlog.cpp" />
+    <ClCompile Include="..\..\modules\autoattach.cpp" />
+    <ClCompile Include="..\..\modules\autocycle.cpp" />
+    <ClCompile Include="..\..\modules\autoop.cpp" />
+    <ClCompile Include="..\..\modules\autoreply.cpp" />
+    <ClCompile Include="..\..\modules\autovoice.cpp" />
+    <ClCompile Include="..\..\modules\awaynick.cpp" />
+    <ClCompile Include="..\..\modules\awaystore.cpp" />
+    <ClCompile Include="..\..\modules\blockuser.cpp" />
+    <ClCompile Include="..\..\modules\block_motd.cpp" />
+    <ClCompile Include="..\..\modules\bouncedcc.cpp" />
+    <ClCompile Include="..\..\modules\buffextras.cpp" />
+    <ClCompile Include="..\..\modules\cert.cpp" />
+    <ClCompile Include="..\..\modules\certauth.cpp" />
+    <ClCompile Include="..\..\modules\chansaver.cpp" />
+    <ClCompile Include="..\..\modules\clearbufferonmsg.cpp" />
+    <ClCompile Include="..\..\modules\clientnotify.cpp" />
+    <ClCompile Include="..\..\modules\controlpanel.cpp" />
+    <ClCompile Include="..\..\modules\crypt.cpp" />
+    <ClCompile Include="..\..\modules\ctcpflood.cpp" />
+    <ClCompile Include="..\..\modules\dcc.cpp" />
+    <ClCompile Include="..\..\modules\disconkick.cpp" />
+    <ClCompile Include="..\..\modules\fail2ban.cpp" />
+    <ClCompile Include="..\..\modules\flooddetach.cpp" />
+    <ClCompile Include="..\..\modules\identfile.cpp" />
+    <ClCompile Include="..\..\modules\imapauth.cpp" />
+    <ClCompile Include="..\..\modules\keepnick.cpp" />
+    <ClCompile Include="..\..\modules\kickrejoin.cpp" />
+    <ClCompile Include="..\..\modules\lastseen.cpp" />
+    <ClCompile Include="..\..\modules\listsockets.cpp" />
+    <ClCompile Include="..\..\modules\log.cpp" />
+    <ClCompile Include="..\..\modules\missingmotd.cpp" />
+    <ClCompile Include="..\..\modules\modules_online.cpp" />
+    <ClCompile Include="..\..\modules\nickserv.cpp" />
+    <ClCompile Include="..\..\modules\notes.cpp" />
+    <ClCompile Include="..\..\modules\notify_connect.cpp" />
+    <ClCompile Include="..\..\modules\partyline.cpp" />
+    <ClCompile Include="..\..\modules\perform.cpp" />
+    <ClCompile Include="..\..\modules\q.cpp" />
+    <ClCompile Include="..\..\modules\raw.cpp" />
+    <ClCompile Include="..\..\modules\route_replies.cpp" />
+    <ClCompile Include="..\..\modules\sample.cpp" />
+    <ClCompile Include="..\..\modules\sasl.cpp" />
+    <ClCompile Include="..\..\modules\savebuff.cpp" />
+    <ClCompile Include="..\..\modules\schat.cpp" />
+    <ClCompile Include="..\..\modules\send_raw.cpp" />
+    <ClCompile Include="..\..\modules\simple_away.cpp" />
+    <ClCompile Include="..\..\modules\stickychan.cpp" />
+    <ClCompile Include="..\..\modules\watch.cpp" />
+    <ClCompile Include="..\..\modules\webadmin.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

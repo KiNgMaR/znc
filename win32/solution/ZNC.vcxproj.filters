@@ -113,9 +113,6 @@
     <ClInclude Include="..\..\include\znc\defines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\znc\ExecSock.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\znc\exports.h">
       <Filter>Header Files</Filter>
     </ClInclude>

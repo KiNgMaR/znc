@@ -20,7 +20,7 @@
 #include <znc/zncconfig.h>
 #include <znc/ZNCString.h>
 
-class CServer {
+class ZNC_API CServer {
 public:
 	CServer(const CString& sName, unsigned short uPort = 6667, const CString& sPass = "", bool bSSL = false);
 	~CServer();

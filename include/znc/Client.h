@@ -81,7 +81,7 @@ protected:
 	CClient* m_pClient;
 };
 
-class CClient : public CZNCSock {
+class ZNC_API CClient : public CZNCSock {
 public:
 	CClient() : CZNCSock() {
 		m_pUser = NULL;

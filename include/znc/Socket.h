@@ -23,7 +23,7 @@
 
 class CModule;
 
-class CZNCSock : public Csock {
+class ZNC_API CZNCSock : public Csock {
 public:
 	CZNCSock(int timeout = 60) : Csock(timeout) {}
 	CZNCSock(const CString& sHost, u_short port, int timeout = 60) : Csock(sHost, port, timeout) {}
@@ -156,7 +156,7 @@ protected:
  * - EnableReadLine is default to true in this class
  * - MaxBuffer for readline is set to 10240, in the event this is reached the socket is closed (@see ReachedMaxBuffer)
  */
-class CSocket : public CZNCSock {
+class ZNC_API CSocket : public CZNCSock {
 public:
 	/**
 	 * @brief ctor

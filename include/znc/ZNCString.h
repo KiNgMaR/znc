@@ -56,6 +56,18 @@ static const unsigned char base64_table[256] = {
 	XX,XX,XX,XX, XX,XX,XX,XX, XX,XX,XX,XX, XX,XX,XX,XX,
 };
 
+#ifdef WIN_MSVC
+	/* workaround for MSVC++ 2010/2012 change */
+	typedef std::basic_string<char> __ZNCBasicString;
+	#ifndef ZNC_EXPORTS
+	// ref: http://connect.microsoft.com/VisualStudio/feedback/details/562448/std-string-npos-lnk2001-when-inheriting-a-dll-class-from-std-string
+	const __ZNCBasicString::size_type __ZNCBasicString::npos = size_t(-1); 
+	#endif
+	#define _ZNC_BASE_STRING __ZNCBasicString
+#else
+	#define _ZNC_BASE_STRING std::string
+#endif
+
 /**
  * @brief String class that is used inside ZNC.
  *
@@ -63,7 +75,7 @@ static const unsigned char base64_table[256] = {
  * class. It provides helpful functions for parsing input like Token() and
  * Split().
  */
-class ZNC_API CString : public std::string {
+class ZNC_API CString : public _ZNC_BASE_STRING {
 public:
 	typedef enum {
 		EASCII,

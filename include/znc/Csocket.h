@@ -519,7 +519,7 @@ typedef int ( *FPCertVerifyCB )( int, X509_STORE_CTX * );
  * @see TSocketManager
  * @author Jim Hull <csocket@jimloco.com>
  */
-class Csock : public CSockCommon
+class ZNC_API Csock : public CSockCommon
 {
 public:
 	//! default constructor, sets a timeout of 60 seconds

@@ -19,17 +19,27 @@
 #include <znc/IRCNetwork.h>
 #include <znc/User.h>
 
+#ifndef _WIN32
 #include <syslog.h>
+#else
+#define LOG_INFO 0
+#define LOG_NOTICE 1
+#define LOG_WARNING 2
+#endif
 
 class CAdminLogMod : public CModule {
 public:
 	MODCONSTRUCTOR(CAdminLogMod) {
+#ifndef _WIN32
 		openlog("znc", LOG_PID, LOG_DAEMON);
+#endif
 	}
 
 	virtual ~CAdminLogMod() {
 		Log("Logging ended.");
+#ifndef _WIN32
 		closelog();
+#endif
 	}
 
 	virtual bool OnLoad(const CString & sArgs, CString & sMessage) {
@@ -45,7 +55,11 @@ public:
 
 		m_sLogFile = GetSavePath() + "/znc.log";
 
-		Log("Logging started. ZNC PID[" + CString(getpid()) + "] UID/GID[" + CString(getuid()) + ":" + CString(getgid()) + "]");
+#ifndef _WIN32
+ 		Log("Logging started. ZNC PID[" + CString(getpid()) + "] UID/GID[" + CString(getuid()) + ":" + CString(getgid()) + "]");
+#else
+		Log("Logging started. ZNC PID[" + CString(_getpid()) + "]");
+#endif
 		return true;
 	}
 
@@ -83,8 +97,10 @@ public:
 	}
 
 	void Log(CString sLine, int iPrio = LOG_INFO) {
+#ifndef _WIN32
 		if (m_eLogMode & LOG_TO_SYSLOG)
 			syslog(iPrio, "%s", sLine.c_str());
+#endif
 
 		if (m_eLogMode & LOG_TO_FILE) {
 			time_t curtime;
@@ -175,4 +191,8 @@ template<> void TModInfo<CAdminLogMod>(CModInfo& Info) {
 	Info.SetWikiPage("adminlog");
 }
 
+#ifndef _WIN32
 GLOBALMODULEDEFS(CAdminLogMod, "Log ZNC events to file and/or syslog.")
+#else
+GLOBALMODULEDEFS(CAdminLogMod, "Log ZNC events to a file.")
+#endif
