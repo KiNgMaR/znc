@@ -30,7 +30,7 @@ class CWebSubPage;
 typedef CSmartPtr<CWebSubPage> TWebSubPage;
 typedef std::vector<TWebSubPage> VWebSubPages;
 
-class CZNCTagHandler : public CTemplateTagHandler {
+class ZNC_API CZNCTagHandler : public CTemplateTagHandler {
 public:
 	CZNCTagHandler(CWebSock& pWebSock);
 	virtual ~CZNCTagHandler() {}
@@ -41,7 +41,7 @@ private:
 };
 
 
-class CWebSession {
+class ZNC_API CWebSession {
 public:
 	CWebSession(const CString& sId, const CString& sIP);
 	~CWebSession();
@@ -67,7 +67,7 @@ private:
 };
 
 
-class CWebSubPage {
+class ZNC_API CWebSubPage {
 public:
 	CWebSubPage(const CString& sName, const CString& sTitle = "", unsigned int uFlags = 0) : m_sName(sName), m_sTitle(sTitle) {
 		m_uFlags = uFlags;
@@ -105,7 +105,7 @@ class CWebSessionMap : public TCacheMap<CString, CSmartPtr<CWebSession> > {
 		void FinishUserSessions(const CUser& User);
 };
 
-class CWebSock : public CHTTPSock {
+class ZNC_API CWebSock : public CHTTPSock {
 public:
 	enum EPageReqResult {
 		PAGE_NOTFOUND, // print 404 and Close()

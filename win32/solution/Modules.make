@@ -40,11 +40,13 @@ CFG = Win32-Release
 # Common macros
 # -------------
 
+SSL=0
+
 INCLUDES=/I "..\..\include" /I "..\platform"
 LIBS=kernel32.lib advapi32.lib shell32.lib ws2_32.lib ZNC.lib
 LIBPATHS=/LIBPATH:"..\build\$(CFG)"
 DEFINES=/D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "_WINDLL"
-CXXFLAGS=/c /GS /W3 /Zc:wchar_t /FI"target_winver.h" /FI"znc_msvc.h" /Zi /sdl /fp:precise /errorReport:prompt /WX- /Zc:forScope /RTC1 /Gd /EHsc /nologo
+CXXFLAGS=/c /GS /W3 /Zc:wchar_t /FI"target_winver.h" /FI"znc_msvc.h" /Zi /sdl /fp:precise /errorReport:prompt /WX- /Zc:forScope /Gd /EHsc /nologo
 LINKFLAGS=/DLL /SUBSYSTEM:WINDOWS /NOLOGO /DYNAMICBASE /NXCOMPAT
 
 RSP=_ZNCModules.rsp
@@ -106,6 +108,11 @@ LINKFLAGS=$(LINKFLAGS) /INCREMENTAL /DEBUG /MACHINE:$(PLATFORM)
 # --------------------
 
 !INCLUDE ModulesList.make
+
+!IF "$(SSL)" == "1"
+OBJS=$(OBJS) $(OBJS_SSL)
+DLLS=$(DLLS) $(DLLS_SSL)
+!ENDIF
 
 # ----------------
 # Makefile targets

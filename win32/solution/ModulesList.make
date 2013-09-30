@@ -5,18 +5,14 @@
  $(MAKDIR)\autoreply.dll \
  $(MAKDIR)\autovoice.dll \
  $(MAKDIR)\awaynick.dll \
- $(MAKDIR)\awaystore.dll \
  $(MAKDIR)\blockuser.dll \
  $(MAKDIR)\block_motd.dll \
  $(MAKDIR)\bouncedcc.dll \
  $(MAKDIR)\buffextras.dll \
- $(MAKDIR)\cert.dll \
- $(MAKDIR)\certauth.dll \
  $(MAKDIR)\chansaver.dll \
  $(MAKDIR)\clearbufferonmsg.dll \
  $(MAKDIR)\clientnotify.dll \
  $(MAKDIR)\controlpanel.dll \
- $(MAKDIR)\crypt.dll \
  $(MAKDIR)\ctcpflood.dll \
  $(MAKDIR)\dcc.dll \
  $(MAKDIR)\disconkick.dll \
@@ -41,13 +37,18 @@
  $(MAKDIR)\route_replies.dll \
  $(MAKDIR)\sample.dll \
  $(MAKDIR)\sasl.dll \
- $(MAKDIR)\savebuff.dll \
- $(MAKDIR)\schat.dll \
  $(MAKDIR)\send_raw.dll \
  $(MAKDIR)\simple_away.dll \
  $(MAKDIR)\stickychan.dll \
  $(MAKDIR)\watch.dll \
  $(MAKDIR)\webadmin.dll
+
+DLLS_SSL= $(MAKDIR)\awaystore.dll \
+ $(MAKDIR)\cert.dll \
+ $(MAKDIR)\certauth.dll \
+ $(MAKDIR)\crypt.dll \
+ $(MAKDIR)\savebuff.dll \
+ $(MAKDIR)\schat.dll
 
 OBJS= $(MAKDIR)\adminlog.obj \
  $(MAKDIR)\autoattach.obj \
@@ -56,18 +57,14 @@ OBJS= $(MAKDIR)\adminlog.obj \
  $(MAKDIR)\autoreply.obj \
  $(MAKDIR)\autovoice.obj \
  $(MAKDIR)\awaynick.obj \
- $(MAKDIR)\awaystore.obj \
  $(MAKDIR)\blockuser.obj \
  $(MAKDIR)\block_motd.obj \
  $(MAKDIR)\bouncedcc.obj \
  $(MAKDIR)\buffextras.obj \
- $(MAKDIR)\cert.obj \
- $(MAKDIR)\certauth.obj \
  $(MAKDIR)\chansaver.obj \
  $(MAKDIR)\clearbufferonmsg.obj \
  $(MAKDIR)\clientnotify.obj \
  $(MAKDIR)\controlpanel.obj \
- $(MAKDIR)\crypt.obj \
  $(MAKDIR)\ctcpflood.obj \
  $(MAKDIR)\dcc.obj \
  $(MAKDIR)\disconkick.obj \
@@ -92,11 +89,16 @@ OBJS= $(MAKDIR)\adminlog.obj \
  $(MAKDIR)\route_replies.obj \
  $(MAKDIR)\sample.obj \
  $(MAKDIR)\sasl.obj \
- $(MAKDIR)\savebuff.obj \
- $(MAKDIR)\schat.obj \
  $(MAKDIR)\send_raw.obj \
  $(MAKDIR)\simple_away.obj \
  $(MAKDIR)\stickychan.obj \
  $(MAKDIR)\watch.obj \
  $(MAKDIR)\webadmin.obj
+
+OBJS_SSL= $(MAKDIR)\awaystore.obj \
+ $(MAKDIR)\cert.obj \
+ $(MAKDIR)\certauth.obj \
+ $(MAKDIR)\crypt.obj \
+ $(MAKDIR)\savebuff.obj \
+ $(MAKDIR)\schat.obj
 

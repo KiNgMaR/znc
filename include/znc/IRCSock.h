@@ -30,7 +30,7 @@ class CIRCNetwork;
 class CClient;
 // !Forward Declarations
 
-class CIRCSock : public CZNCSock {
+class ZNC_API CIRCSock : public CZNCSock {
 public:
 	CIRCSock(CIRCNetwork* pNetwork);
 	virtual ~CIRCSock();

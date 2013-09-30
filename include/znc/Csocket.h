@@ -351,7 +351,7 @@ uint64_t millitime();
  * You should derive from this class, and override RunJob() with your code
  * @author Jim Hull <csocket@jimloco.com>
  */
-class CCron
+class ZNC_API CCron
 {
 public:
 	CCron();
@@ -464,7 +464,7 @@ protected:
  * @class CSockCommon
  * @brief simple class to share common code to both TSockManager and Csock
  */
-class CSockCommon
+class ZNC_API CSockCommon
 {
 public:
 	CSockCommon() {}

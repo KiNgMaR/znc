@@ -38,7 +38,7 @@ enum EAddrType {
 	ADDR_ALL
 };
 
-class CSockManager : public TSocketManager<CZNCSock> {
+class ZNC_API CSockManager : public TSocketManager<CZNCSock> {
 public:
 	CSockManager();
 	virtual ~CSockManager();

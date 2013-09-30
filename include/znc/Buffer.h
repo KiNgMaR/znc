@@ -26,7 +26,7 @@
 class CClient;
 // !Forward Declarations
 
-class CBufLine {
+class ZNC_API CBufLine {
 public:
 	CBufLine() { throw 0; } // shouldn't be called, but is needed for compilation
 	CBufLine(const CString& sFormat, const CString& sText = "", const timeval* ts = 0);
@@ -53,7 +53,7 @@ protected:
 	timeval  m_time;
 };
 
-class CBuffer : private std::deque<CBufLine> {
+class ZNC_API CBuffer : private std::deque<CBufLine> {
 public:
 	CBuffer(unsigned int uLineCount = 100);
 	~CBuffer();

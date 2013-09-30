@@ -24,7 +24,7 @@
 class CRealListener;
 // !Forward Declarations
 
-class CListener {
+class ZNC_API CListener {
 public:
 	typedef enum {
 		ACCEPT_IRC,

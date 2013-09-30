@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
 #endif /* _WIN32 */
 
 	CUtils::SeedPRNG();
-	CDebug::SetStdoutIsTTY(isatty(1));
+	CDebug::SetStdoutIsTTY(isatty(1) != 0);
 
 	int iArg, iOptIndex = -1;
 	bool bMakeConf = false;

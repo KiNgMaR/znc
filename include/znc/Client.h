@@ -30,7 +30,7 @@ class CIRCSock;
 class CClient;
 // !Forward Declarations
 
-class CAuthBase {
+class ZNC_API CAuthBase {
 public:
 	CAuthBase(const CString& sUsername, const CString& sPassword, Csock *pSock) {
 		SetLoginInfo(sUsername, sPassword, pSock);
@@ -68,7 +68,7 @@ private:
 };
 
 
-class CClientAuth : public CAuthBase {
+class ZNC_API CClientAuth : public CAuthBase {
 public:
 	CClientAuth(CClient* pClient, const CString& sUsername, const CString& sPassword);
 	virtual ~CClientAuth() {}

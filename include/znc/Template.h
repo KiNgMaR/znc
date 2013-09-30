@@ -24,7 +24,7 @@
 
 class CTemplate;
 
-class CTemplateTagHandler {
+class ZNC_API CTemplateTagHandler {
 public:
 	CTemplateTagHandler() {}
 	virtual ~CTemplateTagHandler() {}
@@ -48,7 +48,7 @@ private:
 };
 class CTemplate;
 
-class CTemplateOptions {
+class ZNC_API CTemplateOptions {
 public:
 	CTemplateOptions() {
 		m_eEscapeFrom = CString::EASCII;
@@ -69,7 +69,7 @@ private:
 };
 
 
-class CTemplateLoopContext {
+class ZNC_API CTemplateLoopContext {
 public:
 	CTemplateLoopContext(unsigned long uFilePos, const CString& sLoopName, bool bReverse, std::vector<CTemplate*>* pRows) {
 		m_uFilePosition = uFilePos;
@@ -114,7 +114,7 @@ private:
 };
 
 
-class CTemplate : public MCString {
+class ZNC_API CTemplate : public MCString {
 public:
 	CTemplate() : MCString(), m_spOptions(new CTemplateOptions) {
 		Init();
