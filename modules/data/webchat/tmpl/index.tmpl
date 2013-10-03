@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+	<meta charset="UTF-8" />
+	<title>ZNC WebChat - <? VAR SessionUser ?></title>
+	<link rel="stylesheet" href="<? VAR ModFilesPath TOP ?>webchat.css" />
+	<!-- *TODO* mobile version / styles -->
+</head>
+<body ng-app="WebChat">
+	<div id="wc-loading">
+		<p>Loading the webchat module...</p>
+		<p>If this does not go away, please make sure your browser is up to date and JavaScript is allowed to run.</p>
+		<!--[if IE lte 8]>
+		<p class="browser-error">Error: Your browser (Internet Explorer 8 or below) is definitely not supported!</p>
+		<![endif]-->
+	</div>
+
+	<div id="wc-main" style="display:none;">
+		<div id="wc-top" ng-controller="TitleBar">
+			<h1>ZNC <? VAR VersionShort ?></h1>
+			<h2>{{user_name}}</h2>
+		</div>
+		<nav id="wc-navigation" ng-controller="Navigation">
+			<ul class="networks">
+				<li ng-repeat="network in windows" class="network" ng-class="network.statusWindow.flagsString">
+					<ul class="windows" data-network="{{network.statusWindow.name}}">
+						<li class="status">
+							<a href="#" ng-click="switchWindow($event)">{{network.statusWindow.name}}</a>
+						</li>
+						<li ng-repeat="chan in network.channelWindows" class="chan" ng-class="chan.flagsString">
+							<a href="#" ng-click="switchWindow($event)">{{chan.name}}</a>
+						</li>
+						<li ng-repeat="query in network.queryWindows" class="query" ng-class="query.flagsString">
+							<a href="#" ng-click="switchWindow($event)">{{query.name}}</a>
+						</li>
+					</ul>
+				</li>
+			</ul>
+			<!-- *TODO* (custom?) scrollbar if there's not enough vertical space -->
+		</nav>
+		<div id="wc-windows" ng-controller="WindowManager">
+			<div ng-repeat="window in domWindows">
+				<div class="window {{window.type}}" ng-show="window.visible" id="window-{{window.id}}">
+					<div class="content">
+						<h1>{{window.displayName}} on {{window.network}}</h1>
+						<div class="lines">
+							<div class="line" ng-repeat="line in window.lines">
+								<span class="line-nick" ng-bind="line.nick"></span>
+								<span class="line-body" ng-bind-html-unsafe="line.bodyHtml"></span>
+								<span class="line-time" ng-bind="line.time"></span>
+							</div>
+							<div class="not-connected status-info" ng-show="window.disconnected">
+								<p>You are not connected to this network right now.</p>
+							</div>
+							<div class="not-joined status-info" ng-show="window.notJoined">
+								<p>You are not in this channel right now.</p>
+							</div>
+						</div>
+					</div>
+					<aside class="nicklist" ng-show="window.hasNicklist">
+						<ul>
+							<li ng-repeat="person in window.nicklist" class="{{person.role}}">{{person.nick}}</li>
+						</ul>
+					</aside>
+					<div class="input">
+						<textarea placeholder="Chat here..."></textarea>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="js-error" style="display:none">
+		<h1>Sorry!</h1>
+		<p>A javascript error has occured. This is not supposed to happen. Please reload the page to continue using WebChat.</p>
+	</div>
+	<script>
+	(function() {
+		var oldOnError = window.onerror;
+		window.onerror = function(msg, url, line) {
+			document.getElementById('js-error').style.display = 'block';
+			return (oldOnError ? oldOnError(msg, url, line) : false);
+		};
+	}());
+	</script>
+
+	<div id="backend-connection-gone" style="display:none">
+		<div class="bg"></div>
+		<div class="text">
+			<h1>Sorry!</h1>
+			<p>The connection to ZNC has been interrupted for too long or otherwise gone bad.</p>
+			<p><a href="javascript:window.location.reload();">Click here to restart</a></p>
+		</div>
+	</div>
+
+	<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min.js"></script>
+	<script src="<? VAR ModFilesPath TOP ?>angular.min.js"></script>
+	<script src="<? VAR ModFilesPath TOP ?>microevent.js"></script>
+	<script>
+	/* these vars are guaranteed to not contain any quote or < characters, so using them here is safe. */
+	window.WebChatSetup = {
+		user_name: '<? VAR SessionUser ?>',
+		mod_path: '<? VAR ModPath ?>',
+		csrf_token_name: '_CSRF_Check',
+		csrf_token_value: '<? VAR _CSRF_Check TOP ?>',
+	};
+	</script>
+	<script src="<? VAR ModFilesPath TOP ?>webchat.backend.js"></script>
+	<script src="<? VAR ModFilesPath TOP ?>webchat.angular.js"></script>
+</body>
+</html>

@@ -1,0 +1,300 @@
+/**
+ * (c) Copyright 2013 - See the AUTHORS file for details.
+ * (c) Ingmar Runge 2013
+ *
+ * Visual appearance heavily influenced by https://github.com/thedjpetersen/subway (MIT License) - Thanks!
+ **/
+
+* {
+	padding: 0;
+	margin: 0;
+	zoom: 1;
+}
+
+ul, li {
+	list-style: none;
+}
+
+html {
+	background-color: #E7E9ED;
+}
+
+body, textarea, input, td, th {
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 14px;
+}
+
+body {
+	line-height: 20px;
+	color: #333;
+	overflow: hidden;
+}
+
+#wc-loading {
+	text-align: center;
+	margin: 2em;
+}
+
+#wc-loading p:first-child {
+	font-weight: bold;
+}
+
+#wc-loading p.browser-error {
+	color: crimson;
+	margin-top: 2em;
+	font-weight: bold;
+}
+
+#wc-main {
+	position: absolute;
+	width: 100%;
+	min-height: 100%;
+}
+
+#wc-top {
+	position: fixed;
+	width: 15%;
+	height: 80px;
+	top: 0;
+
+	text-align: center;
+	padding-top: 10px;
+}
+
+#wc-navigation {
+	position: fixed;
+	width: 15%;
+	top: 80px;
+}
+
+#wc-windows {
+	position: absolute;
+	margin-left: 15%;
+	width: 85%;
+	min-height: 100%;
+	background-color: whitesmoke;
+	border-left: 2px solid #ddd;
+}
+
+h1, h2 {
+	line-height: 1.2em;
+}
+
+h1 {
+	font-size: 30px;
+	font-weight: bold;
+	white-space: nowrap;
+}
+
+h2 {
+	font-size: 18px;
+	color: #999;
+	font-weight: normal;
+}
+
+a, a:link, a:visited, a:focus, a:active {
+	color: #08c;
+	text-decoration: none;
+}
+
+a:hover {
+	color: #005580;
+	text-decoration: underline;
+}
+
+#js-error {
+	position: fixed;
+	background-color: crimson;
+	color: whitesmoke;
+	width: 20%;
+	min-width: 400px;
+	left: 40%;
+	top: 0;
+	height: 100px;
+	padding: 20px 0 0 20px;
+	z-index: 999;
+}
+
+#backend-connection-gone .bg,
+#backend-connection-gone .text {
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	text-align: center;
+	z-index: 1000;
+}
+
+#backend-connection-gone .bg {
+	background-color: whitesmoke;
+	opacity: 0.8;
+}
+
+#backend-connection-gone .text {
+	margin-top: 5%;
+	color: #666;
+	font-weight: bold;
+}
+
+#backend-connection-gone .text p {
+	margin-top: 1em;
+}
+
+/** left (navigation) panel styles **/
+
+ul.windows li {
+	display: block;
+	overflow: hidden;
+	border-top: 1px solid #666;
+}
+
+ul.windows li > a {
+	display: block;
+	padding: 10px 15px 10px 25px;
+	color: #eee;
+	font-weight: bold;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+
+	background-color: #434950;
+}
+
+ul.windows > li.status > a {
+	background-color: #434950;
+}
+
+/*li.network:not(.connected) a {
+	color: #000;
+}*/
+
+/** right panel styles **/
+
+div.window {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	min-height: 100%;
+}
+
+div.window > .content {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 85%;
+	height: 100%;
+	overflow: hidden;
+}
+
+.content > .lines {
+	position: absolute;
+	bottom: 50px;
+	left: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
+	width: 100%;
+	max-height: 100%; /* fallback, known issue = scrollbar goes behind <h1> */
+	max-height: -webkit-calc(100% - 50px - 34px); /* for Chrome up to v26 and Safari */
+	max-height: -moz-calc(100% - 50px - 34px); /* for Firefox 4 to 15 */
+	max-height: calc(100% - 50px - 34px); /* for IE 9, newer Chrome + Firefox versions */
+	z-index: 100;
+}
+
+div.window > .nicklist {
+	position: absolute;
+	top: 0;
+	margin-bottom: 50px;
+	height: 100%;
+	right: 0;
+	width: 15%;
+	background-color: #E7E9ED;
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+.nicklist ul {
+	margin: 10px;
+}
+
+/* *TODO* images or colors for channel roles */
+.nicklist li.op:before {
+	content: "@";
+}
+.nicklist li.halfop:before {
+	content: "%";
+}
+.nicklist li.voice:before {
+	content: "+";
+}
+
+div.input {
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	height: 50px;
+	padding: 10px;
+	border-top: 2px solid #ddd;
+	width: 85%;
+}
+
+div.input > textarea {
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+	display: block;
+	width: 100%;
+	padding: 5px;
+	height: 30px;
+	line-height: 20px;
+	resize: none;
+	overflow: hidden;
+}
+
+div.window h1 {
+	font-size: 14px;
+	background-color: #434950;
+	color: #eee;
+	line-height: 34px;
+	height: 34px;
+	padding-left: 10px;
+	position: relative;
+	left: 0;
+	top: 0;
+	width: 100%;
+	z-index: 101;
+}
+
+div.line {
+	display: table;
+	padding: 0 10px;
+}
+
+div.line > span {
+	display: table-cell;
+}
+
+span.line-nick {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	width: 15%;
+	max-width: 100px;
+	font-weight: bold;
+}
+
+span.line-body {
+	width: 75%;
+}
+
+span.line-time {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	width: 10%;
+	max-width: 70px;
+	color: #888;
+}
+

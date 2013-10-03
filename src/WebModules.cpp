@@ -513,8 +513,15 @@ bool CWebSock::ForceLogin() {
 		return true;
 	}
 
-	GetSession()->AddError("You must login to view that page");
-	Redirect("/");
+	if (m_sRequestedWith == "XMLHttpRequest") {
+		// do not redirect AJAX requests.
+		PrintHeader(0, "", 401, "Unauthorized");
+		Close(Csock::CLT_AFTERWRITE);
+	} else {
+		GetSession()->AddError("You must login to view that page");
+		Redirect("/");
+	}
+
 	return false;
 }
 

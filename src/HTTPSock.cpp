@@ -123,6 +123,8 @@ void CHTTPSock::ReadLine(const CString& sData) {
 		m_sUser = sUnhashed.Token(0, false, ":");
 		m_sPass = sUnhashed.Token(1, true, ":");
 		m_bLoggedIn = OnLogin(m_sUser, m_sPass);
+	} else if (sName.Equals("X-Requested-With:")) {
+		m_sRequestedWith = sLine.Token(1, true);
 	} else if (sName.Equals("Content-Length:")) {
 		m_uPostLen = sLine.Token(1).ToULong();
 		if (m_uPostLen > MAX_POST_SIZE)

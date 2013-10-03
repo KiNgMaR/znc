@@ -119,6 +119,7 @@ protected:
 	bool                     m_bAcceptGzip;
 	MCString                 m_msRequestCookies;
 	MCString                 m_msResponseCookies;
+	CString                  m_sRequestedWith;
 };
 
 #endif // !_HTTPSOCK_H
