@@ -41,14 +41,17 @@
  $(MAKDIR)\simple_away.dll \
  $(MAKDIR)\stickychan.dll \
  $(MAKDIR)\watch.dll \
- $(MAKDIR)\webadmin.dll
+ $(MAKDIR)\webadmin.dll \
+ $(MAKDIR)\antiidle.dll \
+ $(MAKDIR)\motdfile.dll
 
 DLLS_SSL= $(MAKDIR)\awaystore.dll \
  $(MAKDIR)\cert.dll \
  $(MAKDIR)\certauth.dll \
  $(MAKDIR)\crypt.dll \
  $(MAKDIR)\savebuff.dll \
- $(MAKDIR)\schat.dll
+ $(MAKDIR)\schat.dll \
+ $(MAKDIR)\push.dll
 
 OBJS= $(MAKDIR)\adminlog.obj \
  $(MAKDIR)\autoattach.obj \
@@ -93,12 +96,15 @@ OBJS= $(MAKDIR)\adminlog.obj \
  $(MAKDIR)\simple_away.obj \
  $(MAKDIR)\stickychan.obj \
  $(MAKDIR)\watch.obj \
- $(MAKDIR)\webadmin.obj
+ $(MAKDIR)\webadmin.obj \
+ $(MAKDIR)\antiidle.obj \
+ $(MAKDIR)\motdfile.obj
 
 OBJS_SSL= $(MAKDIR)\awaystore.obj \
  $(MAKDIR)\cert.obj \
  $(MAKDIR)\certauth.obj \
  $(MAKDIR)\crypt.obj \
  $(MAKDIR)\savebuff.obj \
- $(MAKDIR)\schat.obj
+ $(MAKDIR)\schat.obj \
+ $(MAKDIR)\push.obj
 
