@@ -17,6 +17,9 @@
 #include "znc_msvc.h"
 #include <stdio.h>
 #include <fcntl.h>
+#ifdef HAVE_LIBSSL
+#include <openssl/crypto.h>
+#endif
 
 const char *ZNC_VERSION_EXTRA =
 #ifdef _WIN64

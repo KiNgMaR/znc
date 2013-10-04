@@ -29,8 +29,8 @@
 
 // linker magic:
 #ifdef HAVE_LIBSSL
-#pragma comment(lib, "ssleay32.lib")
-#pragma comment(lib, "libeay32.lib")
+#pragma comment(lib, "ssleay32")
+#pragma comment(lib, "libeay32")
 #endif /* HAVE_LIBSSL */
 
 // map some general types:
@@ -94,6 +94,7 @@ ZNC_API int setenv(const char*, const char*, int overwrite);
 ZNC_API int unsetenv(const char *);
 ZNC_API std::string getpass(const char* prompt);
 ZNC_API size_t strftime_validating(char* strDest, size_t maxsize, const char* format, const struct tm* timeptr);
+ZNC_API int rand_r(unsigned int *seedp);
 
 // Win32 utility + feature code:
 class ZNC_API CZNCWin32Helpers

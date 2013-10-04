@@ -71,8 +71,8 @@ public:
 	{
 		if( sArgs == CRYPT_ASK_PASS )
 		{
-			char *pPass = getpass( "Enter pass for savebuff: " );
-			if( pPass )
+			std::string pPass = getpass( "Enter pass for savebuff: " );
+			if( !pPass.empty() )
 				m_sPassword = CBlowfish::MD5( pPass );
 			else
 			{

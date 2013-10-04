@@ -22,6 +22,7 @@
 	#define NOMINMAX
 	#define NOGDI // not required, plus may cause conflicts
 	#define _CRT_SECURE_NO_WARNINGS // not ideal, but ok for now
+	#define _CRT_RAND_S
 #endif
 
 #endif // _TARGET_WINVER_H

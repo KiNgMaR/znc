@@ -211,3 +211,22 @@ int unsetenv(const char *envname)
 {
 	return (::SetEnvironmentVariable(envname, NULL) ? 1 : 0);
 }
+
+//
+// rand_r implementation for Windows
+//
+int rand_r(unsigned int *seedp)
+{
+	if (seedp)
+	{
+		srand(*seedp);
+
+		return rand();
+	}
+	else
+	{
+		int result;
+		rand_s((unsigned int*)&result);
+		return result;
+	}
+}

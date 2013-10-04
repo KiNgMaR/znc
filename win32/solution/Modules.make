@@ -40,9 +40,9 @@ CFG = Win32-Release
 # Common macros
 # -------------
 
-SSL=0
+SSL=1
 
-INCLUDES=/I "..\..\include" /I "..\platform"
+INCLUDES=/I "..\..\include" /I "..\platform" /I "..\dependencies\include"
 LIBS=kernel32.lib advapi32.lib shell32.lib ws2_32.lib ZNC.lib
 LIBPATHS=/LIBPATH:"..\build\$(CFG)"
 DEFINES=/D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "_WINDLL"
@@ -93,15 +93,19 @@ PLATFORM_CFG=debug
 DEFINES=$(DEFINES) /D "NDEBUG"
 CXXFLAGS=$(CXXFLAGS) /GL /Gy /Gm- /O2 /Oi /MD
 LINKFLAGS=$(LINKFLAGS) /INCREMENTAL:NO /OPT:REF /OPT:ICF /LTCG /MACHINE:$(PLATFORM)
-#LIBPATHS=$(LIBPATHS) /LIBPATH:"..\..\dependencies\lib_$(PLATFORM)\release"
 !ENDIF
 
 !IF "$(PLATFORM_CFG)" == "debug"
 DEFINES=$(DEFINES) /D "_DEBUG"
 CXXFLAGS=$(CXXFLAGS) /Gm /Od /RTC1 /MDd
 LINKFLAGS=$(LINKFLAGS) /INCREMENTAL /DEBUG /MACHINE:$(PLATFORM)
-#LIBPATHS=$(LIBPATHS) /LIBPATH:"..\..\dependencies\lib_$(PLATFORM)\debug" /LIBPATH:"..\..\dependencies\lib_$(PLATFORM)\release"
 !ENDIF
+
+!IF "$(SSL)" == "1"
+DEFINES=$(DEFINES) /D "HAVE_LIBSSL"
+!ENDIF
+
+LIBPATHS=$(LIBPATHS) /LIBPATH:"..\dependencies\lib_$(PLATFORM)"
 
 # --------------------
 # List of target files
@@ -176,6 +180,6 @@ $(OBJS):
   echo $(LIBS) >>$(RSP)
   echo $< >>$(RSP)
   link @$(RSP)
-  copy /Y $(@R).dll $(BUILDOUT)
-  if exist $(@R).pdb copy /Y $(@R).pdb $(BUILDOUT)
+  copy /Y $(@R).dll $(BUILDOUT) >NUL
+  if exist $(@R).pdb copy /Y $(@R).pdb $(BUILDOUT) >NUL
   del $(RSP)
