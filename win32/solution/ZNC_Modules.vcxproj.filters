@@ -15,11 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Modules.make">
-      <Filter>Resource Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\..\modules\autoreply.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -170,5 +165,10 @@
     <ClCompile Include="..\..\modules\autoop.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="modules\Modules.make">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

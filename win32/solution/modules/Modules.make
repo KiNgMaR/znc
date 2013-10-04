@@ -36,30 +36,32 @@ VALID_CFG = TRUE
 CFG = Win32-Release
 !ENDIF
 
+BASEDIR=..
+
 # -------------
 # Common macros
 # -------------
 
 SSL=1
 
-INCLUDES=/I "..\..\include" /I "..\platform" /I "..\dependencies\include"
+INCLUDES=/I "$(BASEDIR)\..\include" /I "$(BASEDIR)\platform" /I "$(BASEDIR)\dependencies\include" /I "$(BASEDIR)\solution\modules"
 LIBS=kernel32.lib advapi32.lib shell32.lib ws2_32.lib ZNC.lib
-LIBPATHS=/LIBPATH:"..\build\$(CFG)"
+LIBPATHS=/LIBPATH:"$(BASEDIR)\build\$(CFG)"
 DEFINES=/D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "_WINDLL"
-CXXFLAGS=/c /GS /W3 /Zc:wchar_t /FI"target_winver.h" /FI"znc_msvc.h" /Zi /sdl /fp:precise /errorReport:prompt /WX- /Zc:forScope /Gd /EHsc /nologo
+CXXFLAGS=/c /GS /W3 /Zc:wchar_t /FI"modules-pch.h" /Zi /sdl /fp:precise /errorReport:prompt /WX- /Zc:forScope /Gd /EHsc /nologo
 LINKFLAGS=/DLL /SUBSYSTEM:WINDOWS /NOLOGO /DYNAMICBASE /NXCOMPAT
 
 RSP=_ZNCModules.rsp
 
 # Intermediate directory for .obj and .dll files
-INTDIR=..\build\temp\Modules\$(CFG)\ 
+INTDIR=$(BASEDIR)\build\temp\Modules\$(CFG)\ 
 # same as INTDIR, but without the trailing '\'
-MAKDIR=..\build\temp\Modules\$(CFG)
+MAKDIR=$(BASEDIR)\build\temp\Modules\$(CFG)
 # WARNING! SRCDIR pathes must NOT end with '\' else NMAKE will complain!
-SRCDIR=..\..\modules
-SRCDIR_EXTRA=..\extra_modules
+SRCDIR=$(BASEDIR)\..\modules
+SRCDIR_EXTRA=$(BASEDIR)\extra_modules
 
-BUILDOUT=..\build\$(CFG)\modules
+BUILDOUT=$(BASEDIR)\build\$(CFG)\modules
 
 # -----------------------------------
 # Split configuration specific macros
@@ -105,7 +107,7 @@ LINKFLAGS=$(LINKFLAGS) /INCREMENTAL /DEBUG /MACHINE:$(PLATFORM)
 DEFINES=$(DEFINES) /D "HAVE_LIBSSL"
 !ENDIF
 
-LIBPATHS=$(LIBPATHS) /LIBPATH:"..\dependencies\lib_$(PLATFORM)_$(PLATFORM_CFG)"
+LIBPATHS=$(LIBPATHS) /LIBPATH:"$(BASEDIR)\dependencies\lib_$(PLATFORM)_$(PLATFORM_CFG)"
 
 # --------------------
 # List of target files
@@ -148,8 +150,8 @@ $(OBJS):
   echo $(CXXFLAGS) >>$(RSP)
   echo $(INCLUDES) >>$(RSP)
   echo $(DEFINES) >>$(RSP)
-#  echo /Yc"stdafx.hpp" >>$(RSP)
-#  echo /Fp$(INTDIR)ZNC_mods.pch >>$(RSP)
+  echo /Yc"modules-pch.h" >>$(RSP)
+  echo /Fp$(INTDIR)ZNC_mods.pch >>$(RSP)
   echo /Fo$(INTDIR) >>$(RSP)
   echo /Fd$(INTDIR)vc110.pdb >>$(RSP)
   echo $< >>$(RSP)
@@ -162,8 +164,8 @@ $(OBJS):
   echo $(CXXFLAGS) >>$(RSP)
   echo $(INCLUDES) >>$(RSP)
   echo $(DEFINES) >>$(RSP)
-#  echo /Yc"stdafx.hpp" >>$(RSP)
-#  echo /Fp$(INTDIR)ZNC_mods.pch >>$(RSP)
+  echo /Yc"modules-pch.h" >>$(RSP)
+  echo /Fp$(INTDIR)ZNC_mods.pch >>$(RSP)
   echo /Fo$(INTDIR) >>$(RSP)
   echo /Fd$(INTDIR)vc110.pdb >>$(RSP)
   echo $< >>$(RSP)

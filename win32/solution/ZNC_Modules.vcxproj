@@ -70,20 +70,20 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)..\build\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\temp\$(ProjectName)-$(Configuration)-$(Platform)\</IntDir>
-    <NMakeBuildCommandLine>nmake /nologo -f Modules.make CFG=$(Platform)-$(Configuration) build</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake /nologo -f Modules.make CFG=$(Platform)-$(Configuration) rebuild</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake /nologo -f Modules.make CFG=$(Platform)-$(Configuration) clean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>nmake /nologo -f modules/Modules.make CFG=$(Platform)-$(Configuration) build</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>nmake /nologo -f modules/Modules.make CFG=$(Platform)-$(Configuration) rebuild</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>nmake /nologo -f modules/Modules.make CFG=$(Platform)-$(Configuration) clean</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>..\..\include;..\platform</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>target_winver.h;znc_msvc.h</NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <NMakeBuildCommandLine>call "$(VCInstallDir)\vcvarsall.bat" amd64
-nmake /nologo -f Modules.make CFG=$(Platform)-$(Configuration) build</NMakeBuildCommandLine>
+nmake /nologo -f modules/Modules.make CFG=$(Platform)-$(Configuration) build</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>call "$(VCInstallDir)\vcvarsall.bat" amd64
-nmake /nologo -f Modules.make CFG=$(Platform)-$(Configuration) rebuild</NMakeReBuildCommandLine>
+nmake /nologo -f modules/Modules.make CFG=$(Platform)-$(Configuration) rebuild</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>call "$(VCInstallDir)\vcvarsall.bat" amd64
-nmake /nologo -f Modules.make CFG=$(Platform)-$(Configuration) clean</NMakeCleanCommandLine>
+nmake /nologo -f modules/Modules.make CFG=$(Platform)-$(Configuration) clean</NMakeCleanCommandLine>
     <OutDir>$(SolutionDir)..\build\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\temp\$(ProjectName)-$(Configuration)-$(Platform)\</IntDir>
     <NMakeIncludeSearchPath>..\..\include;..\platform</NMakeIncludeSearchPath>
@@ -93,20 +93,20 @@ nmake /nologo -f Modules.make CFG=$(Platform)-$(Configuration) clean</NMakeClean
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)..\build\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\temp\$(ProjectName)-$(Configuration)-$(Platform)\</IntDir>
-    <NMakeBuildCommandLine>nmake /nologo -f Modules.make CFG=$(Platform)-$(Configuration) build</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake /nologo -f Modules.make CFG=$(Platform)-$(Configuration) rebuild</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake /nologo -f Modules.make CFG=$(Platform)-$(Configuration) clean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>nmake /nologo -f modules/Modules.make CFG=$(Platform)-$(Configuration) build</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>nmake /nologo -f modules/Modules.make CFG=$(Platform)-$(Configuration) rebuild</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>nmake /nologo -f modules/Modules.make CFG=$(Platform)-$(Configuration) clean</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>..\..\include;..\platform</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>target_winver.h;znc_msvc.h</NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <NMakeBuildCommandLine>call "$(VCInstallDir)\vcvarsall.bat" amd64
-nmake /nologo -f Modules.make CFG=$(Platform)-$(Configuration) build</NMakeBuildCommandLine>
+nmake /nologo -f modules/Modules.make CFG=$(Platform)-$(Configuration) build</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>call "$(VCInstallDir)\vcvarsall.bat" amd64
-nmake /nologo -f Modules.make CFG=$(Platform)-$(Configuration) rebuild</NMakeReBuildCommandLine>
+nmake /nologo -f modules/Modules.make CFG=$(Platform)-$(Configuration) rebuild</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>call "$(VCInstallDir)\vcvarsall.bat" amd64
-nmake /nologo -f Modules.make CFG=$(Platform)-$(Configuration) clean</NMakeCleanCommandLine>
+nmake /nologo -f modules/Modules.make CFG=$(Platform)-$(Configuration) clean</NMakeCleanCommandLine>
     <OutDir>$(SolutionDir)..\build\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\temp\$(ProjectName)-$(Configuration)-$(Platform)\</IntDir>
     <NMakeIncludeSearchPath>..\..\include;..\platform</NMakeIncludeSearchPath>
@@ -177,9 +177,6 @@ nmake /nologo -f Modules.make CFG=$(Platform)-$(Configuration) clean</NMakeClean
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="Modules.make" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\..\modules\adminlog.cpp" />
     <ClCompile Include="..\..\modules\autoattach.cpp" />
     <ClCompile Include="..\..\modules\autocycle.cpp" />
@@ -230,6 +227,9 @@ nmake /nologo -f Modules.make CFG=$(Platform)-$(Configuration) clean</NMakeClean
     <ClCompile Include="..\..\modules\stickychan.cpp" />
     <ClCompile Include="..\..\modules\watch.cpp" />
     <ClCompile Include="..\..\modules\webadmin.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="modules\Modules.make" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
