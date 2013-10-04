@@ -6,8 +6,8 @@
 #include "target_winver.h"
 #include "znc_msvc.h"
 
-// all these headers include all the big stdlib headers,
-// so we don't have to do it here. yay.
+// these headers include all the big stdlib headers,
+// so we don't have to do it manually. yay.
 
 #include <znc/Buffer.h>
 #include <znc/Chan.h>
