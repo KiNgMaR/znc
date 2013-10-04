@@ -134,7 +134,6 @@ rebuild: clean build
 
 _dir_check:
   if not exist $(INTDIR) md $(INTDIR)
-  if not exist $(INTDIR)\extra_win32 md $(INTDIR)\extra_win32
   if not exist $(BUILDOUT) md $(BUILDOUT)
 
 # compile .obj files using inference rules
