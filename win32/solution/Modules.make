@@ -153,14 +153,14 @@ $(OBJS):
   del $(RSP)
 
 # extra_win32\ cpp => obj
-{$(SRCDIR_EXTRA)}.cpp{$(MAKDIR)\extra_win32}.obj:
+{$(SRCDIR_EXTRA)}.cpp{$(MAKDIR)}.obj:
   if exist $(RSP) del $(RSP)
   echo $(CXXFLAGS) >>$(RSP)
   echo $(INCLUDES) >>$(RSP)
   echo $(DEFINES) >>$(RSP)
 #  echo /Yc"stdafx.hpp" >>$(RSP)
 #  echo /Fp$(INTDIR)ZNC_mods.pch >>$(RSP)
-  echo /Fo$(INTDIR)extra_win32\ >>$(RSP)
+  echo /Fo$(INTDIR) >>$(RSP)
   echo /Fd$(INTDIR)vc110.pdb >>$(RSP)
   echo $< >>$(RSP)
   cl @$(RSP)
@@ -176,20 +176,6 @@ $(OBJS):
   echo $(LIBS) >>$(RSP)
   echo $< >>$(RSP)
   link @$(RSP)
-  xcopy /q /y /c $(@R).dll $(BUILDOUT)
-  if exist $(@R).pdb  xcopy /q /y /c $(@R).pdb $(BUILDOUT)
-  del $(RSP)
-
-# extra_win32\ obj => dll
-{$(MAKDIR)\extra_win32}.obj{$(MAKDIR)\extra_win32}.dll:
-  if exist $(RSP) del $(RSP)
-  echo /OUT:$@ >>$(RSP)
-  echo $(LIBPATHS) >>$(RSP)
-  echo $(LINKFLAGS) >>$(RSP)
-  echo /PDB:$(INTDIR)extra_win32\$(@B).pdb >>$(RSP)
-  echo $(LIBS) >>$(RSP)
-  echo $< >>$(RSP)
-  link @$(RSP)
-  xcopy /q /y /c $(@R).dll $(BUILDOUT)
-  if exist $(@R).pdb xcopy /q /y /c $(@R).pdb $(BUILDOUT)
+  copy /Y $(@R).dll $(BUILDOUT)
+  if exist $(@R).pdb copy /Y $(@R).pdb $(BUILDOUT)
   del $(RSP)

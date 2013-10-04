@@ -333,7 +333,7 @@ public:
 			}
 		}
 
-		return pUser;
+		return !!pUser;
 	}
 
 	void DelUser(const CString& sUser) {

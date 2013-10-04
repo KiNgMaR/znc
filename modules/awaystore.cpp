@@ -144,7 +144,7 @@ class CAway : public CModule
 			char szFormat[64];
 			struct tm t;
 			localtime_r(&iTime, &t);
-			size_t iCount = strftime(szFormat, 64, "%F %T", &t);
+			size_t iCount = strftime(szFormat, 64, "%Y-%m-%d %H:%M:%S", &t);
 
 			if (iCount <= 0) {
 				PutModule("Corrupt time stamp! [" + m_vMessages[a] + "]");

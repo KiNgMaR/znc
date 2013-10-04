@@ -16,7 +16,7 @@
 #include <Windows.h>
 #include <Winsock2.h> // do not use Winsock v1.
 #include <Shlwapi.h>
-#undef StrCmp // a method in CString is called "StrCmp".
+#undef StrCmp // a method in CString is called "StrCmp". Avoid renaming it.
 #include <Shlobj.h>
 #include <Wincrypt.h>
 

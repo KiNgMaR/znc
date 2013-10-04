@@ -402,7 +402,7 @@ CString CUtils::FormatTime(time_t t, const CString& sFormat, const CString& sTim
 	tm m;
 	if (sTimezone.empty()) {
 		localtime_r(&t, &m);
-		strftime(s, sizeof(s), sFormat.c_str(), &m);
+		strftime_validating(s, sizeof(s), sFormat.c_str(), &m);
 		return s;
 	}
 	CString sTZ = FixGMT(sTimezone);
@@ -414,7 +414,7 @@ CString CUtils::FormatTime(time_t t, const CString& sFormat, const CString& sTim
 	tzset();
 
 	localtime_r(&t, &m);
-	strftime(s, sizeof(s), sFormat.c_str(), &m);
+	strftime_validating(s, sizeof(s), sFormat.c_str(), &m);
 
 	// restore old value
 	if (oldTZ) {
