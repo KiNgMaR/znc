@@ -1,0 +1,7 @@
+1) download latest OpenSSL tar.gz from openssl.org,
+compile per instructions in INSTALL.W32/INSTALL.W64
+
+2) copy inc32/openssl to include/openssl
+
+3) copy out32dll/libeay.* and out32dll/ssleay.* to
+the correct lib_xx folder.

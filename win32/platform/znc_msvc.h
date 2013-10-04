@@ -27,6 +27,12 @@
 #include <process.h>
 #include <string>
 
+// linker magic:
+#ifdef HAVE_LIBSSL
+#pragma comment(lib, "ssleay32.lib")
+#pragma comment(lib, "libeay32.lib")
+#endif /* HAVE_LIBSSL */
+
 // map some general types:
 #define ssize_t SSIZE_T
 typedef long suseconds_t;

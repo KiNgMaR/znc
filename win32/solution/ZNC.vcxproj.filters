@@ -108,6 +108,9 @@
     <ClCompile Include="..\platform\znc_msvc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\platform\znc_msvc_dll_main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\znc\defines.h">
