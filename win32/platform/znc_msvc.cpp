@@ -95,13 +95,19 @@ int CZNCWin32Helpers::RuntimeStartUp()
 	// adding _O_BINARY to the modes doesn't seem to be enough for some reason...
 	// if we don't do this, Template.cpp will break because it uses string.size() for
 	// file position calculations.
-	_set_fmode(_O_BINARY);
+	if (_set_fmode(_O_BINARY) != 0) {
+		return -1;
+	}
+
+	if (!setlocale(LC_CTYPE, "C")) {
+		return -2;
+	}
 
 #ifdef HAVE_LIBSSL
-	CRYPTO_malloc_init();
+	if (!CRYPTO_malloc_init()) {
+		return -3;
+	}
 #endif
-
-	setlocale(LC_CTYPE, "C");
 
 	return 0;
 }
