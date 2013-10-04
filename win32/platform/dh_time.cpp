@@ -10,35 +10,26 @@
  *
  *****************************************************************************/
 
+#include <Windows.h>
 #include <time.h>
 #include <tchar.h>
-#include <windows.h>
-#include <winbase.h>
-#include <mmsystem.h>
 #include <errno.h>
-
 
 struct timezone {
 	int tz_minuteswest;
 	int tz_dsttime;
 };
 
-
 typedef VOID (WINAPI *MyGetSystemTimeAsFileTime)(LPFILETIME lpSystemTimeAsFileTime);
 
 static MyGetSystemTimeAsFileTime get_time_func(void)
 {
-	MyGetSystemTimeAsFileTime timefunc = NULL;
-	HMODULE hMod = LoadLibrary(_T("kernel32.dll"));
+	static __declspec(thread) MyGetSystemTimeAsFileTime timefunc = NULL;
+	HMODULE hMod = ::GetModuleHandle(_T("kernel32.dll"));
 
 	if (hMod) {
 		/* Max possible resolution <1us, win8/server2012 */
-		timefunc = (MyGetSystemTimeAsFileTime)GetProcAddress(hMod, "GetSystemTimePreciseAsFileTime");
-
-		if(!timefunc) {
-			/* 100ns blocks since 01-Jan-1641 */
-			timefunc = (MyGetSystemTimeAsFileTime)GetProcAddress(hMod, "GetSystemTimeAsFileTime");
-		}
+		timefunc = (MyGetSystemTimeAsFileTime)::GetProcAddress(hMod, "GetSystemTimePreciseAsFileTime");
 	}
 
 	return timefunc;
@@ -58,7 +49,7 @@ static int getfilesystemtime(struct timeval *tv)
 		GetSystemTimeAsFileTime(&ft);
 	}
 
-        /*
+	/*
 	 * Do not cast a pointer to a FILETIME structure to either a 
 	 * ULARGE_INTEGER* or __int64* value because it can cause alignment faults on 64-bit Windows.
 	 * via  http://technet.microsoft.com/en-us/library/ms724284(v=vs.85).aspx

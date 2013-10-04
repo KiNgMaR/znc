@@ -176,8 +176,8 @@ $(OBJS):
   echo $(LIBS) >>$(RSP)
   echo $< >>$(RSP)
   link @$(RSP)
-  xcopy /y /c $(@R).dll $(BUILDOUT)
-  if exist $(@R).pdb  xcopy /y /c $(@R).pdb $(BUILDOUT)
+  xcopy /q /y /c $(@R).dll $(BUILDOUT)
+  if exist $(@R).pdb  xcopy /q /y /c $(@R).pdb $(BUILDOUT)
   del $(RSP)
 
 # extra_win32\ obj => dll
@@ -190,6 +190,6 @@ $(OBJS):
   echo $(LIBS) >>$(RSP)
   echo $< >>$(RSP)
   link @$(RSP)
-  xcopy /y /c $(@R).dll $(BUILDOUT)
-  if exist $(@R).pdb xcopy /y /c $(@R).pdb $(BUILDOUT)
+  xcopy /q /y /c $(@R).dll $(BUILDOUT)
+  if exist $(@R).pdb xcopy /q /y /c $(@R).pdb $(BUILDOUT)
   del $(RSP)
