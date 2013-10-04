@@ -105,7 +105,7 @@ LINKFLAGS=$(LINKFLAGS) /INCREMENTAL /DEBUG /MACHINE:$(PLATFORM)
 DEFINES=$(DEFINES) /D "HAVE_LIBSSL"
 !ENDIF
 
-LIBPATHS=$(LIBPATHS) /LIBPATH:"..\dependencies\lib_$(PLATFORM)"
+LIBPATHS=$(LIBPATHS) /LIBPATH:"..\dependencies\lib_$(PLATFORM)_$(PLATFORM_CFG)"
 
 # --------------------
 # List of target files
