@@ -345,6 +345,8 @@ void CUtils::PrintStatus(bool bSuccess, const CString& sMessage) {
 	fflush(stdout);
 }
 
+#ifndef _WIN32
+
 namespace {
 	/* Switch GMT-X and GMT+X
 	 *
@@ -456,6 +458,89 @@ SCString CUtils::GetTimezones() {
 	FillTimezones("/usr/share/zoneinfo", result, "");
 	return result;
 }
+
+#else /* _WIN32 */
+
+CString CUtils::CTime(time_t t, const CString& sTimezone) {
+	if (sTimezone.empty()) {
+		char s[30] = {}; // should have at least 26 bytes
+		ctime_r(&t, s);
+		// ctime() adds a trailing newline
+		return CString(s).Trim_n();
+	}
+
+	CString result;
+	UnicodeString uresult;
+	UErrorCode ec = U_ZERO_ERROR;
+
+	TimeZone *utz = TimeZone::createTimeZone(sTimezone.c_str());
+
+	SimpleDateFormat *usdt = new SimpleDateFormat(UnicodeString("EEE MMM dd HH:mm:ss yyyy"), ec);
+
+	usdt->adoptTimeZone(utz); // usdt now owns utz
+
+	usdt->format(t * 1000.0, uresult);
+
+	uresult.toUTF8String(result);
+
+	delete usdt;
+
+	return result;
+}
+
+CString CUtils::FormatTime(time_t t, const CString& sFormat, const CString& sTimezone) {
+	if (sTimezone.empty()) {
+		char s[1024] = {};
+		tm m;
+		localtime_r(&t, &m);
+		strftime_validating(s, sizeof(s), sFormat.c_str(), &m);
+		return s;
+	}
+
+	CString result;
+	const std::string icuformat = strftime_format_to_icu(sFormat);
+	UnicodeString uformat(icuformat.c_str()), uresult;
+
+	UErrorCode ec = U_ZERO_ERROR;
+
+	TimeZone *utz = TimeZone::createTimeZone(sTimezone.c_str());
+
+	SimpleDateFormat *usdt = new SimpleDateFormat(uformat, ec);
+
+	usdt->adoptTimeZone(utz); // usdt now owns utz
+
+	usdt->format(t * 1000.0, uresult);
+
+	uresult.toUTF8String(result);
+
+	delete usdt;
+
+	return result;
+}
+
+SCString CUtils::GetTimezones() {
+	static SCString result;
+
+	if (result.empty()) {
+		UErrorCode ec = U_ZERO_ERROR;
+		StringEnumeration *ids = TimeZone::createTimeZoneIDEnumeration(UCAL_ZONE_TYPE_CANONICAL, NULL, NULL, ec);
+
+		if (ids)
+		{
+			UErrorCode success = U_ZERO_ERROR;
+
+			for (int i = 0; i < ids->count(success); i++) {
+				result.insert(ids->next(NULL, success));
+			}
+		}
+
+		delete ids;
+	}
+
+	return result;
+}
+
+#endif /* _WIN32 */
 
 bool CTable::AddColumn(const CString& sName) {
 	for (unsigned int a = 0; a < m_vsHeaders.size(); a++) {

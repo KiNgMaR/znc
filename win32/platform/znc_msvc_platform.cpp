@@ -230,3 +230,94 @@ int rand_r(unsigned int *seedp)
 		return result;
 	}
 }
+
+//
+// convert strftime format to ICU format
+// http://www.cplusplus.com/reference/ctime/strftime/
+// http://userguide.icu-project.org/formatparse/datetime
+//
+std::string strftime_format_to_icu(const std::string& a_format)
+{
+	std::string icu;
+
+	for(std::string::const_iterator it = a_format.begin(); it != a_format.end(); it++)
+	{
+		char c = *it;
+
+		if (c == '%')
+		{
+			std::string::const_iterator next = ++it;
+
+			if(next == a_format.end())
+			{
+				icu += '%';
+				break;
+			}
+
+			char spec = *next;
+
+			switch(spec)
+			{
+			case '%': icu += c; break;
+			case 'a': icu += "EEE"; break;
+			case 'A': icu += "EEEE"; break;
+			case 'b':
+			case 'h':
+				icu += "MMMM"; break;
+			case 'B': icu += "MMMMM"; break;
+			case 'c': icu += "EEE MMM dd HH:mm:ss yyyy"; break;
+			case 'C': icu += "yy"; break;
+			case 'd': icu += "dd"; break;
+			case 'D': icu += "M/dd/yy"; break;
+			case 'e': icu += "dd"; break; // space-padding is not supported by ICU
+			case 'F': icu += "yyyy-M-dd"; break;
+			case 'g': // two-digit week based not supported by ICU
+			case 'G':
+				icu += "Y"; break;
+			case 'H': icu += "HH"; break;
+			case 'I': icu += "hh"; break;
+			case 'j': icu += "D"; break;
+			case 'm': icu += "MM"; break;
+			case 'M': icu += "mm"; break;
+			case 'n': icu += '\n'; break;
+			case 'p': icu += "a"; break;
+			case 'r': icu += "hh:mm:ss a"; break;
+			case 'R': icu += "HH:mm"; break;
+			case 'S': icu += "ss"; break;
+			case 't': icu += "\t"; break;
+			case 'T': icu += "HH:mm:ss"; break;
+#if 0
+			// the following are questionable, if not plain wrong:
+			case 'u': icu += "c"; break; // ??
+			case 'U': icu += "w"; break; // ??
+			case 'V': icu += "w"; break; // ??
+			case 'w': icu += "e"; break; // ??
+			case 'W': icu += "w"; break; // ??
+			// ---
+#endif
+			case 'x': icu += "yyyy-M-dd"; break;
+			case 'X': icu += "HH:mm:ss"; break;
+			case 'y': icu += "yy"; break;
+			case 'Y': icu += "yyyy"; break;
+#if 0
+			case 'z': icu += "ZZZZ"; break; // not exactly correct
+#endif
+			case 'Z': icu += "z"; break;
+			default:
+				icu += "%'";
+				icu += spec;
+			}
+		}
+		else if(!isalpha(c) && c != '\'')
+		{
+			icu += c;
+		}
+		else
+		{
+			// escape:
+			icu += "'" + c;
+		}
+	}
+
+	return icu;
+}

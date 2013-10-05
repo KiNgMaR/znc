@@ -43,6 +43,12 @@
 #include <process.h>
 #include <string>
 
+// ICU headers:
+#include <unicode/timezone.h>
+#include <unicode/calendar.h>
+#include <unicode/datefmt.h>
+#include <unicode/smpdtfmt.h>
+
 // linker magic:
 #ifdef HAVE_LIBSSL
 #pragma comment(lib, "ssleay32")
@@ -111,6 +117,7 @@ ZNC_API int unsetenv(const char *);
 ZNC_API std::string getpass(const char* prompt);
 ZNC_API size_t strftime_validating(char* strDest, size_t maxsize, const char* format, const struct tm* timeptr);
 ZNC_API int rand_r(unsigned int *seedp);
+ZNC_API std::string strftime_format_to_icu(const std::string& a_format);
 
 // Win32 utility + feature code:
 class ZNC_API CZNCWin32Helpers

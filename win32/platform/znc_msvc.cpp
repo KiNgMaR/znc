@@ -103,9 +103,17 @@ int CZNCWin32Helpers::RuntimeStartUp()
 		return -2;
 	}
 
+	Locale uloc = Locale::createCanonical("C");
+	UErrorCode ec = U_ZERO_ERROR;
+	Locale::setDefault(uloc, ec);
+
+	if (ec != U_ZERO_ERROR) {
+		return -3;
+	}
+
 #ifdef HAVE_LIBSSL
 	if (!CRYPTO_malloc_init()) {
-		return -3;
+		return -9;
 	}
 #endif
 
