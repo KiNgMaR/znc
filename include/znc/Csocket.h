@@ -425,37 +425,37 @@ public:
 	 * @param iTimeoutMS the timeout to change to, setting this to -1 (the default)
 	 * @return returning false will remove this from monitoring. The same effect can be had by setting m_bEnabled to false as it is returned from this
 	 */
-	virtual bool GatherFDsForSelect( std::map< int, short > & miiReadyFds, long & iTimeoutMS );
+	virtual bool GatherFDsForSelect( std::map< cs_sock_t, short > & miiReadyFds, long & iTimeoutMS );
 
 	/**
 	 * @brief called when there are fd's belonging to this class that have triggered
 	 * @param miiReadyFds the map of fd's with the bits that triggered them (@see CSockManager::ECheckType)
 	 * @return returning false will remove this from monitoring
 	 */
-	virtual bool FDsThatTriggered( const std::map< int, short > & miiReadyFds ) { return( true ); }
+	virtual bool FDsThatTriggered( const std::map< cs_sock_t, short > & miiReadyFds ) { return( true ); }
 
 	/**
 	 * @brief gets called to diff miiReadyFds with m_miiMonitorFDs, and calls FDsThatTriggered when appropriate. Typically you don't need to reimplement this.
 	 * @param miiReadyFds the map of all triggered fd's, not just the fd's from this class
 	 * @return returning false will remove this from monitoring
 	 */
-	virtual bool CheckFDs( const std::map< int, short > & miiReadyFds );
+	virtual bool CheckFDs( const std::map< cs_sock_t, short > & miiReadyFds );
 
 	/**
 	 * @brief adds a file descriptor to be monitored
 	 * @param iFD the file descriptor
 	 * @param iMonitorEvents bitset of events to monitor for (@see CSockManager::ECheckType)
 	 */
-	void Add( int iFD, short iMonitorEvents ) { m_miiMonitorFDs[iFD] = iMonitorEvents; }
+	void Add( cs_sock_t iFD, short iMonitorEvents ) { m_miiMonitorFDs[iFD] = iMonitorEvents; }
 	//! removes this fd from monitoring
-	void Remove( int iFD ) { m_miiMonitorFDs.erase( iFD ); }
+	void Remove( cs_sock_t iFD ) { m_miiMonitorFDs.erase( iFD ); }
 	//! causes this monitor to be removed
 	void DisableMonitor() { m_bEnabled = false; }
 
 	bool IsEnabled() const { return( m_bEnabled ); }
 
 protected:
-	std::map< int, short > m_miiMonitorFDs;
+	std::map< cs_sock_t, short > m_miiMonitorFDs;
 	bool m_bEnabled;
 };
 
@@ -492,8 +492,8 @@ public:
 	//! delete cron by address
 	virtual void DelCronByAddr( CCron * pcCron );
 
-	void CheckFDs( const std::map< int, short > & miiReadyFds );
-	void AssignFDs( std::map< int, short > & miiReadyFds, struct timeval * tvtimeout );
+	void CheckFDs( const std::map< cs_sock_t, short > & miiReadyFds );
+	void AssignFDs( std::map< cs_sock_t, short > & miiReadyFds, struct timeval * tvtimeout );
 
 	//! add an FD set to monitor
 	void MonitorFD( CSMonitorFD * pMonitorFD ) { m_vcMonitorFD.push_back( pMonitorFD ); }
@@ -1467,12 +1467,12 @@ public:
 		ECT_Write = 2
 	};
 
-	void FDSetCheck( cs_sock_t iFd, std::map< int, short > & miiReadyFds, ECheckType eType );
-	bool FDHasCheck( cs_sock_t iFd, std::map< int, short > & miiReadyFds, ECheckType eType );
+	void FDSetCheck( cs_sock_t iFd, std::map< cs_sock_t, short > & miiReadyFds, ECheckType eType );
+	bool FDHasCheck( cs_sock_t iFd, std::map< cs_sock_t, short > & miiReadyFds, ECheckType eType );
 
 protected:
 
-	virtual int Select( std::map< int, short > & miiReadyFds, struct timeval *tvtimeout );
+	virtual int Select( std::map< cs_sock_t, short > & miiReadyFds, struct timeval *tvtimeout );
 
 private:
 	/**
