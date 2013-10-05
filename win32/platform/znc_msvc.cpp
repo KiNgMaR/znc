@@ -103,9 +103,9 @@ int CZNCWin32Helpers::RuntimeStartUp()
 		return -2;
 	}
 
-	Locale uloc = Locale::createCanonical("C");
+	icu::Locale uloc = icu::Locale::createCanonical("C");
 	UErrorCode ec = U_ZERO_ERROR;
-	Locale::setDefault(uloc, ec);
+	icu::Locale::setDefault(uloc, ec);
 
 	if (ec != U_ZERO_ERROR) {
 		return -3;

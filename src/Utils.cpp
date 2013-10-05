@@ -461,21 +461,17 @@ SCString CUtils::GetTimezones() {
 
 #else /* _WIN32 */
 
-CString CUtils::CTime(time_t t, const CString& sTimezone) {
-	if (sTimezone.empty()) {
-		char s[30] = {}; // should have at least 26 bytes
-		ctime_r(&t, s);
-		// ctime() adds a trailing newline
-		return CString(s).Trim_n();
-	}
-
+static CString icuDateTimeFormat(time_t t, const char* puformat, const CString& sTimezone) {
+	const icu::UnicodeString uformat(puformat);
+	icu::UnicodeString uresult;
 	CString result;
-	UnicodeString uresult;
+
 	UErrorCode ec = U_ZERO_ERROR;
 
-	TimeZone *utz = TimeZone::createTimeZone(sTimezone.c_str());
+	// never returns NULL:
+	icu::TimeZone *utz = icu::TimeZone::createTimeZone(sTimezone.c_str());
 
-	SimpleDateFormat *usdt = new SimpleDateFormat(UnicodeString("EEE MMM dd HH:mm:ss yyyy"), ec);
+	icu::SimpleDateFormat *usdt = new icu::SimpleDateFormat(uformat, ec);
 
 	usdt->adoptTimeZone(utz); // usdt now owns utz
 
@@ -486,6 +482,17 @@ CString CUtils::CTime(time_t t, const CString& sTimezone) {
 	delete usdt;
 
 	return result;
+}
+
+CString CUtils::CTime(time_t t, const CString& sTimezone) {
+	if (sTimezone.empty()) {
+		char s[30] = {}; // should have at least 26 bytes
+		ctime_r(&t, s);
+		// ctime() adds a trailing newline
+		return CString(s).Trim_n();
+	}
+
+	return icuDateTimeFormat(t, "EEE MMM dd HH:mm:ss yyyy", sTimezone);
 }
 
 CString CUtils::FormatTime(time_t t, const CString& sFormat, const CString& sTimezone) {
@@ -497,33 +504,17 @@ CString CUtils::FormatTime(time_t t, const CString& sFormat, const CString& sTim
 		return s;
 	}
 
-	CString result;
-	const std::string icuformat = strftime_format_to_icu(sFormat);
-	UnicodeString uformat(icuformat.c_str()), uresult;
-
-	UErrorCode ec = U_ZERO_ERROR;
-
-	TimeZone *utz = TimeZone::createTimeZone(sTimezone.c_str());
-
-	SimpleDateFormat *usdt = new SimpleDateFormat(uformat, ec);
-
-	usdt->adoptTimeZone(utz); // usdt now owns utz
-
-	usdt->format(t * 1000.0, uresult);
-
-	uresult.toUTF8String(result);
-
-	delete usdt;
-
-	return result;
+	const std::string formatTranslated = strftime_format_to_icu(sFormat);
+	return icuDateTimeFormat(t, formatTranslated.c_str(), sTimezone);
 }
 
 SCString CUtils::GetTimezones() {
+	// not thread-safe.
 	static SCString result;
 
 	if (result.empty()) {
 		UErrorCode ec = U_ZERO_ERROR;
-		StringEnumeration *ids = TimeZone::createTimeZoneIDEnumeration(UCAL_ZONE_TYPE_CANONICAL, NULL, NULL, ec);
+		icu::StringEnumeration *ids = icu::TimeZone::createTimeZoneIDEnumeration(UCAL_ZONE_TYPE_CANONICAL, NULL, NULL, ec);
 
 		if (ids)
 		{

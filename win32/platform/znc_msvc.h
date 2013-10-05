@@ -42,8 +42,10 @@
 #include <time.h>
 #include <process.h>
 #include <string>
+#include <map>
 
 // ICU headers:
+#define U_USING_ICU_NAMESPACE 0
 #include <unicode/timezone.h>
 #include <unicode/calendar.h>
 #include <unicode/datefmt.h>

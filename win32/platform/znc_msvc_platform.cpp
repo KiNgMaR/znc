@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <string>
+#include <mutex>
+#include <map>
 
 //
 // localtime_r implementation for Windows (VC 2012 + later)!
@@ -238,6 +240,19 @@ int rand_r(unsigned int *seedp)
 //
 std::string strftime_format_to_icu(const std::string& a_format)
 {
+	static std::map<const std::string, std::string> cache;
+	static std::mutex cache_access;
+
+	cache_access.lock();
+	auto found_in_cache = cache.find(a_format);
+	if (found_in_cache != cache.end())
+	{
+		std::string result = found_in_cache->second;
+		cache_access.unlock();
+		return result;
+	}
+	cache_access.unlock();
+
 	std::string icu;
 
 	for(std::string::const_iterator it = a_format.begin(); it != a_format.end(); it++)
@@ -318,6 +333,10 @@ std::string strftime_format_to_icu(const std::string& a_format)
 			icu += "'" + c;
 		}
 	}
+
+	cache_access.lock();
+	cache[a_format] = icu;
+	cache_access.unlock();
 
 	return icu;
 }
