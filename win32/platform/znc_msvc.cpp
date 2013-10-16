@@ -117,5 +117,7 @@ int CZNCWin32Helpers::RuntimeStartUp()
 	}
 #endif
 
+	::SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
+
 	return 0;
 }
