@@ -213,14 +213,27 @@ bool CFile::Delete(const CString& sFileName) {
 }
 
 bool CFile::Move(const CString& sOldFileName, const CString& sNewFileName, bool bOverwrite) {
-#ifndef _WIN32
-	if ((!bOverwrite) && (CFile::Exists(sNewFileName))) {
-		errno = EEXIST;
-		return false;
+#ifndef WIN_MSVC
+	if (CFile::Exists(sNewFileName)) {
+		if (!bOverwrite) {
+			errno = EEXIST;
+			return false;
+		}
+#ifdef _WIN32
+		// Windows (or maybe cygwin?) sometimes fails to rename() file over an existing file
+		// We don't want to remove the old file before moving new file over, for the case if the following rename() will fail for any reason
+		CString sTempFile = sNewFileName
+			+ CUtils::FormatTime(time(NULL), "_%Y%m%d-%H%M%S_", "UTC")
+			+ CString::RandomString(10).MD5(); // this file shouldn't exist :)
+		bool result = rename(sNewFileName.c_str(), sTempFile.c_str()) == 0;
+		result &&= rename(sOldFileName.c_str(), sNewFileName.c_str()) == 0;
+		result &&= Delete(sTempFile); // ok, renamed the file successfully, it's safe to remove backup of old file now
+		return result;
+#endif /* _WIN32 */
 	}
 
 	return (rename(sOldFileName.c_str(), sNewFileName.c_str()) == 0);
-#else
+#else /* WIN_MSVC */
 	// msvc's rename() doesn't seem to overwrite files. d'oh.
 
 	DWORD dFlags = MOVEFILE_WRITE_THROUGH | MOVEFILE_COPY_ALLOWED;
@@ -229,7 +242,7 @@ bool CFile::Move(const CString& sOldFileName, const CString& sNewFileName, bool 
 	}
 
 	return (::MoveFileEx(sOldFileName.c_str(), sNewFileName.c_str(), dFlags) != 0);
-#endif
+#endif /* WIN_MSVC */
 }
 
 bool CFile::Copy(const CString& sOldFileName, const CString& sNewFileName, bool bOverwrite) {
