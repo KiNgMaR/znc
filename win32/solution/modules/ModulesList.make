@@ -45,6 +45,7 @@ DLLS=$(MAKDIR)\adminlog.dll \
  $(MAKDIR)\watch.dll \
  $(MAKDIR)\webadmin.dll \
  $(MAKDIR)\antiidle.dll \
+ $(MAKDIR)\identserver.dll \
  $(MAKDIR)\motdfile.dll
 
 DLLS_SSL=$(MAKDIR)\awaystore.dll \
@@ -100,6 +101,7 @@ OBJS=$(MAKDIR)\adminlog.obj \
  $(MAKDIR)\watch.obj \
  $(MAKDIR)\webadmin.obj \
  $(MAKDIR)\antiidle.obj \
+ $(MAKDIR)\identserver.obj \
  $(MAKDIR)\motdfile.obj
 
 OBJS_SSL=$(MAKDIR)\awaystore.obj \

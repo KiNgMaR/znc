@@ -113,6 +113,8 @@ Source: "{#SourceFileDir64}\modules\webadmin.dll"; DestDir: "{app}\modules"; Fla
 Source: "{#SourceCodeDir}\win32\solution\modules\..\..\..\modules\data\webadmin\*"; DestDir: "{app}\modules\data\webadmin"; Flags: recursesubdirs; Components: modules/core
 Source: "{#SourceFileDir32}\modules\antiidle.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: modules/extra_win32
 Source: "{#SourceFileDir64}\modules\antiidle.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: modules/extra_win32
+Source: "{#SourceFileDir32}\modules\identserver.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: modules/extra_win32
+Source: "{#SourceFileDir64}\modules\identserver.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: modules/extra_win32
 Source: "{#SourceFileDir32}\modules\motdfile.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: modules/extra_win32
 Source: "{#SourceFileDir64}\modules\motdfile.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: modules/extra_win32
 Source: "{#SourceFileDir32}\modules\push.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: modules/extra_win32
