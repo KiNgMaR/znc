@@ -1,8 +1,8 @@
 #ifndef _TARGET_WINVER_H
 #define _TARGET_WINVER_H
 
-// the following definitions match MSVC runtime's
-// mininum system requirements.
+// the following WINVER definitions match the
+// MSVC 2012 runtime's mininum system requirements!
 
 #ifdef _WIN64
 	#define WINVER 0x0600 // Windows Vista / Server 2008
@@ -20,9 +20,9 @@
 
 	#define WIN32_LEAN_AND_MEAN
 	#define NOMINMAX
-	#define NOGDI // not required, plus may cause conflicts
-	#define _CRT_SECURE_NO_WARNINGS // not ideal, but ok for now
-	#define _CRT_RAND_S
+	#define NOGDI // GDI is not required, plus may cause conflicts
+	#define _CRT_SECURE_NO_WARNINGS // disabling is not ideal, but ok for now
+	#define _CRT_RAND_S // enable rand_s
 #endif
 
 #endif // _TARGET_WINVER_H
