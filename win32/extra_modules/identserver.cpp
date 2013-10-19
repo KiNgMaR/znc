@@ -139,8 +139,8 @@ CString CIdentServer::GetResponse(const CString& sLine, const CString& sSocketIP
 	{
 		sAddInfo = "NO-USER";
 
-		const std::map<CString, CUser*>& msUsers = CZNC::Get().GetUserMap();
-		for(auto itu = msUsers.begin(); itu != msUsers.end(); itu++)
+		for(auto itu = CZNC::Get().GetUserMap().begin();
+			itu != CZNC::Get().GetUserMap().end(); ++itu)
 		{
 			CUser* pUser = itu->second;
 			bool bFound = false;
