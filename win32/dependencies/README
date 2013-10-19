@@ -6,6 +6,6 @@ compile per instructions in INSTALL.W32/INSTALL.W64
 3) copy out32dll/libeay.* and out32dll/ssleay.* to
 the correct lib_xxx_release folder.
 
-4) repeat for debug builds. do not copy release builds,
-OpenSSL_APPLINK stuff will fail otherwise due to non-
-matching C runtime libraries.
+4) repeat for debug builds. do not copy release builds
+to the debug folders, OpenSSL_APPLINK stuff will fail
+otherwise due to unmatched C runtime libraries.

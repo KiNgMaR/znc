@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -18,6 +18,9 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="modules\Modules.make" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5177E585-9F24-4ADC-AF85-B924AAAD3BE3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -27,28 +30,28 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v120_xp</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120_xp</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -176,61 +179,6 @@ nmake /nologo -f modules/Modules.make CFG=$(Platform)-$(Configuration) clean</NM
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\modules\adminlog.cpp" />
-    <ClCompile Include="..\..\modules\autoattach.cpp" />
-    <ClCompile Include="..\..\modules\autocycle.cpp" />
-    <ClCompile Include="..\..\modules\autoop.cpp" />
-    <ClCompile Include="..\..\modules\autoreply.cpp" />
-    <ClCompile Include="..\..\modules\autovoice.cpp" />
-    <ClCompile Include="..\..\modules\awaynick.cpp" />
-    <ClCompile Include="..\..\modules\awaystore.cpp" />
-    <ClCompile Include="..\..\modules\blockuser.cpp" />
-    <ClCompile Include="..\..\modules\block_motd.cpp" />
-    <ClCompile Include="..\..\modules\bouncedcc.cpp" />
-    <ClCompile Include="..\..\modules\buffextras.cpp" />
-    <ClCompile Include="..\..\modules\cert.cpp" />
-    <ClCompile Include="..\..\modules\certauth.cpp" />
-    <ClCompile Include="..\..\modules\chansaver.cpp" />
-    <ClCompile Include="..\..\modules\clearbufferonmsg.cpp" />
-    <ClCompile Include="..\..\modules\clientnotify.cpp" />
-    <ClCompile Include="..\..\modules\controlpanel.cpp" />
-    <ClCompile Include="..\..\modules\crypt.cpp" />
-    <ClCompile Include="..\..\modules\ctcpflood.cpp" />
-    <ClCompile Include="..\..\modules\dcc.cpp" />
-    <ClCompile Include="..\..\modules\disconkick.cpp" />
-    <ClCompile Include="..\..\modules\fail2ban.cpp" />
-    <ClCompile Include="..\..\modules\flooddetach.cpp" />
-    <ClCompile Include="..\..\modules\identfile.cpp" />
-    <ClCompile Include="..\..\modules\imapauth.cpp" />
-    <ClCompile Include="..\..\modules\keepnick.cpp" />
-    <ClCompile Include="..\..\modules\kickrejoin.cpp" />
-    <ClCompile Include="..\..\modules\lastseen.cpp" />
-    <ClCompile Include="..\..\modules\listsockets.cpp" />
-    <ClCompile Include="..\..\modules\log.cpp" />
-    <ClCompile Include="..\..\modules\missingmotd.cpp" />
-    <ClCompile Include="..\..\modules\modules_online.cpp" />
-    <ClCompile Include="..\..\modules\nickserv.cpp" />
-    <ClCompile Include="..\..\modules\notes.cpp" />
-    <ClCompile Include="..\..\modules\notify_connect.cpp" />
-    <ClCompile Include="..\..\modules\partyline.cpp" />
-    <ClCompile Include="..\..\modules\perform.cpp" />
-    <ClCompile Include="..\..\modules\q.cpp" />
-    <ClCompile Include="..\..\modules\raw.cpp" />
-    <ClCompile Include="..\..\modules\route_replies.cpp" />
-    <ClCompile Include="..\..\modules\sample.cpp" />
-    <ClCompile Include="..\..\modules\sasl.cpp" />
-    <ClCompile Include="..\..\modules\savebuff.cpp" />
-    <ClCompile Include="..\..\modules\schat.cpp" />
-    <ClCompile Include="..\..\modules\send_raw.cpp" />
-    <ClCompile Include="..\..\modules\simple_away.cpp" />
-    <ClCompile Include="..\..\modules\stickychan.cpp" />
-    <ClCompile Include="..\..\modules\watch.cpp" />
-    <ClCompile Include="..\..\modules\webadmin.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="modules\Modules.make" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

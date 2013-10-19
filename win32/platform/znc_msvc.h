@@ -43,6 +43,7 @@
 #include <process.h>
 #include <string>
 #include <map>
+#include <algorithm>
 
 // ICU headers:
 #define U_USING_ICU_NAMESPACE 0

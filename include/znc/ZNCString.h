@@ -57,7 +57,7 @@ static const unsigned char base64_table[256] = {
 };
 
 #ifdef WIN_MSVC
-	/* workaround for MSVC++ 2010/2012 change */
+	/* workaround for MSVC++ 2010/2012/2013 change (bug) */
 	typedef std::basic_string<char> __ZNCBasicString;
 	#ifndef ZNC_EXPORTS
 	// ref: http://connect.microsoft.com/VisualStudio/feedback/details/562448/std-string-npos-lnk2001-when-inheriting-a-dll-class-from-std-string

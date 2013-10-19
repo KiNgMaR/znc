@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZNC_DLL", "ZNC.vcxproj", "{3C1FBC79-7578-4B6E-85F4-C78EF02A63D1}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZNC_CLI", "ZNC_CLI.vcxproj", "{26838D35-DAF6-4E46-8CEF-148941CA95F3}"
