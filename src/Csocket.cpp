@@ -49,6 +49,7 @@
 #include <openssl/engine.h>
 #endif /* HAVE_LIBSSL */
 
+#include <list>
 
 #define CS_SRANDBUFFER 128
 
@@ -613,7 +614,7 @@ static const char * CS_StrError( int iErrno, char * pszBuff, size_t uBuffLen )
 	return( strerror( iErrno ) );
 #else
 	memset( pszBuff, '\0', uBuffLen );
-#if !defined( _GNU_SOURCE )
+#if !defined( _GNU_SOURCE ) || defined( __FreeBSD__ )
 	if( strerror_r( iErrno, pszBuff, uBuffLen ) == 0 )
 		return( pszBuff );
 #else
@@ -770,14 +771,14 @@ CSockCommon::~CSockCommon()
 
 void CSockCommon::CleanupCrons()
 {
-	for( size_t a = 0; a < m_vcCrons.size(); a++ )
+	for( size_t a = 0; a < m_vcCrons.size(); ++a )
 		CS_Delete( m_vcCrons[a] );
 	m_vcCrons.clear();
 }
 
 void CSockCommon::CleanupFDMonitors()
 {
-	for( size_t a = 0; a < m_vcMonitorFD.size(); a++ )
+	for( size_t a = 0; a < m_vcMonitorFD.size(); ++a )
 		CS_Delete( m_vcMonitorFD[a] );
 	m_vcMonitorFD.clear();
 }
@@ -814,7 +815,7 @@ void CSockCommon::Cron()
 	timeval tNow;
 	timerclear( &tNow );
 
-	for( vector<CCron *>::size_type a = 0; a < m_vcCrons.size(); a++ )
+	for( vector<CCron *>::size_type a = 0; a < m_vcCrons.size(); ++a )
 	{
 		CCron * pcCron = m_vcCrons[a];
 
@@ -1252,7 +1253,7 @@ bool Csock::Listen( uint16_t iPort, int iMaxConns, const CS_STRING & sBindHost, 
 
 	// set it none blocking
 	set_non_blocking( m_iReadSock );
-	if( m_uPort == 0 || m_sBindHost.size() )
+	if( m_uPort == 0 || !m_sBindHost.empty() )
 	{
 		struct sockaddr_storage cAddr;
 		socklen_t iAddrLen = sizeof( cAddr );
@@ -1268,9 +1269,10 @@ bool Csock::Listen( uint16_t iPort, int iMaxConns, const CS_STRING & sBindHost, 
 
 cs_sock_t Csock::Accept( CS_STRING & sHost, uint16_t & iRPort )
 {
+	cs_sock_t iSock = CS_INVALID_SOCK;
 	struct sockaddr_storage cAddr;
 	socklen_t iAddrLen = sizeof( cAddr );
-	cs_sock_t iSock = accept( m_iReadSock, ( struct sockaddr * )&cAddr, &iAddrLen );
+	iSock = accept( m_iReadSock, ( struct sockaddr * )&cAddr, &iAddrLen );
 	if( iSock != CS_INVALID_SOCK && getpeername( iSock, ( struct sockaddr * )&cAddr, &iAddrLen ) == 0 )
 	{
 		ConvertAddress( &cAddr, iAddrLen, sHost, &iRPort );
@@ -1908,8 +1910,10 @@ void Csock::SetTimeout( int iTimeout, u_int iTimeoutType )
 
 void Csock::CallSockError( int iErrno, const CS_STRING & sDescription )
 {
-	if( sDescription.size() )
+	if( !sDescription.empty() )
+	{
 		SockError( iErrno, sDescription );
+	}
 	else
 	{
 		char szBuff[0xff];
@@ -1933,7 +1937,9 @@ bool Csock::CheckTimeout( time_t iNow )
 
 	time_t iDiff = 0;
 	if( iNow > m_iLastCheckTimeoutTime )
+	{
 		iDiff = iNow - m_iLastCheckTimeoutTime;
+	}
 	else
 	{
 		// this is weird, but its possible if someone changes a clock and it went back in time, this essentially has to reset the last check
@@ -2619,7 +2625,7 @@ CSocketManager::~CSocketManager()
 
 void CSocketManager::clear()
 {
-	while( this->size() )
+	while( !this->empty() )
 		DelSock( 0 );
 }
 
@@ -2735,7 +2741,7 @@ bool CSocketManager::Listen( const CSListener & cListen, Csock * pcSock, uint16_
 
 bool CSocketManager::HasFDs() const
 {
-	return( this->size() || m_vcMonitorFD.size() );
+	return( !this->empty() || !m_vcMonitorFD.empty() );
 }
 
 void CSocketManager::Loop()
@@ -2814,7 +2820,7 @@ void CSocketManager::Loop()
 	{
 	case SUCCESS:
 	{
-		for( std::map<Csock *, EMessages>::iterator itSock = mpeSocks.begin(); itSock != mpeSocks.end(); ++itSock )
+		for( std::map<Csock *, EMessages>::iterator itSock = mpeSocks.begin(); itSock != mpeSocks.end(); itSock++ )
 		{
 			Csock * pcSock = itSock->first;
 			EMessages iErrno = itSock->second;
@@ -2853,21 +2859,22 @@ void CSocketManager::Loop()
 					{
 						bool bHandled = false;
 #ifdef HAVE_LIBSSL
-						if (pcSock->GetSSL()) {
+						if( pcSock->GetSSL() ) 
+						{
 							unsigned long iSSLError = ERR_peek_error();
-							if (iSSLError) {
+							if( iSSLError )
+							{
 								char szError[512];
 								memset(( char * ) szError, '\0', 512 );
 								ERR_error_string_n( iSSLError, szError, 511 );
-								SSLErrors(__FILE__, __LINE__);
-								pcSock->CallSockError(GetSockError(), szError);
+								SSLErrors( __FILE__, __LINE__ );
+								pcSock->CallSockError( GetSockError(), szError );
 								bHandled = true;
 							}
 						}
 #endif
-						if (!bHandled) {
+						if( !bHandled ) 
 							pcSock->CallSockError( GetSockError() );
-						}
 						DelSockByAddr( pcSock );
 						break;
 					}
@@ -2982,7 +2989,7 @@ Csock * CSocketManager::FindSockByName( const CS_STRING & sName )
 {
 	std::vector<Csock *>::iterator it;
 	std::vector<Csock *>::iterator it_end = this->end();
-	for( it = this->begin(); it != it_end; ++it )
+	for( it = this->begin(); it != it_end; it++ )
 	{
 		if( (*it)->GetSockName() == sName )
 			return( *it );
@@ -3120,7 +3127,7 @@ bool CSocketManager::FDHasCheck( cs_sock_t iFd, std::map< cs_sock_t, short > & m
 {
 	std::map< cs_sock_t, short >::iterator it = miiReadyFds.find( iFd );
 	if( it != miiReadyFds.end() )
-		return(( it->second & eType ) );
+		return( ( it->second & eType ) != 0 );
 	return( false );
 }
 
@@ -3168,10 +3175,13 @@ int CSocketManager::Select( std::map< cs_sock_t, short > & miiReadyFds, struct t
 	TFD_ZERO( &rfds );
 	TFD_ZERO( &wfds );
 	bool bHasWrite = false;
-	cs_sock_t iHighestFD = 0;
+	int iHighestFD = 0;
 	for( std::map< cs_sock_t, short >::iterator it = miiReadyFds.begin(); it != miiReadyFds.end(); ++it )
 	{
+#ifndef _WIN32
+		// the first argument to select() is not used on Win32.
 		iHighestFD = std::max( it->first, iHighestFD );
+#endif /* _WIN32 */
 		if( it->second & ECT_Read )
 		{
 			TFD_SET( it->first, &rfds );
@@ -3236,7 +3246,7 @@ void CSocketManager::Select( std::map<Csock *, EMessages> & mpeSocks )
 		cs_sock_t & iRSock = pcSock->GetRSock();
 		cs_sock_t & iWSock = pcSock->GetWSock();
 #if !defined(CSOCK_USE_POLL) && !defined(_WIN32)
-		if( iRSock > FD_SETSIZE || iWSock > FD_SETSIZE )
+		if( iRSock > (cs_sock_t)FD_SETSIZE || iWSock > (cs_sock_t)FD_SETSIZE )
 		{
 			CS_DEBUG( "FD is larger than select() can handle" );
 			DelSock( i-- );

@@ -62,6 +62,17 @@
 #include <ws2tcpip.h>
 #include <sys/timeb.h>
 
+#ifndef ECONNREFUSED
+// these aliases might or might not be defined in errno.h
+// already, depending on the WinSDK version.
+#define ECONNREFUSED WSAECONNREFUSED
+#define EINPROGRESS WSAEINPROGRESS
+#define ETIMEDOUT WSAETIMEDOUT
+#define EADDRNOTAVAIL WSAEADDRNOTAVAIL
+#define ECONNABORTED WSAECONNABORTED
+#define ENETUNREACH WSAENETUNREACH
+#endif /* ECONNREFUSED */
+
 #endif /* _WIN32 */
 
 #ifdef HAVE_C_ARES
