@@ -81,6 +81,9 @@ __inline void sleep(int seconds) { ::Sleep(seconds * 1000); }
 // getopt and getopt_long are provided via getopt.c, a Win32 getopt implementation
 #define HAVE_GETOPT_LONG
 
+// there's no point in disabling IPv6:
+#define HAVE_IPV6
+
 // on Windows, load stuff from exe directory by default:
 #define RUN_FROM_SOURCE
 
