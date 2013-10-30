@@ -146,7 +146,24 @@ _dir_check:
   if not exist $(BUILDOUT) md $(BUILDOUT)
 
 # compile .obj files using inference rules
-$(OBJS):
+$(OBJS): $(INTDIR)_ZNC_mods.pch
+
+# ---------------
+# Create precompiled header file
+# ---------------
+
+$(INTDIR)_ZNC_mods.pch:
+  if exist $(RSP) del $(RSP)
+  echo $(CXXFLAGS) >>$(RSP)
+  echo $(INCLUDES) >>$(RSP)
+  echo $(DEFINES) >>$(RSP)
+  echo /Yc"modules-pch.h" >>$(RSP)
+  echo /Fp$(INTDIR)_ZNC_mods.pch >>$(RSP)
+  echo /Fo$(INTDIR) >>$(RSP)
+  echo /Fd$(INTDIR)vc120.pdb >>$(RSP)
+  echo modules/modules-pch.cpp >>$(RSP)
+  cl @$(RSP)
+  del $(RSP)
 
 # ---------------
 # Inference rules
@@ -158,10 +175,10 @@ $(OBJS):
   echo $(CXXFLAGS) >>$(RSP)
   echo $(INCLUDES) >>$(RSP)
   echo $(DEFINES) >>$(RSP)
-  echo /Yc"modules-pch.h" >>$(RSP)
+  echo /Yu"modules-pch.h" >>$(RSP)
   echo /Fp$(INTDIR)_ZNC_mods.pch >>$(RSP)
   echo /Fo$(INTDIR) >>$(RSP)
-  echo /Fd$(INTDIR)vc110.pdb >>$(RSP)
+  echo /Fd$(INTDIR)vc120.pdb >>$(RSP)
   echo $< >>$(RSP)
   cl @$(RSP)
   del $(RSP)
@@ -172,10 +189,10 @@ $(OBJS):
   echo $(CXXFLAGS) >>$(RSP)
   echo $(INCLUDES) >>$(RSP)
   echo $(DEFINES) >>$(RSP)
-  echo /Yc"modules-pch.h" >>$(RSP)
+  echo /Yu"modules-pch.h" >>$(RSP)
   echo /Fp$(INTDIR)_ZNC_mods.pch >>$(RSP)
   echo /Fo$(INTDIR) >>$(RSP)
-  echo /Fd$(INTDIR)vc110.pdb >>$(RSP)
+  echo /Fd$(INTDIR)vc120.pdb >>$(RSP)
   echo $< >>$(RSP)
   cl @$(RSP)
   del $(RSP)
@@ -188,6 +205,7 @@ $(OBJS):
   echo $(LINKFLAGS) >>$(RSP)
   echo /PDB:$(INTDIR)$(@B).pdb >>$(RSP)
   echo $(LIBS) >>$(RSP)
+  echo $(INTDIR)modules-pch.obj >>$(RSP)
   echo $< >>$(RSP)
   link @$(RSP)
   copy /Y $(@R).dll $(BUILDOUT) >NUL
