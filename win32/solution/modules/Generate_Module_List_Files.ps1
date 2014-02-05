@@ -3,7 +3,7 @@
 # no beauty.
 
 $mod_package_dirs = @("..\..\..\modules\", "..\..\extra_modules\")
-$blacklist = @("charset.cpp", "cyrusauth.cpp", "modperl.cpp", "modpython.cpp", "modtcl.cpp", "shell.cpp")
+$blacklist = @("cyrusauth.cpp", "modperl.cpp", "modpython.cpp", "modtcl.cpp", "shell.cpp")
 
 filter script:moduleblacklist { if([array]::IndexOf($blacklist, $_.name) -eq -1) { $_ } }
 filter script:skip-null { $_|?{ $_ } }

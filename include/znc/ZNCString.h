@@ -601,4 +601,11 @@ public:
 	virtual CString& Decode(CString& sValue) const;
 };
 
+// due to the nature of ZNC.dll being a DLL, we have to explicitely
+// define these template exports:
+#ifdef WIN_MSVC
+// for alias.cpp:
+template ZNC_API CString CString::Join(VCString::iterator, const VCString::iterator&) const;
+#endif
+
 #endif // !ZNCSTRING_H

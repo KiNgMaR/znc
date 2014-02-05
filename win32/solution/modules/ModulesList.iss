@@ -3,6 +3,8 @@
 
 Source: "{#SourceFileDir32}\modules\adminlog.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: modules/core
 Source: "{#SourceFileDir64}\modules\adminlog.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: modules/core
+Source: "{#SourceFileDir32}\modules\alias.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: modules/core
+Source: "{#SourceFileDir64}\modules\alias.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: modules/core
 Source: "{#SourceFileDir32}\modules\autoattach.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: modules/core
 Source: "{#SourceFileDir64}\modules\autoattach.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: modules/core
 Source: "{#SourceFileDir32}\modules\autocycle.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: modules/core
