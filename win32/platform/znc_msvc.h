@@ -78,6 +78,9 @@ typedef long suseconds_t;
 __inline void usleep(int useconds) { ::Sleep(useconds / 1000); }
 __inline void sleep(int seconds) { ::Sleep(seconds * 1000); }
 
+// enable built-in ZNC charset conversion:
+#define HAVE_ICU
+
 // getopt and getopt_long are provided via getopt.c, a Win32 getopt implementation
 #define HAVE_GETOPT_LONG
 
