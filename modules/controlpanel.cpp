@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2013 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
  * Copyright (C) 2008 by Stefan Rado
  * based on admin.cpp by Sebastian Ramacher
  * based on admin.cpp in crox branch
@@ -68,6 +68,7 @@ class CAdminMod : public CModule {
 			{"Password",            str},
 			{"JoinTries",           integer},
 			{"MaxJoins",            integer},
+			{"MaxNetworks",         integer},
 			{"Timezone",            str},
 			{"Admin",               boolean},
 			{"AppendTimestamp",     boolean},
@@ -188,6 +189,8 @@ class CAdminMod : public CModule {
 			PutModule("AutoClearChanBuffer = " + CString(pUser->AutoClearChanBuffer()));
 		else if (sVar == "maxjoins")
 			PutModule("MaxJoins = " + CString(pUser->MaxJoins()));
+		else if (sVar == "maxnetworks")
+			PutModule("MaxNetworks = " + CString(pUser->MaxNetworks()));
 		else if (sVar == "jointries")
 			PutModule("JoinTries = " + CString(pUser->JoinTries()));
 		else if (sVar == "timezone")
@@ -203,7 +206,11 @@ class CAdminMod : public CModule {
 		else if (sVar == "admin")
 			PutModule("Admin = " + CString(pUser->IsAdmin()));
 		else if (sVar == "statusprefix")
-			PutModule("StatuxPrefix = " + pUser->GetStatusPrefix());
+			PutModule("StatusPrefix = " + pUser->GetStatusPrefix());
+#ifdef HAVE_ICU
+		else if (sVar == "clientencoding")
+			PutModule("ClientEncoding = " + pUser->GetClientEncoding());
+#endif
 		else
 			PutModule("Error: Unknown variable");
 	}
@@ -308,6 +315,15 @@ class CAdminMod : public CModule {
 			pUser->SetMaxJoins(i);
 			PutModule("MaxJoins = " + CString(pUser->MaxJoins()));
 		}
+		else if (sVar == "maxnetworks") {
+			if(m_pUser->IsAdmin()) {
+				unsigned int i = sValue.ToUInt();
+				pUser->SetMaxNetworks(i);
+				PutModule("MaxNetworks = " + sValue);
+			} else {
+				PutModule("Access denied!");
+			}
+		}
 		else if (sVar == "jointries") {
 			unsigned int i = sValue.ToUInt();
 			pUser->SetJoinTries(i);
@@ -356,6 +372,12 @@ class CAdminMod : public CModule {
 				PutModule("That would be a bad idea!");
 			}
 		}
+#ifdef HAVE_ICU
+		else if (sVar == "clientencoding") {
+			pUser->SetClientEncoding(sValue);
+			PutModule("ClientEncoding = " + sValue);
+		}
+#endif
 		else
 			PutModule("Error: Unknown variable");
 	}
@@ -401,6 +423,10 @@ class CAdminMod : public CModule {
 			PutModule("FloodRate = " + CString(pNetwork->GetFloodRate()));
 		} else if (sVar.Equals("floodburst")) {
 			PutModule("FloodBurst = " + CString(pNetwork->GetFloodBurst()));
+#ifdef HAVE_ICU
+		} else if (sVar.Equals("encoding")) {
+			PutModule("Encoding = " + pNetwork->GetEncoding());
+#endif
 		} else {
 			PutModule("Error: Unknown variable");
 		}
@@ -454,9 +480,77 @@ class CAdminMod : public CModule {
 		} else if (sVar.Equals("floodburst")) {
 			pNetwork->SetFloodBurst(sValue.ToUShort());
 			PutModule("FloodBurst = " + CString(pNetwork->GetFloodBurst()));
+#ifdef HAVE_ICU
+		} else if (sVar.Equals("encoding")) {
+			pNetwork->SetEncoding(sValue);
+			PutModule("Encoding = " + pNetwork->GetEncoding());
+#endif
 		} else {
 			PutModule("Error: Unknown variable");
 		}
+	}
+	
+	void AddChan(const CString& sLine) {
+		const CString sUsername   = sLine.Token(1);
+		const CString sNetwork    = sLine.Token(2);
+		const CString sChan       = sLine.Token(3);
+		
+		if (sChan.empty()) {
+			PutModule("Usage: addchan <username> <network> <channel>");
+			return;
+		}
+		
+		CUser* pUser = GetUser(sUsername);
+		if (!pUser)
+			return;
+				
+		CIRCNetwork* pNetwork = pUser->FindNetwork(sNetwork);
+		if (!pNetwork) {
+			PutModule("Error: [" + sUsername + "] does not have a network named [" + sNetwork + "].");
+			return;
+		}
+		
+		if (pNetwork->FindChan(sChan)) {
+			PutModule("Error: [" + sUsername + "] already has a channel named [" + sChan + "].");
+			return;
+		}
+		
+		CChan* pChan = new CChan(sChan, pNetwork, true);
+		pNetwork->AddChan(pChan);
+		
+		PutModule("Channel [" + sChan + "] for user [" + sUsername + "] added.");
+	}
+	
+	void DelChan(const CString& sLine) {
+		const CString sUsername   = sLine.Token(1);
+		const CString sNetwork    = sLine.Token(2);
+		const CString sChan       = sLine.Token(3);
+		
+		if (sChan.empty()) {
+			PutModule("Usage: delchan <username> <network> <channel>");
+			return;
+		}
+		
+		CUser* pUser = GetUser(sUsername);
+		if (!pUser)
+			return;
+		
+		CIRCNetwork* pNetwork = pUser->FindNetwork(sNetwork);
+		if (!pNetwork) {
+			PutModule("Error: [" + sUsername + "] does not have a network named [" + sNetwork + "].");
+			return;
+		}
+		
+		CChan* pChan = pNetwork->FindChan(sChan);
+		if (!pChan) {
+			PutModule("Error: User [" + sUsername + "] does not have a channel named [" + sChan + "].");
+			return;
+		}
+		
+		pNetwork->DelChan(sChan);
+		pNetwork->PutIRC("PART " + sChan);
+		
+		PutModule("Channel [" + sChan + "] for user [" + sUsername + "] deleted.");
 	}
 
 	void GetChan(const CString& sLine) {
@@ -732,7 +826,7 @@ class CAdminMod : public CModule {
 		}
 
 		if (!m_pUser->IsAdmin() && !pUser->HasSpaceForNewNetwork()) {
-			PutStatus("Network number limit reached. Ask an admin to increase the limit for you, or delete few old ones using /znc DelNetwork <name>");
+			PutStatus("Network number limit reached. Ask an admin to increase the limit for you, or delete unneeded networks using /znc DelNetwork <name>");
 			return;
 		}
 
@@ -1073,7 +1167,7 @@ class CAdminMod : public CModule {
 		if (!Modules.UnloadModule(sModName, sModRet)) {
 			PutModule("Unable to unload module [" + sModName + "] [" + sModRet + "]");
 		} else {
-			PutModule("Unloaded module [" + sModName + "] [" + sModRet + "]");
+			PutModule("Unloaded module [" + sModName + "]");
 		}
 	}
 
@@ -1188,6 +1282,10 @@ public:
 			"variable [username] network chan",     "Prints the variable's value for the given channel");
 		AddCommand("SetChan",      static_cast<CModCommand::ModCmdFunc>(&CAdminMod::SetChan),
 			"variable username network chan value", "Sets the variable's value for the given channel");
+		AddCommand("AddChan",      static_cast<CModCommand::ModCmdFunc>(&CAdminMod::AddChan),
+			"username network chan",                "Adds a new channel");
+		AddCommand("DelChan",      static_cast<CModCommand::ModCmdFunc>(&CAdminMod::DelChan),
+			"username network chan",                "Deletes a channel");
 		AddCommand("ListUsers",    static_cast<CModCommand::ModCmdFunc>(&CAdminMod::ListUsers),
 			"",                                     "Lists users");
 		AddCommand("AddUser",      static_cast<CModCommand::ModCmdFunc>(&CAdminMod::AddUser),

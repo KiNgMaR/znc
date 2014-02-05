@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2013 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -308,6 +308,7 @@ void CClient::UserCommand(CString& sLine) {
 		}
 
 		CString sArgs = sLine.Token(1, true);
+		sArgs.Trim();
 		CServer *pServer = NULL;
 
 		if (!sArgs.empty()) {
@@ -382,6 +383,34 @@ void CClient::UserCommand(CString& sLine) {
 
 			PutStatus("There were [" + CString(uMatches) + "] channels matching [" + sChan + "]");
 			PutStatus("Enabled [" + CString(uEnabled) + "] channels");
+		}
+	} else if (sCommand.Equals("DISABLECHAN")) {
+		if (!m_pNetwork) {
+			PutStatus("You must be connected with a network to use this command");
+			return;
+		}
+
+		CString sChan = sLine.Token(1, true);
+
+		if (sChan.empty()) {
+			PutStatus("Usage: DisableChan <channel>");
+		} else {
+			const vector<CChan*>& vChans = m_pNetwork->GetChans();
+			vector<CChan*>::const_iterator it;
+			unsigned int uMatches = 0, uDisabled = 0;
+			for (it = vChans.begin(); it != vChans.end(); ++it) {
+				if (!(*it)->GetName().WildCmp(sChan))
+					continue;
+				uMatches++;
+
+				if ((*it)->IsDisabled())
+					continue;
+				uDisabled++;
+				(*it)->Disable();
+			}
+
+			PutStatus("There were [" + CString(uMatches) + "] channels matching [" + sChan + "]");
+			PutStatus("Disabled [" + CString(uDisabled) + "] channels");
 		}
 	} else if (sCommand.Equals("LISTCHANS")) {
 		if (!m_pNetwork) {
@@ -467,7 +496,7 @@ void CClient::UserCommand(CString& sLine) {
 			" - Detached: " + CString(uNumDetached) + " - Disabled: " + CString(uNumDisabled));
 	} else if (sCommand.Equals("ADDNETWORK")) {
 		if (!m_pUser->IsAdmin() && !m_pUser->HasSpaceForNewNetwork()) {
-			PutStatus("Network number limit reached. Ask an admin to increase the limit for you, or delete few old ones using /znc DelNetwork <name>");
+			PutStatus("Network number limit reached. Ask an admin to increase the limit for you, or delete unneeded networks using /znc DelNetwork <name>");
 			return;
 		}
 
@@ -1571,6 +1600,11 @@ void CClient::HelpUser() {
 	Table.SetCell("Command", "Enablechan");
 	Table.SetCell("Arguments", "<#chan>");
 	Table.SetCell("Description", "Enable the channel");
+
+	Table.AddRow();
+	Table.SetCell("Command", "Disablechan");
+	Table.SetCell("Arguments", "<#chan>");
+	Table.SetCell("Description", "Disable the channel");
 
 	Table.AddRow();
 	Table.SetCell("Command", "Detach");

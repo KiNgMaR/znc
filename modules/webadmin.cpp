@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2013 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -821,7 +821,7 @@ public:
 				}
 			} else {
 				if (!spSession->IsAdmin() && !pUser->HasSpaceForNewNetwork()) {
-					WebSock.PrintErrorPage("Network number limit reached. Ask an admin to increase the limit for you, or delete few old ones from Your Settings");
+					WebSock.PrintErrorPage("Network number limit reached. Ask an admin to increase the limit for you, or delete unneeded networks from Your Settings.");
 					return true;
 				}
 
@@ -1099,7 +1099,7 @@ public:
 					l["IRCNick"] = vNetworks[a]->GetIRCNick().GetNick();
 					CServer* pServer = vNetworks[a]->GetCurrentServer();
 					if (pServer) {
-						l["Server"] = pServer->GetName();
+						l["Server"] = pServer->GetName() + ":" + (pServer->IsSSL() ? "+" : "") + CString(pServer->GetPort());
 					}
 				}
 
