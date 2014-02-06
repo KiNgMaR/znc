@@ -111,8 +111,8 @@ Name: "{code:GetServiceDataDir}"
 Name: "{commonappdata}\ZNC"
 
 [Run]
-;Filename: "{app}\ZNC_Service.exe"; Parameters: "--install"; Flags: runhidden; Components: service and service/autorun
-;Filename: "{app}\ZNC_Service.exe"; Parameters: "--install --manual"; Flags: runhidden; Components: service and not service/autorun
+Filename: "{app}\ZNC_Service.exe"; Parameters: "--install"; Flags: runhidden; Components: service and service/autorun
+Filename: "{app}\ZNC_Service.exe"; Parameters: "--install --manual"; Flags: runhidden; Components: service and not service/autorun
 ;Filename: "{app}\COMServiceControl.exe"; Parameters: "/RegServer"; Flags: runhidden; Components: service/tray
 ; can't use [Registry] because this needs to be done *after* /RegServer (same during uninstall where it needs to be done before /UnRegServer):
 Filename: "{cmd}"; Parameters: "/c reg add HKLM\SOFTWARE\Classes\CLSID\{#COMServiceControlCLSID} /v LocalizedString /t REG_EXPAND_SZ /d ""@{app}\COMServiceControl.exe,-101"" /f"; Flags: runhidden; Components: service/tray
@@ -122,7 +122,7 @@ Filename: "{cmd}"; Parameters: "/c reg add HKLM\SOFTWARE\Classes\CLSID\{#COMServ
 ; could use something less brutal than taskkill in the future:
 Filename: "{cmd}"; parameters: "/c taskkill /f /im ZNC_Tray.exe"; Flags: runhidden; Components: service/tray
 Filename: "{cmd}"; parameters: "/c net stop ZNC"; Flags: runhidden; Components: service
-;Filename: "{app}\ZNC_Service.exe"; Flags: runhidden; Parameters: "--uninstall"; Components: service
+Filename: "{app}\ZNC_Service.exe"; Flags: runhidden; Parameters: "--uninstall"; Components: service
 Filename: "{cmd}"; Parameters: "/c reg delete HKLM\SOFTWARE\Classes\CLSID\{#COMServiceControlCLSID} /v LocalizedString /f"; Flags: runhidden; Components: service/tray
 Filename: "{cmd}"; Parameters: "/c reg delete HKLM\SOFTWARE\Classes\CLSID\{#COMServiceControlCLSID}\Elevation /f"; Flags: runhidden; Components: service/tray
 ;Filename: "{app}\COMServiceControl.exe"; Parameters: "/UnRegServer"; Flags: runhidden; Components: service/tray
