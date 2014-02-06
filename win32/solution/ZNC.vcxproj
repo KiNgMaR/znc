@@ -204,6 +204,8 @@
     <ClCompile Include="..\platform\dirent.cpp" />
     <ClCompile Include="..\platform\dlfcn.cpp" />
     <ClCompile Include="..\platform\getopt.cpp" />
+    <ClCompile Include="..\platform\win_registry.cpp" />
+    <ClCompile Include="..\platform\win_utils.cpp" />
     <ClCompile Include="..\platform\znc_msvc.cpp" />
     <ClCompile Include="..\platform\znc_msvc_dll_main.cpp" />
     <ClCompile Include="..\platform\znc_msvc_platform.cpp" />
@@ -237,6 +239,7 @@
     <ClInclude Include="..\..\include\znc\znc.h" />
     <ClInclude Include="..\..\include\znc\ZNCDebug.h" />
     <ClInclude Include="..\..\include\znc\ZNCString.h" />
+    <ClInclude Include="..\platform\znc_msvc.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

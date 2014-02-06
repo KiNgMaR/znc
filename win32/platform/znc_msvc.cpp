@@ -15,6 +15,7 @@
  */
 
 #include "znc_msvc.h"
+#include "win_utils.h"
 #include <stdio.h>
 #include <fcntl.h>
 #ifdef HAVE_LIBSSL
@@ -28,19 +29,17 @@ const char *ZNC_VERSION_EXTRA =
 	"-Win";
 #endif
 
+bool CZNCWin32Helpers::ms_serviceMode = false;
+
 // some utils:
 
 static void HardenDLLSearchPath()
 {
 	// this removes `pwd` from the DLL search path.
 
-	OSVERSIONINFOEX winver = { sizeof(OSVERSIONINFOEX), 0 };
-
-	::GetVersionEx((LPOSVERSIONINFO)&winver);
-
 	// available from Windows XP SP1 and higher:
 
-	if (winver.dwMajorVersion > 5 || (winver.dwMajorVersion == 5 && winver.wServicePackMajor >= 1))
+	if (CWinUtils::WinVerAtLeast(5, 1, 1))
 	{
 		typedef BOOL (WINAPI *pSetDllDirectory)(LPCTSTR);
 

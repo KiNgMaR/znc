@@ -44,6 +44,7 @@
 #include <string>
 #include <map>
 #include <algorithm>
+#include <sstream>
 
 // ICU headers:
 #define U_USING_ICU_NAMESPACE 0
@@ -133,7 +134,23 @@ class ZNC_API CZNCWin32Helpers
 {
 public:
 	static int RuntimeStartUp();
+
+	static bool IsWindowService() { 
+		return ms_serviceMode;
+	}
+	static void SetWindowsServiceMode() {
+		ms_serviceMode = true;
+	}
+
+private:
+	static bool ms_serviceMode;
 };
+
+// Shared service definitions:
+
+#define ZNC_SERVICE_NAME L"ZNC"
+#define ZNC_EVENT_PROVIDER L"ZNCService"
+#define ZNC_SERVICE_DESCRIPTION L"ZNC is an advanced IRC network bouncer (BNC)."
 
 // suppress some warnings from ZNC code:
 #pragma warning(disable:4996) // disable "The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name"
