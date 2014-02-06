@@ -1,19 +1,23 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.30110.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZNC_DLL", "ZNC.vcxproj", "{3C1FBC79-7578-4B6E-85F4-C78EF02A63D1}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZNC_CLI", "ZNC_CLI.vcxproj", "{26838D35-DAF6-4E46-8CEF-148941CA95F3}"
 	ProjectSection(ProjectDependencies) = postProject
-		{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B} = {119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}
 		{3C1FBC79-7578-4B6E-85F4-C78EF02A63D1} = {3C1FBC79-7578-4B6E-85F4-C78EF02A63D1}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ansicon", "ansicon.vcxproj", "{119B6C62-89C4-49D6-BFC3-B94C5F8A3F2B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZNC_Modules", "ZNC_Modules.vcxproj", "{5177E585-9F24-4ADC-AF85-B924AAAD3BE3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3C1FBC79-7578-4B6E-85F4-C78EF02A63D1} = {3C1FBC79-7578-4B6E-85F4-C78EF02A63D1}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZNC_Service", "ZNC_Service.vcxproj", "{494FDDEC-6BF4-4612-892E-E54722FF3664}"
 	ProjectSection(ProjectDependencies) = postProject
 		{3C1FBC79-7578-4B6E-85F4-C78EF02A63D1} = {3C1FBC79-7578-4B6E-85F4-C78EF02A63D1}
 	EndProjectSection
@@ -76,6 +80,17 @@ Global
 		{5177E585-9F24-4ADC-AF85-B924AAAD3BE3}.Release|Win32.Build.0 = Release|Win32
 		{5177E585-9F24-4ADC-AF85-B924AAAD3BE3}.Release|x64.ActiveCfg = Release|x64
 		{5177E585-9F24-4ADC-AF85-B924AAAD3BE3}.Release|x64.Build.0 = Release|x64
+		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Debug|Win32.ActiveCfg = Debug|Win32
+		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Debug|Win32.Build.0 = Debug|Win32
+		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Debug|x64.ActiveCfg = Debug|x64
+		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Debug|x64.Build.0 = Debug|x64
+		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Release|Win32.ActiveCfg = Release|Win32
+		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Release|Win32.Build.0 = Release|Win32
+		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
