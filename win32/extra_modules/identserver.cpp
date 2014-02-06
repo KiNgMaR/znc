@@ -47,6 +47,7 @@ public:
 	void OnIRCDisconnected() override;
 	void OnClientLogin() override;
 	EModRet OnDeleteUser(CUser& User) override;
+	EModRet OnDeleteNetwork(CIRCNetwork& Network) override;
 	void OnModCommand(const CString& sLine) override;
 
 	void NoLongerNeedsIdentServer();
@@ -324,6 +325,19 @@ CIdentServerMod::EModRet CIdentServerMod::OnDeleteUser(CUser& User)
 
 		NoLongerNeedsIdentServer();
 	}
+
+	m_pNetwork = pBackup;
+
+	return CONTINUE;
+}
+
+CIdentServerMod::EModRet CIdentServerMod::OnDeleteNetwork(CIRCNetwork& Network)
+{
+	CIRCNetwork* pBackup = m_pNetwork;
+
+	m_pNetwork = &Network; // meh
+
+	NoLongerNeedsIdentServer();
 
 	m_pNetwork = pBackup;
 
