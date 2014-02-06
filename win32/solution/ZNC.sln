@@ -90,7 +90,8 @@ Global
 		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Release|Win32.ActiveCfg = Release|Win32
 		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Release|Win32.Build.0 = Release|Win32
-		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Release|x64.ActiveCfg = Release|Win32
+		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Release|x64.ActiveCfg = Release|x64
+		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

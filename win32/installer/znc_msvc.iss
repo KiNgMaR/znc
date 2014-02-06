@@ -73,10 +73,10 @@ Source: "{#SourceFileDir64}\icuin51.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceFileDir32}\icuuc51.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode
 Source: "{#SourceFileDir64}\icuuc51.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode
 
-;Source: "{#SourceFileDir32}\ZNC_Service.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: service
-;Source: "{#SourceFileDir64}\ZNC_Service.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: service
-;Source: "{#SourceFileDir32}\service_provider.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: service
-;Source: "{#SourceFileDir64}\service_provider.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: service
+Source: "{#SourceFileDir32}\ZNC_Service.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: service
+Source: "{#SourceFileDir64}\ZNC_Service.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: service
+Source: "{#SourceFileDir32}\znc_service_provider.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: service
+Source: "{#SourceFileDir64}\znc_service_provider.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: service
 ;Source: "{#SourceFileDir32}\ZNC_Tray.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: service/tray
 ;Source: "{#SourceFileDir64}\ZNC_Tray.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: service/tray
 
@@ -144,8 +144,8 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
 	if (CurStep = ssPostInstall) and IsComponentSelected('service') and IsComponentSelected('service/firewall') then
 	begin
-//		AddFirewallException('ZNC IRC Bouncer Service', ExpandConstant('{app}\ZNC_Service.exe'));
-//		AddFirewallException('ZNC IRC Bouncer CLI', ExpandConstant('{app}\ZNC_CLI.exe'));
+		AddFirewallException('ZNC IRC Bouncer Service', ExpandConstant('{app}\ZNC_Service.exe'));
+		AddFirewallException('ZNC IRC Bouncer CLI', ExpandConstant('{app}\ZNC_CLI.exe'));
 	end;
 end;
 
@@ -153,7 +153,7 @@ procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
 	if CurUninstallStep = usUninstall then
 	begin
-//		RemoveFirewallException('ZNC IRC Bouncer Service', ExpandConstant('{app}\ZNC_Service.exe'));
-//		RemoveFirewallException('ZNC IRC Bouncer CLI', ExpandConstant('{app}\ZNC_CLI.exe'));
+		RemoveFirewallException('ZNC IRC Bouncer Service', ExpandConstant('{app}\ZNC_Service.exe'));
+		RemoveFirewallException('ZNC IRC Bouncer CLI', ExpandConstant('{app}\ZNC_CLI.exe'));
 	end;
 end;
