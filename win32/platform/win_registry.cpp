@@ -14,18 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef UNICODE
-// ZNC hack...
-#define UNICODE
-#endif
-
 #include "win_registry.h"
 
-
-CRegistryKey::CRegistryKey(HKEY a_hive) :
-	m_hive(a_hive), m_key(0)
-{
-}
 
 
 bool CRegistryKey::OpenForReading(const std::wstring& a_keyPath)
@@ -98,7 +88,7 @@ std::wstring CRegistryKey::ReadString(const wchar_t* a_szName, std::wstring a_de
 
 bool CRegistryKey::ReadBool(const wchar_t* a_szKey, bool a_default)
 {
-	return (ReadDword(a_szKey, (a_default ? 1 : 0)) != 0 ? 1 : 0);
+	return ReadDword(a_szKey, (a_default ? 1 : 0)) != 0;
 }
 
 
@@ -174,10 +164,4 @@ bool CRegistryKey::DeleteKey(const std::wstring& a_parentKeyPath, const std::wst
 	}
 
 	return (l_result == ERROR_SUCCESS);
-}
-
-
-CRegistryKey::~CRegistryKey()
-{
-	CloseKey();
 }
