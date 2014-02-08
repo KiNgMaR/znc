@@ -3,5 +3,7 @@
 *.suo
 _*.rsp
 *.user
-obj
+Debug
+Release
+x64
 ipch
