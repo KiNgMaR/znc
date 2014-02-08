@@ -3,5 +3,6 @@
 *.suo
 _*.rsp
 *.user
+*.aps
 obj
 ipch

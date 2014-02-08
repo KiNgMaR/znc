@@ -3,6 +3,7 @@
 *.suo
 _*.rsp
 *.user
+*.aps
 Debug
 Release
 x64
