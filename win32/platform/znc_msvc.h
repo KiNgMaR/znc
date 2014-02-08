@@ -129,28 +129,7 @@ ZNC_API size_t strftime_validating(char* strDest, size_t maxsize, const char* fo
 ZNC_API int rand_r(unsigned int *seedp);
 ZNC_API std::string strftime_format_to_icu(const std::string& a_format);
 
-// Win32 utility + feature code:
-class ZNC_API CZNCWin32Helpers
-{
-public:
-	static int RuntimeStartUp();
-
-	static bool IsWindowService() { 
-		return ms_serviceMode;
-	}
-	static void SetWindowsServiceMode() {
-		ms_serviceMode = true;
-	}
-
-private:
-	static bool ms_serviceMode;
-};
-
-// Shared service definitions:
-
-#define ZNC_SERVICE_NAME L"ZNC"
-#define ZNC_EVENT_PROVIDER L"ZNCService"
-#define ZNC_SERVICE_DESCRIPTION L"ZNC is an advanced IRC network bouncer (BNC)."
+#include "znc_msvc_shared.h"
 
 // suppress some warnings from ZNC code:
 #pragma warning(disable:4996) // disable "The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name"

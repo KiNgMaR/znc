@@ -31,64 +31,12 @@ const char *ZNC_VERSION_EXTRA =
 
 bool CZNCWin32Helpers::ms_serviceMode = false;
 
-// some utils:
-
-static void HardenDLLSearchPath()
-{
-	// this removes `pwd` from the DLL search path.
-
-	// available from Windows XP SP1 and higher:
-
-	if (CWinUtils::WinVerAtLeast(5, 1, 1))
-	{
-		typedef BOOL (WINAPI *pSetDllDirectory)(LPCTSTR);
-
-		pSetDllDirectory SetDllDirectory = (pSetDllDirectory)::GetProcAddress(::GetModuleHandle("Kernel32.dll"), "SetDllDirectory");
-
-		if (SetDllDirectory != nullptr)
-		{
-			SetDllDirectory("");
-		}
-	}
-}
-
-static void HardenHeap()
-{
-#ifndef _DEBUG
-	// Activate program termination on heap corruption.
-	// http://msdn.microsoft.com/en-us/library/aa366705%28VS.85%29.aspx
-	typedef BOOL (WINAPI *pHeapSetInformation)(HANDLE, HEAP_INFORMATION_CLASS, PVOID, SIZE_T);
-	pHeapSetInformation HeapSetInformation = (pHeapSetInformation)::GetProcAddress(::GetModuleHandle("Kernel32.dll"), "HeapSetInformation");
-	if (HeapSetInformation != nullptr)
-	{
-		HeapSetInformation(::GetProcessHeap(), HeapEnableTerminationOnCorruption, NULL, 0);
-	}
-#endif
-}
-
-#ifndef PROCESS_DEP_ENABLE
-#define PROCESS_DEP_ENABLE 0x00000001
-#endif
-
-static void EnsureDEPIsEnabled()
-{
-#ifndef _WIN64
-	// Explicitly activate DEP, only necessary on 32 bit.
-	// http://msdn.microsoft.com/en-us/library/bb736299%28VS.85%29.aspx
-	typedef BOOL (WINAPI *pSetProcessDEPPolicy)(DWORD);
-	pSetProcessDEPPolicy SetProcessDEPPolicy = (pSetProcessDEPPolicy)::GetProcAddress(::GetModuleHandle("Kernel32.dll"), "SetProcessDEPPolicy");
-	if (SetProcessDEPPolicy != nullptr)
-	{
-		SetProcessDEPPolicy(PROCESS_DEP_ENABLE);
-	}
-#endif
-}
 
 int CZNCWin32Helpers::RuntimeStartUp()
 {
-	EnsureDEPIsEnabled();
-	HardenHeap();
-	HardenDLLSearchPath();
+	CWinUtils::EnforceDEP();
+	CWinUtils::HardenHeap();
+	CWinUtils::HardenDLLSearchPath();
 
 	// this prevents open()/read() and friends from stripping \r from files... simply
 	// adding _O_BINARY to the modes doesn't seem to be enough for some reason...

@@ -44,6 +44,63 @@ bool CWinUtils::WinVerAtLeast(DWORD dwMajor, DWORD dwMinor, WORD dwServicePack)
 }
 
 
+void CWinUtils::HardenDLLSearchPath()
+{
+	// this removes `pwd` from the DLL search path.
+
+	// available from Windows XP SP1 and higher:
+
+	if (CWinUtils::WinVerAtLeast(5, 1, 1))
+	{
+		typedef BOOL(WINAPI *fSetDllDirectory)(LPCWSTR);
+
+		fSetDllDirectory pSetDllDirectory = (fSetDllDirectory)::GetProcAddress(
+			::GetModuleHandleW(L"Kernel32.dll"), "SetDllDirectoryW");
+
+		if (pSetDllDirectory != nullptr)
+		{
+			pSetDllDirectory(L"");
+		}
+	}
+}
+
+
+void CWinUtils::HardenHeap()
+{
+#ifndef _DEBUG
+	// Activate program termination on heap corruption.
+	// http://msdn.microsoft.com/en-us/library/aa366705%28VS.85%29.aspx
+	typedef BOOL(WINAPI *pHeapSetInformation)(HANDLE, HEAP_INFORMATION_CLASS, PVOID, SIZE_T);
+	pHeapSetInformation HeapSetInformation = (pHeapSetInformation)::GetProcAddress(
+		::GetModuleHandleW(L"Kernel32.dll"), "HeapSetInformation");
+	if (HeapSetInformation != nullptr)
+	{
+		HeapSetInformation(::GetProcessHeap(), HeapEnableTerminationOnCorruption, NULL, 0);
+	}
+#endif
+}
+
+
+#ifndef PROCESS_DEP_ENABLE
+#define PROCESS_DEP_ENABLE 0x00000001
+#endif
+
+void CWinUtils::EnforceDEP()
+{
+#ifndef _WIN64
+	// Explicitly activate DEP, only necessary on 32 bit.
+	// http://msdn.microsoft.com/en-us/library/bb736299%28VS.85%29.aspx
+	typedef BOOL(WINAPI *pSetProcessDEPPolicy)(DWORD);
+	pSetProcessDEPPolicy SetProcessDEPPolicy = (pSetProcessDEPPolicy)::GetProcAddress(
+		::GetModuleHandleW(L"Kernel32.dll"), "SetProcessDEPPolicy");
+	if (SetProcessDEPPolicy != nullptr)
+	{
+		SetProcessDEPPolicy(PROCESS_DEP_ENABLE);
+	}
+#endif
+}
+
+
 bool CWinUtils::CreateFolderPath(const std::wstring& a_path)
 {
 	int r = ::SHCreateDirectoryExW(0, a_path.c_str(), NULL);

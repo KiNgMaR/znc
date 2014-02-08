@@ -26,7 +26,13 @@ class ZNC_API CWinUtils
 {
 public:
 	static bool WinVerAtLeast(DWORD dwMajor, DWORD dwMinor, WORD dwServicePack = -1);
+
 	static bool CreateFolderPath(const std::wstring& a_path);
+
 	static std::wstring GetExePath();
 	static std::wstring GetExeDir();
+
+	static void HardenDLLSearchPath();
+	static void HardenHeap();
+	static void EnforceDEP();
 };
