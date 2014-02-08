@@ -1,0 +1,36 @@
+// COMServiceControl.idl : IDL source for COMServiceControl
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (COMServiceControl.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(B2E93418-924E-4DFC-A110-46473991B05F),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IServiceControlSTA : IDispatch{
+	[id(1), helpstring("Starts the Windows Service with the given name")] HRESULT DoStartService([in] BSTR bStrServiceName);
+	[id(2), helpstring("Stops the Windows Service with the given name.")] HRESULT DoStopService([in] BSTR bStrServiceName);
+};
+[
+	uuid(5509E306-44B7-4103-BFC6-8788159F0FCF),
+	version(1.0),
+]
+library COMServiceControlLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(DC2BF05E-2451-435E-A24C-1B9BA804B5F0)		
+	]
+	coclass ServiceControlSTA
+	{
+		[default] interface IServiceControlSTA;
+	};
+};
+

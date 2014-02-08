@@ -1,0 +1,16 @@
+HKCR
+{
+	NoRemove CLSID
+	{
+		ForceRemove {DC2BF05E-2451-435E-A24C-1B9BA804B5F0} = s 'ServiceControlSTA Class'
+		{
+			ForceRemove Programmable
+			LocalServer32 = s '%MODULE%'
+			{
+				val ServerExecutable = s '%MODULE_RAW%'
+			}
+			TypeLib = s '{5509E306-44B7-4103-BFC6-8788159F0FCF}'
+			Version = s '1.0'
+		}
+	}
+}
