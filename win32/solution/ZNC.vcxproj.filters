@@ -206,5 +206,8 @@
     <ClInclude Include="..\platform\znc_msvc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\platform\znc_msvc_shared.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

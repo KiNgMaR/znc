@@ -22,6 +22,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZNC_Service", "ZNC_Service.
 		{3C1FBC79-7578-4B6E-85F4-C78EF02A63D1} = {3C1FBC79-7578-4B6E-85F4-C78EF02A63D1}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZNC_Tray", "ZNC_Tray.vcxproj", "{121AA02E-2265-442F-81F3-D8884986327E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -92,6 +94,18 @@ Global
 		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Release|Win32.Build.0 = Release|Win32
 		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Release|x64.ActiveCfg = Release|x64
 		{494FDDEC-6BF4-4612-892E-E54722FF3664}.Release|x64.Build.0 = Release|x64
+		{121AA02E-2265-442F-81F3-D8884986327E}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{121AA02E-2265-442F-81F3-D8884986327E}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{121AA02E-2265-442F-81F3-D8884986327E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{121AA02E-2265-442F-81F3-D8884986327E}.Debug|Win32.Build.0 = Debug|Win32
+		{121AA02E-2265-442F-81F3-D8884986327E}.Debug|x64.ActiveCfg = Debug|x64
+		{121AA02E-2265-442F-81F3-D8884986327E}.Debug|x64.Build.0 = Debug|x64
+		{121AA02E-2265-442F-81F3-D8884986327E}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{121AA02E-2265-442F-81F3-D8884986327E}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{121AA02E-2265-442F-81F3-D8884986327E}.Release|Win32.ActiveCfg = Release|Win32
+		{121AA02E-2265-442F-81F3-D8884986327E}.Release|Win32.Build.0 = Release|Win32
+		{121AA02E-2265-442F-81F3-D8884986327E}.Release|x64.ActiveCfg = Release|x64
+		{121AA02E-2265-442F-81F3-D8884986327E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

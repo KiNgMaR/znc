@@ -240,6 +240,7 @@
     <ClInclude Include="..\..\include\znc\ZNCDebug.h" />
     <ClInclude Include="..\..\include\znc\ZNCString.h" />
     <ClInclude Include="..\platform\znc_msvc.h" />
+    <ClInclude Include="..\platform\znc_msvc_shared.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
