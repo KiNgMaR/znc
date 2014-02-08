@@ -238,7 +238,7 @@ void CTrayIcon::OnWmTrayIconEvent(WPARAM wParam, LPARAM lParam)
 }
 
 
-#define _APPENDMENU(FLAG, CMD, TXT) InsertMenu(hMenu, -1, MF_BYPOSITION | FLAG, CMD, TXT);
+#define _APPENDMENU(FLAG, CMD, TXT) InsertMenu(hMenu, -1, MF_BYPOSITION | FLAG, CMD, TXT)
 
 void CTrayIcon::ShowContextMenu(LPPOINT pt)
 {
