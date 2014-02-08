@@ -5,6 +5,7 @@
 #define SourceFileDir64 "..\build\x64-Release"
 #define SourceCodeDir "..\.."
 #define COMServiceControlCLSID "{{DC2BF05E-2451-435E-A24C-1B9BA804B5F0}"
+#define COMServiceControlPreCompiledDir "C:\Dev\COMServiceControl_Signed"
 #define MSVCRedist GetEnv('VS120COMNTOOLS') + "..\..\VC\redist"
 
 [Setup]
@@ -77,11 +78,11 @@ Source: "{#SourceFileDir32}\ZNC_Service.exe"; DestDir: "{app}"; Flags: ignorever
 Source: "{#SourceFileDir64}\ZNC_Service.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: service
 Source: "{#SourceFileDir32}\znc_service_provider.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: service
 Source: "{#SourceFileDir64}\znc_service_provider.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: service
-;Source: "{#SourceFileDir32}\ZNC_Tray.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: service/tray
-;Source: "{#SourceFileDir64}\ZNC_Tray.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: service/tray
+Source: "{#SourceFileDir32}\ZNC_Tray.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: service/tray
+Source: "{#SourceFileDir64}\ZNC_Tray.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: service/tray
 
-;Source: "{#SourceFileDir32}\COMServiceControl.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: service/tray
-;Source: "{#SourceFileDir64}\COMServiceControl.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: service/tray
+Source: "{#COMServiceControlPreCompiledDir}\Release\COMServiceControl.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: service/tray
+Source: "{#COMServiceControlPreCompiledDir}\x64\Release\COMServiceControl.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: service/tray
 
 #include "..\solution\modules\ModulesList.iss"
 
@@ -95,13 +96,13 @@ Source: "{#SourceCodeDir}\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"
 Source: "{#SourceCodeDir}\README.md"; DestDir: "{app}"; DestName: "README-ZNC.txt"
 
 [Icons]
-;Name: "{group}\ZNC Service Control"; Filename: "{app}\ZNC_Tray.exe"; Components: service/tray
+Name: "{group}\ZNC Service Control"; Filename: "{app}\ZNC_Tray.exe"; Components: service/tray
 Name: "{group}\ZNC (CLI)"; Filename: "{app}\ZNC_CLI.exe"
 Name: "{group}\More\{cm:ProgramOnTheWeb,ZNC-MSVC}"; Filename: "http://znc-msvc.googlecode.com/"; Flags: excludefromshowinnewinstall
 Name: "{group}\More\{cm:ProgramOnTheWeb,ZNC}"; Filename: "http://znc.in/"; Flags: excludefromshowinnewinstall
 Name: "{group}\More\{cm:UninstallProgram,ZNC}"; Filename: "{uninstallexe}"; Flags: excludefromshowinnewinstall
-;Name: "{userdesktop}\ZNC Service Control"; Filename: "{app}\ZNC_Tray.exe"; Components: service/tray/desktop
-;Name: "{userstartup}\ZNC Service Control"; Filename: "{app}\ZNC_Tray.exe"; Parameters: "--autorun"; Components: service/tray/autorun
+Name: "{userdesktop}\ZNC Service Control"; Filename: "{app}\ZNC_Tray.exe"; Components: service/tray/desktop
+Name: "{userstartup}\ZNC Service Control"; Filename: "{app}\ZNC_Tray.exe"; Parameters: "--autorun"; Components: service/tray/autorun
 
 [Registry]
 Root: HKLM; Subkey: "SOFTWARE\ZNC"; ValueType: string; ValueName: "ServiceDataDir"; ValueData: "{code:GetServiceDataDir}"; Components: service; Flags: uninsdeletekey
@@ -113,7 +114,7 @@ Name: "{commonappdata}\ZNC"
 [Run]
 Filename: "{app}\ZNC_Service.exe"; Parameters: "--install"; Flags: runhidden; Components: service and service/autorun
 Filename: "{app}\ZNC_Service.exe"; Parameters: "--install --manual"; Flags: runhidden; Components: service and not service/autorun
-;Filename: "{app}\COMServiceControl.exe"; Parameters: "/RegServer"; Flags: runhidden; Components: service/tray
+Filename: "{app}\COMServiceControl.exe"; Parameters: "/RegServer"; Flags: runhidden; Components: service/tray
 ; can't use [Registry] because this needs to be done *after* /RegServer (same during uninstall where it needs to be done before /UnRegServer):
 Filename: "{cmd}"; Parameters: "/c reg add HKLM\SOFTWARE\Classes\CLSID\{#COMServiceControlCLSID} /v LocalizedString /t REG_EXPAND_SZ /d ""@{app}\COMServiceControl.exe,-101"" /f"; Flags: runhidden; Components: service/tray
 Filename: "{cmd}"; Parameters: "/c reg add HKLM\SOFTWARE\Classes\CLSID\{#COMServiceControlCLSID}\Elevation /v Enabled /t REG_DWORD /d 1 /f"; Flags: runhidden; Components: service/tray
@@ -125,7 +126,7 @@ Filename: "{cmd}"; parameters: "/c net stop ZNC"; Flags: runhidden; Components: 
 Filename: "{app}\ZNC_Service.exe"; Flags: runhidden; Parameters: "--uninstall"; Components: service
 Filename: "{cmd}"; Parameters: "/c reg delete HKLM\SOFTWARE\Classes\CLSID\{#COMServiceControlCLSID} /v LocalizedString /f"; Flags: runhidden; Components: service/tray
 Filename: "{cmd}"; Parameters: "/c reg delete HKLM\SOFTWARE\Classes\CLSID\{#COMServiceControlCLSID}\Elevation /f"; Flags: runhidden; Components: service/tray
-;Filename: "{app}\COMServiceControl.exe"; Parameters: "/UnRegServer"; Flags: runhidden; Components: service/tray
+Filename: "{app}\COMServiceControl.exe"; Parameters: "/UnRegServer"; Flags: runhidden; Components: service/tray
 
 [UninstallDelete]
 Type: files; Name: "{commonappdata}\ZNC\Service.*.log"
