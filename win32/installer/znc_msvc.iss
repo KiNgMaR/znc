@@ -48,10 +48,10 @@ Name: "modules"; Description: "Modules"; Types: full compact
 Name: "modules/core"; Description: "Core Modules"; Types: full compact
 Name: "modules/extra_win32"; Description: "Useful third-party Modules"; Types: full
 Name: "webskins"; Description: "Web Interface Themes"; Types: full compact custom; Flags: fixed
-Name: "webskins\default"; Description: "Default Theme"; Types: full compact custom; Flags: fixed
-Name: "webskins\darkclouds"; Description: "Dark Clouds Theme"; Types: full
-Name: "webskins\forest"; Description: "Forest Theme"; Types: full
-Name: "webskins\ice"; Description: "Ice Theme"; Types: full
+Name: "webskins/default"; Description: "Default Theme"; Types: full compact custom; Flags: fixed
+Name: "webskins/darkclouds"; Description: "Dark Clouds Theme"; Types: full
+Name: "webskins/forest"; Description: "Forest Theme"; Types: full
+Name: "webskins/ice"; Description: "Ice Theme"; Types: full
 
 [Files]
 Source: "{#SourceFileDir32}\ZNC.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode
@@ -92,9 +92,9 @@ Source: "{#COMServiceControlPreCompiledDir}\x64\Release\COMServiceControl.exe"; 
 #include "..\solution\modules\ModulesList.iss"
 
 Source: "{#SourceCodeDir}\webskins\_default_\*"; DestDir: "{app}\webskins\_default_"; Excludes: ".svn"; Flags: recursesubdirs
-Source: "{#SourceCodeDir}\webskins\dark-clouds\*"; DestDir: "{app}\webskins\dark-clouds"; Excludes: ".svn"; Flags: recursesubdirs; Components: webskins\darkclouds
-Source: "{#SourceCodeDir}\webskins\forest\*"; DestDir: "{app}\webskins\forest"; Excludes: ".svn"; Flags: recursesubdirs; Components: webskins\forest
-Source: "{#SourceCodeDir}\webskins\ice\*"; DestDir: "{app}\webskins\ice"; Excludes: ".svn"; Flags: recursesubdirs; Components: webskins\ice
+Source: "{#SourceCodeDir}\webskins\dark-clouds\*"; DestDir: "{app}\webskins\dark-clouds"; Excludes: ".svn"; Flags: recursesubdirs; Components: webskins/darkclouds
+Source: "{#SourceCodeDir}\webskins\forest\*"; DestDir: "{app}\webskins\forest"; Excludes: ".svn"; Flags: recursesubdirs; Components: webskins/forest
+Source: "{#SourceCodeDir}\webskins\ice\*"; DestDir: "{app}\webskins\ice"; Excludes: ".svn"; Flags: recursesubdirs; Components: webskins/ice
 
 Source: "{#SourceCodeDir}\NOTICE"; DestDir: "{app}"; DestName: "NOTICE.txt"
 Source: "{#SourceCodeDir}\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"
