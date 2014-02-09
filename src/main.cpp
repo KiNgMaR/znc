@@ -106,6 +106,7 @@ static bool s_bMainLoop = true;
 #ifdef WIN_MSVC
 static BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType) {
 	if (dwCtrlType == CTRL_C_EVENT || dwCtrlType == CTRL_BREAK_EVENT) {
+		CUtils::PrintMessage("Received shutdown signal...");
 		s_bMainLoop = false;
 		return TRUE;
 	}
