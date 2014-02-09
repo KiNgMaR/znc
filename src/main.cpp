@@ -121,10 +121,20 @@ int main(int argc, char** argv) {
 	}
 	else
 	{
+		CUtils::SeedPRNG();
+
 		// console window setup:
 
-		const CString _sAnsiConPath = CDir::ChangeDir("./", "") + "\\ansicon.dll";
-		::LoadLibrary(_sAnsiConPath.c_str());
+		const CString sAnsiConPath = CDir::ChangeDir("./", "") + "\\ansicon.dll";
+		if (::LoadLibrary(sAnsiConPath.c_str()) == NULL)
+		{
+			// disable color codes if ansicon could not be loaded:
+			CDebug::SetStdoutIsTTY(false);
+		}
+		else
+		{
+			CDebug::SetStdoutIsTTY(isatty(1) != 0);
+		}
 
 		const CString sConsoleTitle = "ZNC " + CZNC::GetVersion();
 		::SetConsoleTitle(sConsoleTitle.c_str());
@@ -139,9 +149,6 @@ int main(int argc, char** argv) {
 		}
 	}
 #endif /* _WIN32 */
-
-	CUtils::SeedPRNG();
-	CDebug::SetStdoutIsTTY(isatty(1) != 0);
 
 	int iArg, iOptIndex = -1;
 	bool bMakeConf = false;
