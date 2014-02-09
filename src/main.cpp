@@ -104,8 +104,7 @@ static void signalHandler(int sig) {
 static bool s_bMainLoop = true;
 
 #ifdef WIN_MSVC
-static BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType)
-{
+static BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType) {
 	if (dwCtrlType == CTRL_C_EVENT || dwCtrlType == CTRL_BREAK_EVENT) {
 		s_bMainLoop = false;
 		return TRUE;
@@ -130,25 +129,19 @@ int main(int argc, char** argv) {
 	CString sDataDir = "";
 
 #ifdef WIN_MSVC
-	if(CZNC::GetCoreDLLVersion() != VERSION) // check must not be in DLL for obvious reasons
-	{
+	if(CZNC::GetCoreDLLVersion() != VERSION) { // check must not be in DLL for obvious reasons
 		CUtils::PrintError("The version number in ZNC.dll doesn't match. Aborting.");
 		return 1;
-	}
-	else
-	{
+	} else {
 		CUtils::SeedPRNG();
 
 		// console window setup:
 
 		const CString sAnsiConPath = CDir::ChangeDir("./", "") + "\\ansicon.dll";
-		if (::LoadLibrary(sAnsiConPath.c_str()) == NULL)
-		{
+		if (::LoadLibrary(sAnsiConPath.c_str()) == NULL) {
 			// disable color codes if ansicon could not be loaded:
 			CDebug::SetStdoutIsTTY(false);
-		}
-		else
-		{
+		} else {
 			CDebug::SetStdoutIsTTY(isatty(1) != 0);
 		}
 
@@ -159,8 +152,7 @@ int main(int argc, char** argv) {
 
 		int ret = CZNCWin32Helpers::RuntimeStartUp();
 
-		if (ret != 0)
-		{
+		if (ret != 0) {
 			return ret;
 		}
 	}

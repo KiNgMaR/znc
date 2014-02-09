@@ -195,8 +195,10 @@ void CZNC::Loop(bool& bKeepRunning) {
 		// always react within 1 second:
 		m_Manager.DynamicSelectLoop(100 * 1000, 1000 * 1000);
 	}
+
 	Broadcast("ZNC has been requested to shut down!");
-	if (!CZNC::Get().WriteConfig())	{
+
+	if (!WriteConfig())	{
 		CUtils::PrintError("Writing config file to disk failed! We are forced to continue shutting down anyway.");
 	}
 }
