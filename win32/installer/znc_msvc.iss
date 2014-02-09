@@ -57,6 +57,9 @@ Source: "{#SourceFileDir64}\ZNC.dll"; DestDir: "{app}"; Flags: ignoreversion; Ch
 Source: "{#SourceFileDir32}\ZNC_CLI.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode
 Source: "{#SourceFileDir64}\ZNC_CLI.exe"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode
 
+Source: "{#SourceFileDir32}\ansicon.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode
+Source: "{#SourceFileDir64}\ansicon.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode
+
 Source: "{#MSVCRedist}\x86\Microsoft.VC120.CRT\msvcp120.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode
 Source: "{#MSVCRedist}\x64\Microsoft.VC120.CRT\msvcp120.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode
 Source: "{#MSVCRedist}\x86\Microsoft.VC120.CRT\msvcr120.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: not Is64BitInstallMode
@@ -97,7 +100,8 @@ Source: "{#SourceCodeDir}\README.md"; DestDir: "{app}"; DestName: "README-ZNC.tx
 
 [Icons]
 Name: "{group}\ZNC Service Control"; Filename: "{app}\ZNC_Tray.exe"; Components: service/tray
-Name: "{group}\ZNC (CLI)"; Filename: "{app}\ZNC_CLI.exe"
+Name: "{group}\ZNC - Create Config File"; Filename: "{app}\ZNC_CLI.exe"; Parameters: "--makeconf"
+Name: "{group}\ZNC (Command Line)"; Filename: "{cmd}"; Parameters: "/k ""cd ^""{app}^"" && ZNC_CLI.exe --help"""
 Name: "{group}\More\{cm:ProgramOnTheWeb,ZNC-MSVC}"; Filename: "http://znc-msvc.googlecode.com/"; Flags: excludefromshowinnewinstall
 Name: "{group}\More\{cm:ProgramOnTheWeb,ZNC}"; Filename: "http://znc.in/"; Flags: excludefromshowinnewinstall
 Name: "{group}\More\{cm:UninstallProgram,ZNC}"; Filename: "{uninstallexe}"; Flags: excludefromshowinnewinstall
@@ -110,6 +114,7 @@ Root: HKLM; Subkey: "SOFTWARE\ZNC"; ValueType: string; ValueName: "ServiceDataDi
 [Dirs]
 Name: "{code:GetServiceDataDir}"
 Name: "{commonappdata}\ZNC"
+Name: "{userappdata}\ZNC"
 
 [Run]
 Filename: "{app}\ZNC_Service.exe"; Parameters: "--install"; Flags: runhidden; Components: service and service/autorun
@@ -131,6 +136,8 @@ Filename: "{app}\COMServiceControl.exe"; Parameters: "/UnRegServer"; Flags: runh
 [UninstallDelete]
 Type: files; Name: "{commonappdata}\ZNC\Service.*.log"
 Type: dirifempty; Name: "{commonappdata}\ZNC"
+Type: dirifempty; Name: "{userappdata}\ZNC\configs"
+Type: dirifempty; Name: "{userappdata}\ZNC"
 
 #include "service_data_dir.iss"
 #include "firewall.iss"
