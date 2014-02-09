@@ -141,7 +141,10 @@ void CServiceHelperMod::OnModCommand(const CString& sLine)
 
 CServiceHelperMod::~CServiceHelperMod()
 {
-	delete m_pServer;
+	if (m_pServer)
+	{
+		m_pServer->Close(); // memory is freed by CSocketManager
+	}
 }
 
 GLOBALMODULEDEFS(CServiceHelperMod, "Communication helper for the ZNC Windows service and GUI.")
