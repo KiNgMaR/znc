@@ -30,6 +30,8 @@ UninstallDisplayName=ZNC IRC Bouncer
 SignTool=kSign /d $qZNC IRC Bouncer$q /du $qhttp://znc-msvc.googlecode.com/$q $f
 WizardImageFile=compiler:WizModernImage-IS.bmp
 WizardSmallImageFile=compiler:WizModernSmallImage-IS.bmp
+; don't show component sizes, they are incorrect because Sources with Checks are not considered.
+ShowComponentSizes=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
