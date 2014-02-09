@@ -56,6 +56,7 @@ DLLS_SSL=$(MAKDIR)\awaystore.dll \
  $(MAKDIR)\crypt.dll \
  $(MAKDIR)\savebuff.dll \
  $(MAKDIR)\schat.dll \
+ $(MAKDIR)\colloquy.dll \
  $(MAKDIR)\push.dll
 
 OBJS=$(MAKDIR)\adminlog.obj \
@@ -114,5 +115,6 @@ OBJS_SSL=$(MAKDIR)\awaystore.obj \
  $(MAKDIR)\crypt.obj \
  $(MAKDIR)\savebuff.obj \
  $(MAKDIR)\schat.obj \
+ $(MAKDIR)\colloquy.obj \
  $(MAKDIR)\push.obj
 
