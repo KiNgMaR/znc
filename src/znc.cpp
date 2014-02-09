@@ -188,43 +188,62 @@ bool CZNC::HandleUserDeletion()
 	return true;
 }
 
+void CZNC::Loop(bool& bKeepRunning) {
+	while (bKeepRunning) {
+		LoopDoMaintenance();
+
+		// always react within 1 second:
+		m_Manager.DynamicSelectLoop(100 * 1000, 1000 * 1000);
+	}
+	Broadcast("ZNC has been requested to shut down!");
+	if (!CZNC::Get().WriteConfig())	{
+		CUtils::PrintError("Writing config file to disk failed! We are forced to continue shutting down anyway.");
+	}
+}
+
 void CZNC::Loop() {
 	while (true) {
-		CString sError;
-
-		switch (GetConfigState()) {
-		case ECONFIG_NEED_REHASH:
-			SetConfigState(ECONFIG_NOTHING);
-
-			if (RehashConfig(sError)) {
-				Broadcast("Rehashing succeeded", true);
-			} else {
-				Broadcast("Rehashing failed: " + sError, true);
-				Broadcast("ZNC is in some possibly inconsistent state!", true);
-			}
-			break;
-		case ECONFIG_NEED_WRITE:
-			SetConfigState(ECONFIG_NOTHING);
-
-			if (WriteConfig()) {
-				Broadcast("Writing the config succeeded", true);
-			} else {
-				Broadcast("Writing the config file failed", true);
-			}
-			break;
-		case ECONFIG_NOTHING:
-			break;
-		}
-
-		// Check for users that need to be deleted
-		if (HandleUserDeletion()) {
-			// Also remove those user(s) from the config file
-			WriteConfig();
-		}
+		LoopDoMaintenance();
 
 		// Csocket wants micro seconds
 		// 100 msec to 600 sec
 		m_Manager.DynamicSelectLoop(100 * 1000, 600 * 1000 * 1000);
+	}
+}
+
+void CZNC::LoopDoMaintenance() {
+	CString sError;
+
+	switch (GetConfigState()) {
+	case ECONFIG_NEED_REHASH:
+		SetConfigState(ECONFIG_NOTHING);
+
+		if (RehashConfig(sError)) {
+			Broadcast("Rehashing succeeded", true);
+		}
+		else {
+			Broadcast("Rehashing failed: " + sError, true);
+			Broadcast("ZNC is in some possibly inconsistent state!", true);
+		}
+		break;
+	case ECONFIG_NEED_WRITE:
+		SetConfigState(ECONFIG_NOTHING);
+
+		if (WriteConfig()) {
+			Broadcast("Writing the config succeeded", true);
+		}
+		else {
+			Broadcast("Writing the config file failed", true);
+		}
+		break;
+	case ECONFIG_NOTHING:
+		break;
+	}
+
+	// Check for users that need to be deleted
+	if (HandleUserDeletion()) {
+		// Also remove those user(s) from the config file
+		WriteConfig();
 	}
 }
 

@@ -45,6 +45,7 @@ public:
 
 	void DeleteUsers();
 	void Loop();
+	void Loop(bool& bKeepRunning);
 	bool WritePidFile(int iPid);
 	bool DeletePidFile();
 	bool WaitForChildLock();
@@ -192,6 +193,7 @@ private:
 	CString MakeConfigHeader();
 	bool AddListener(const CString& sLine, CString& sError);
 	bool AddListener(CConfig* pConfig, CString& sError);
+	void LoopDoMaintenance();
 
 protected:
 	time_t                 m_TimeStarted;
