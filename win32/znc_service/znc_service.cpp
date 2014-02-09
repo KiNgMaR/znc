@@ -86,6 +86,8 @@ DWORD CZNCWindowsService::Init()
 	}
 
 #if 0
+	// this is currently handled in CZNC's constructor which is a problem because this
+	// WSA and OpenSSL initialization is not re-entrant.
 	if (!InitCsocket())
 	{
 		::ReportEvent(hEventLog, EVENTLOG_ERROR_TYPE, INIT_CATEGORY, MSG_CSOCKET_FAILED, NULL, 0, 0, NULL, NULL);
@@ -160,8 +162,7 @@ DWORD CZNCWindowsService::Loop()
 
 	try
 	{
-		// pZNC->Loop(&bMainLoop);
-		pZNC->Loop();
+		pZNC->Loop(bMainLoop);
 	}
 	catch (CException e)
 	{
