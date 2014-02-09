@@ -23,11 +23,17 @@ class ZNC_API CZNCWin32Helpers
 public:
 	static int RuntimeStartUp();
 
-	static bool IsWindowService() {
+	static bool IsWindowsService() {
 		return ms_serviceMode;
 	}
 	static void SetWindowsServiceMode() {
 		ms_serviceMode = true;
+	}
+
+	// this is the port that is used for IPC between ZNC_Tray
+	// and ZNC_Service...
+	static unsigned short GetServiceControlPort() {
+		return 962;
 	}
 
 private:

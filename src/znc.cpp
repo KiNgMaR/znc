@@ -534,6 +534,13 @@ bool CZNC::WriteConfig() {
 	for (unsigned int a = 0; a < Mods.size(); a++) {
 		CString sName = Mods[a]->GetModName();
 		CString sArgs = Mods[a]->GetArgs();
+		
+#ifdef WIN_MSVC
+		if (sName == "win32_service_helper")
+		{
+			continue;
+		}
+#endif
 
 		if (!sArgs.empty()) {
 			sArgs = " " + sArgs.FirstLine();
@@ -1185,6 +1192,21 @@ bool CZNC::DoRehash(CString& sError)
 	VCString vsList;
 	VCString::const_iterator vit;
 	config.FindStringVector("loadmodule", vsList);
+#ifdef _WIN32
+#ifndef _DEBUG
+	if (CZNCWin32Helpers::IsWindowsService() &&
+#else
+	if (
+#endif
+		std::find(vsList.begin(), vsList.end(), "win32_service_helper") == vsList.end())
+	{
+		CString sModPath, sDataPath;
+		if (CModules::FindModPath("win32_service_helper", sModPath, sDataPath) != NULL)
+		{
+			vsList.push_back("win32_service_helper");
+		}
+	}
+#endif
 	for (vit = vsList.begin(); vit != vsList.end(); ++vit) {
 		CString sModName = vit->Token(0);
 		CString sArgs = vit->Token(1, true);

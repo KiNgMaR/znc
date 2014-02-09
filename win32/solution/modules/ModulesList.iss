@@ -121,3 +121,5 @@ Source: "{#SourceFileDir32}\modules\motdfile.dll"; DestDir: "{app}\modules"; Fla
 Source: "{#SourceFileDir64}\modules\motdfile.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: modules/extra_win32
 Source: "{#SourceFileDir32}\modules\push.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: not Is64BitInstallMode; Components: modules/extra_win32
 Source: "{#SourceFileDir64}\modules\push.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: Is64BitInstallMode; Components: modules/extra_win32
+Source: "{#SourceFileDir32}\modules\win32_service_helper.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: not Is64BitInstallMode; 
+Source: "{#SourceFileDir64}\modules\win32_service_helper.dll"; DestDir: "{app}\modules"; Flags: ignoreversion; Check: Is64BitInstallMode; 

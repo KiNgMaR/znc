@@ -47,7 +47,8 @@ DLLS=$(MAKDIR)\adminlog.dll \
  $(MAKDIR)\webadmin.dll \
  $(MAKDIR)\antiidle.dll \
  $(MAKDIR)\identserver.dll \
- $(MAKDIR)\motdfile.dll
+ $(MAKDIR)\motdfile.dll \
+ $(MAKDIR)\win32_service_helper.dll
 
 DLLS_SSL=$(MAKDIR)\awaystore.dll \
  $(MAKDIR)\cert.dll \
@@ -104,7 +105,8 @@ OBJS=$(MAKDIR)\adminlog.obj \
  $(MAKDIR)\webadmin.obj \
  $(MAKDIR)\antiidle.obj \
  $(MAKDIR)\identserver.obj \
- $(MAKDIR)\motdfile.obj
+ $(MAKDIR)\motdfile.obj \
+ $(MAKDIR)\win32_service_helper.obj
 
 OBJS_SSL=$(MAKDIR)\awaystore.obj \
  $(MAKDIR)\cert.obj \
