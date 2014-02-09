@@ -98,7 +98,23 @@ static void signalHandler(int sig) {
 		CUtils::PrintMessage("WTF? Signal handler called for a signal it doesn't know?");
 	}
 }
-#endif /* HAVE_SIGNALS */
+#else
+
+// false => exit main select() loop.
+static bool s_bMainLoop = true;
+
+#ifdef WIN_MSVC
+static BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType)
+{
+	if (dwCtrlType == CTRL_C_EVENT || dwCtrlType == CTRL_BREAK_EVENT) {
+		s_bMainLoop = false;
+		return TRUE;
+	}
+	return FALSE;
+}
+#endif /* WIN_MSVC */
+
+#endif /* !HAVE_SIGNALS */
 
 static bool isRoot() {
 #ifndef _WIN32
@@ -113,7 +129,7 @@ int main(int argc, char** argv) {
 	CString sConfig;
 	CString sDataDir = "";
 
-#ifdef _WIN32
+#ifdef WIN_MSVC
 	if(CZNC::GetCoreDLLVersion() != VERSION) // check must not be in DLL for obvious reasons
 	{
 		CUtils::PrintError("The version number in ZNC.dll doesn't match. Aborting.");
@@ -139,7 +155,7 @@ int main(int argc, char** argv) {
 		const CString sConsoleTitle = "ZNC " + CZNC::GetVersion();
 		::SetConsoleTitle(sConsoleTitle.c_str());
 
-		// *TODO* register Ctrl+C handler with SetConsoleCtrlHandler
+		::SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
 
 		int ret = CZNCWin32Helpers::RuntimeStartUp();
 
@@ -148,7 +164,10 @@ int main(int argc, char** argv) {
 			return ret;
 		}
 	}
-#endif /* _WIN32 */
+#else
+	CUtils::SeedPRNG();
+	CDebug::SetStdoutIsTTY(isatty(1) != 0);
+#endif
 
 	int iArg, iOptIndex = -1;
 	bool bMakeConf = false;
@@ -379,7 +398,11 @@ int main(int argc, char** argv) {
 	int iRet = 0;
 
 	try {
+#ifdef HAVE_SIGNALS
 		pZNC->Loop();
+#else
+		pZNC->Loop(s_bMainLoop);
+#endif
 	} catch (const CException& e) {
 		switch (e.GetType()) {
 			case CException::EX_Shutdown:
