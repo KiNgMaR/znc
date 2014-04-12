@@ -103,7 +103,8 @@ Source: "{#SourceCodeDir}\README.md"; DestDir: "{app}"; DestName: "README-ZNC.tx
 [Icons]
 Name: "{group}\ZNC Service Control"; Filename: "{app}\ZNC_Tray.exe"; Components: service/tray
 Name: "{group}\ZNC - Create Config File"; Filename: "{app}\ZNC_CLI.exe"; Parameters: "--makeconf"
-Name: "{group}\ZNC (Command Line)"; Filename: "{cmd}"; Parameters: "/k ""cd ^""{app}^"" && ZNC_CLI.exe --help"""
+Name: "{group}\ZNC - Run On Command Line"; Filename: "{app}\ZNC_CLI.exe"
+Name: "{group}\ZNC (Command Line Help)"; Filename: "{cmd}"; Parameters: "/k ""cd ^""{app}^"" && ZNC_CLI.exe --help"""
 Name: "{group}\More\{cm:ProgramOnTheWeb,ZNC-MSVC}"; Filename: "http://znc-msvc.googlecode.com/"; Flags: excludefromshowinnewinstall
 Name: "{group}\More\{cm:ProgramOnTheWeb,ZNC}"; Filename: "http://znc.in/"; Flags: excludefromshowinnewinstall
 Name: "{group}\More\{cm:UninstallProgram,ZNC}"; Filename: "{uninstallexe}"; Flags: excludefromshowinnewinstall
