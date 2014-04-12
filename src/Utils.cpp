@@ -430,6 +430,22 @@ CString CUtils::FormatTime(time_t t, const CString& sFormat, const CString& sTim
 	return s;
 }
 
+CString CUtils::FormatServerTime(const timeval& tv) {
+	CString s_msec(tv.tv_usec / 1000);
+	while (s_msec.length() < 3) {
+		s_msec = "0" + s_msec;
+	}
+	// TODO support leap seconds properly
+	// TODO support message-tags properly
+	struct tm stm;
+	memset(&stm, 0, sizeof(stm));
+	const time_t secs = tv.tv_sec; // OpenBSD has tv_sec as int, so explicitly convert it to time_t to make gmtime_r() happy
+	gmtime_r(&secs, &stm);
+	char sTime[20] = {};
+	strftime(sTime, sizeof(sTime), "%Y-%m-%dT%H:%M:%S", &stm);
+	return CString(sTime) + "." + s_msec + "Z";
+}
+
 namespace {
 	void FillTimezones(const CString& sPath, SCString& result, const CString& sPrefix) {
 		CDir Dir;
@@ -534,6 +550,37 @@ SCString CUtils::GetTimezones() {
 }
 
 #endif /* _WIN32 */
+
+MCString CUtils::GetMessageTags(const CString& sLine) {
+	if (sLine.StartsWith("@")) {
+		VCString vsTags;
+		sLine.Token(0).TrimPrefix_n("@").Split(";", vsTags, false);
+
+		MCString mssTags;
+		for (VCString::const_iterator it = vsTags.begin(); it != vsTags.end(); ++it) {
+			mssTags[it->Token(0, false, "=", true)] = it->Token(1, true, "=", true);
+		}
+		return mssTags;
+	}
+	return MCString::EmptyMap;
+}
+
+void CUtils::SetMessageTags(CString& sLine, const MCString& mssTags) {
+	if (sLine.StartsWith("@")) {
+		sLine.LeftChomp(sLine.Token(0).length() + 1);
+	}
+
+	if (!mssTags.empty()) {
+		CString sTags;
+		for (MCString::const_iterator it = mssTags.begin(); it != mssTags.end(); ++it) {
+			if (!sTags.empty()) {
+				sTags += ";";
+			}
+			sTags += it->first + "=" + it->second;
+		}
+		sLine = "@" + sTags + " " + sLine;
+	}
+}
 
 bool CTable::AddColumn(const CString& sName) {
 	for (unsigned int a = 0; a < m_vsHeaders.size(); a++) {

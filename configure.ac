@@ -284,6 +284,7 @@ fi
 
 # ----- Check for openssl
 
+SSL_TEXT="$SSL"
 if test "x$SSL" != "xno"; then
 	if test -n "$OPENSSL"; then
 		appendLib -L${OPENSSL}/lib
@@ -299,8 +300,8 @@ if test "x$SSL" != "xno"; then
 	], [
 		# Don't reorder this!
 		# On some arches libssl depends on libcrypto without linking to it :(
-		AC_CHECK_LIB( crypto, BIO_new,, SSL=no )
-		AC_CHECK_LIB( ssl, SSL_shutdown,, SSL=no )
+		AC_CHECK_LIB( crypto, BIO_new,, SSL=no ; SSL_TEXT="no (libcrypt not found)" )
+		AC_CHECK_LIB( ssl, SSL_shutdown,, SSL=no ; SSL_TEXT="no (libssl not found)" )
 	])
 
 	if test "x$SSL" != "xno"; then
@@ -321,6 +322,7 @@ if test "x$SSL" != "xno"; then
 		], [
 			AC_MSG_RESULT([no])
 			SSL=no
+			SSL_TEXT="no (openssl not usable)"
 		])
 		
 	fi
@@ -333,14 +335,17 @@ if test "x$SSL" != "xno"; then
 	else
 		AC_DEFINE([HAVE_LIBSSL], [1], [Define if openssl is enabled])
 		SSL=yes
+		SSL_TEXT=yes
 	fi
 else
 	NOSSL=1
+	SSL_TEXT="no (explicitly disabled)"
 fi
 
 # ----- Check for zlib
 
 old_ZLIB="$ZLIB"
+ZLIB_TEXT="$ZLIB"
 if test "x$ZLIB" != "xno"; then
 	AC_MSG_CHECKING([whether zlib is usable])
 	my_saved_LIBS="$LIBS"
@@ -355,9 +360,11 @@ if test "x$ZLIB" != "xno"; then
 		], [
 			AC_MSG_RESULT([yes])
 			ZLIB=yes
+			ZLIB_TEXT=yes
 		], [
 			AC_MSG_RESULT([no])
 			ZLIB=no
+			ZLIB_TEXT="no (libz not found)"
 	])
 	if test "x$ZLIB" = "xno"; then
 		ZNC_AUTO_FAIL([ZLIB],
@@ -412,7 +419,12 @@ fi
 if test "x$PERL" != xno -o "x$PYTHON" != xno; then
 	old_USESWIG="$USESWIG"
 	if test "x$USESWIG" != "xno"; then
-		AC_PROG_SWIG([2.0.8])
+		if test -z "$ISDARWIN"; then
+			AC_PROG_SWIG([2.0.8])
+		else
+			# Old SWIG doesn't like libc++, see https://github.com/swig/swig/issues/73
+			AC_PROG_SWIG([2.0.12])
+		fi
 		test -z "$SWIG" && USESWIG=no
 		if test "x$USESWIG" = xno -a "x$old_USESWIG" = yes; then
 			AC_MSG_ERROR([Could not found appropriate SWIG installation. Check config.log for details.])
@@ -440,6 +452,7 @@ else
 	USESWIG='not needed'
 fi
 
+PERL_TEXT="$PERL"
 if test "x$PERL" != "xno"; then
 	old_PERL="$PERL"
 	AC_PATH_PROG([PERL_BINARY], [perl], [])
@@ -448,10 +461,11 @@ if test "x$PERL" != "xno"; then
 		appendLD `$PERL_BINARY -MExtUtils::Embed -e ccopts -e ldopts`
 		AC_CHECK_LIB(perl, perl_alloc,
 			     [: No, we do not want autoconf to do sth automatically],
-			     PERL="no")
+			     PERL="no" ; PERL_TEXT="no (libperl not found)")
 		LDFLAGS="$my_saved_LDFLAGS"
 	else
 		PERL="no"
+		PERL_TEXT="no (perl binary not found or too old)"
 	fi
 	if test "x$PERL" = "xno"; then
 		ZNC_AUTO_FAIL([PERL],
@@ -460,9 +474,11 @@ if test "x$PERL" != "xno"; then
 		PERL_BINARY=""
 	else
 		PERL="yes"
+		PERL_TEXT="yes"
 	fi
 fi
 
+PYTHON_TEXT="$PYTHON"
 if test "x$PYTHON" != "xno"; then
 	# Default value for just --enable-python
 	if test "x$PYTHON" = "xyes"; then
@@ -477,7 +493,7 @@ if test "x$PYTHON" != "xno"; then
 	my_saved_CXXFLAGS="$CXXFLAGS"
 	appendLib $python_LIBS
 	appendCXX $python_CFLAGS
-	AC_CHECK_FUNC([Py_Initialize], [], [PYTHON="no"])
+	AC_CHECK_FUNC([Py_Initialize], [], [PYTHON="no" ; PYTHON_TEXT="no (libpython not found)"])
 	if test "x$PYTHON" != "xno"; then
 		# Yes, modpython depends on perl.
 		AC_PATH_PROG([PERL_BINARY], [perl])
@@ -486,8 +502,6 @@ if test "x$PYTHON" != "xno"; then
 		fi
 		LIBS="$my_saved_LIBS"
 		CXXFLAGS="$my_saved_CXXFLAGS"
-	else
-		PYTHON="no"
 	fi
 	if test "x$PYTHON" = "xno"; then
 		ZNC_AUTO_FAIL([PYTHON],
@@ -496,6 +510,7 @@ if test "x$PYTHON" != "xno"; then
 		PYTHONCFG_BINARY=""
 	else
 		PYTHON="yes"
+		PYTHON_TEXT="yes"
 	fi
 fi
 
@@ -561,15 +576,26 @@ then
 	LIBS="$my_saved_LIBS"
 fi
 
-PKG_CHECK_MODULES([icu], [icu-uc], [
-	appendLib "$icu_LIBS"
-	appendCXX "$icu_CFLAGS"
-	HAVE_ICU=yes
-	AC_DEFINE([HAVE_ICU], [1], [Enable ICU library for Unicode handling])
-	AC_DEFINE([U_USING_ICU_NAMESPACE], [0], [Do not clutter global namespace with ICU C++ stuff])
-], [
-	HAVE_ICU=no
-])
+AC_ARG_ENABLE( [charset],
+	AS_HELP_STRING([--disable-charset], [disable ICU support]),
+	[HAVE_ICU="$enableval"],
+	[HAVE_ICU="auto"])
+if test "x$HAVE_ICU" != "xno"
+then
+	old_HAVE_ICU="$HAVE_ICU"
+	PKG_CHECK_MODULES([icu], [icu-uc], [
+		appendLib "$icu_LIBS"
+		appendCXX "$icu_CFLAGS"
+		HAVE_ICU=yes
+		AC_DEFINE([HAVE_ICU], [1], [Enable ICU library for Unicode handling])
+		AC_DEFINE([U_USING_ICU_NAMESPACE], [0], [Do not clutter global namespace with ICU C++ stuff])
+	], [
+		ZNC_AUTO_FAIL([HAVE_ICU],
+			      [support for charset conversion not found. Try --disable-charset.],
+			      [support for charset conversion not found and thus disabled])
+		HAVE_ICU="no (icu-uc not found via pkg-config)"
+	])
+fi
 
 AC_CACHE_CHECK([for GNU make], [ac_cv_path_GNUMAKE], [
 	AC_PATH_PROGS_FEATURE_CHECK([GNUMAKE], [make gmake], [[
@@ -585,6 +611,7 @@ GNUMAKE=`echo $ac_cv_path_GNUMAKE | $SED "s%$GNUMAKE_DIRNAME/%%"`
 
 # this is in the end, for not trying to include it when it doesn't exist yet
 appendCXX "-include znc/zncconfig.h"
+appendMod "-include znc/zncconfig.h"
 
 AC_SUBST([CXXFLAGS])
 AC_SUBST([CPPFLAGS])
@@ -611,7 +638,6 @@ AC_CONFIG_FILES([man/Makefile])
 AC_CONFIG_FILES([znc.pc])
 AC_CONFIG_FILES([znc-uninstalled.pc])
 AC_CONFIG_FILES([modules/Makefile])
-AC_CONFIG_FILES([test/Makefile])
 AC_OUTPUT
 
 echo
@@ -620,10 +646,10 @@ echo
 echo "prefix:       $prefix"
 echo "debug:        $DEBUG"
 echo "ipv6:         $IPV6"
-echo "openssl:      $SSL"
+echo "openssl:      $SSL_TEXT"
 echo "dns:          $DNS_TEXT"
-echo "perl:         $PERL"
-echo "python:       $PYTHON"
+echo "perl:         $PERL_TEXT"
+echo "python:       $PYTHON_TEXT"
 echo "swig:         $USESWIG"
 if test x"$CYRUS" = "x" ; then
 	echo "cyrus:        no"
@@ -636,7 +662,7 @@ else
 	echo "tcl:          yes"
 fi
 echo "charset:      $HAVE_ICU"
-echo "zlib:         $ZLIB"
+echo "zlib:         $ZLIB_TEXT"
 echo "run from src: $RUNFROMSOURCE"
 echo
 echo "Now you can run \"$GNUMAKE\" to compile ZNC"

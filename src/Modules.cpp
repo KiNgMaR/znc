@@ -537,13 +537,35 @@ void CModule::OnIRCConnectionError(CIRCSock *IRCSock) {}
 CModule::EModRet CModule::OnIRCRegistration(CString& sPass, CString& sNick, CString& sIdent, CString& sRealName) { return CONTINUE; }
 CModule::EModRet CModule::OnBroadcast(CString& sMessage) { return CONTINUE; }
 
-void CModule::OnChanPermission(const CNick& OpNick, const CNick& Nick, CChan& Channel, unsigned char uMode, bool bAdded, bool bNoChange) {}
-void CModule::OnOp(const CNick& OpNick, const CNick& Nick, CChan& Channel, bool bNoChange) {}
-void CModule::OnDeop(const CNick& OpNick, const CNick& Nick, CChan& Channel, bool bNoChange) {}
-void CModule::OnVoice(const CNick& OpNick, const CNick& Nick, CChan& Channel, bool bNoChange) {}
-void CModule::OnDevoice(const CNick& OpNick, const CNick& Nick, CChan& Channel, bool bNoChange) {}
-void CModule::OnRawMode(const CNick& OpNick, CChan& Channel, const CString& sModes, const CString& sArgs) {}
-void CModule::OnMode(const CNick& OpNick, CChan& Channel, char uMode, const CString& sArg, bool bAdded, bool bNoChange) {}
+void CModule::OnChanPermission2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, unsigned char uMode, bool bAdded, bool bNoChange) {
+	if (pOpNick) OnChanPermission(*pOpNick, Nick, Channel, uMode, bAdded, bNoChange);
+}
+void CModule::OnOp2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) {
+	if (pOpNick) OnOp(*pOpNick, Nick, Channel, bNoChange);
+}
+void CModule::OnDeop2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) {
+	if (pOpNick) OnDeop(*pOpNick, Nick, Channel, bNoChange);
+}
+void CModule::OnVoice2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) {
+	if (pOpNick) OnVoice(*pOpNick, Nick, Channel, bNoChange);
+}
+void CModule::OnDevoice2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) {
+	if (pOpNick) OnDevoice(*pOpNick, Nick, Channel, bNoChange);
+}
+void CModule::OnRawMode2(const CNick* pOpNick, CChan& Channel, const CString& sModes, const CString& sArgs) {
+	if (pOpNick) OnRawMode(*pOpNick, Channel, sModes, sArgs);
+}
+void CModule::OnMode2(const CNick* pOpNick, CChan& Channel, char uMode, const CString& sArg, bool bAdded, bool bNoChange) {
+	if (pOpNick) OnMode(*pOpNick, Channel, uMode, sArg, bAdded, bNoChange);
+}
+
+void CModule::OnChanPermission(const CNick& pOpNick, const CNick& Nick, CChan& Channel, unsigned char uMode, bool bAdded, bool bNoChange) {}
+void CModule::OnOp(const CNick& pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) {}
+void CModule::OnDeop(const CNick& pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) {}
+void CModule::OnVoice(const CNick& pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) {}
+void CModule::OnDevoice(const CNick& pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) {}
+void CModule::OnRawMode(const CNick& pOpNick, CChan& Channel, const CString& sModes, const CString& sArgs) {}
+void CModule::OnMode(const CNick& pOpNick, CChan& Channel, char uMode, const CString& sArg, bool bAdded, bool bNoChange) {}
 
 CModule::EModRet CModule::OnRaw(CString& sLine) { return CONTINUE; }
 
@@ -602,6 +624,9 @@ CModule::EModRet CModule::OnTopic(CNick& Nick, CChan& Channel, CString& sTopic) 
 CModule::EModRet CModule::OnTimerAutoJoin(CChan& Channel) { return CONTINUE; }
 CModule::EModRet CModule::OnAddNetwork(CIRCNetwork& Network, CString& sErrorRet) { return CONTINUE; }
 CModule::EModRet CModule::OnDeleteNetwork(CIRCNetwork& Network) { return CONTINUE; }
+
+CModule::EModRet CModule::OnSendToClient(CString& sLine, CClient& Client) { return CONTINUE; }
+CModule::EModRet CModule::OnSendToIRC(CString& sLine) { return CONTINUE; }
 
 bool CModule::OnServerCapAvailable(const CString& sCap) { return false; }
 void CModule::OnServerCapResult(const CString& sCap, bool bSuccess) {}
@@ -717,12 +742,20 @@ bool CModules::OnIRCConnectionError(CIRCSock *pIRCSock) { MODUNLOADCHK(OnIRCConn
 bool CModules::OnIRCRegistration(CString& sPass, CString& sNick, CString& sIdent, CString& sRealName) { MODHALTCHK(OnIRCRegistration(sPass, sNick, sIdent, sRealName)); }
 bool CModules::OnBroadcast(CString& sMessage) { MODHALTCHK(OnBroadcast(sMessage)); }
 bool CModules::OnIRCDisconnected() { MODUNLOADCHK(OnIRCDisconnected()); return false; }
+
+bool CModules::OnChanPermission2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, unsigned char uMode, bool bAdded, bool bNoChange) { MODUNLOADCHK(OnChanPermission2(pOpNick, Nick, Channel, uMode, bAdded, bNoChange)); return false; }
 bool CModules::OnChanPermission(const CNick& OpNick, const CNick& Nick, CChan& Channel, unsigned char uMode, bool bAdded, bool bNoChange) { MODUNLOADCHK(OnChanPermission(OpNick, Nick, Channel, uMode, bAdded, bNoChange)); return false; }
+bool CModules::OnOp2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) { MODUNLOADCHK(OnOp2(pOpNick, Nick, Channel, bNoChange)); return false; }
 bool CModules::OnOp(const CNick& OpNick, const CNick& Nick, CChan& Channel, bool bNoChange) { MODUNLOADCHK(OnOp(OpNick, Nick, Channel, bNoChange)); return false; }
+bool CModules::OnDeop2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) { MODUNLOADCHK(OnDeop2(pOpNick, Nick, Channel, bNoChange)); return false; }
 bool CModules::OnDeop(const CNick& OpNick, const CNick& Nick, CChan& Channel, bool bNoChange) { MODUNLOADCHK(OnDeop(OpNick, Nick, Channel, bNoChange)); return false; }
+bool CModules::OnVoice2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) { MODUNLOADCHK(OnVoice2(pOpNick, Nick, Channel, bNoChange)); return false; }
 bool CModules::OnVoice(const CNick& OpNick, const CNick& Nick, CChan& Channel, bool bNoChange) { MODUNLOADCHK(OnVoice(OpNick, Nick, Channel, bNoChange)); return false; }
+bool CModules::OnDevoice2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) { MODUNLOADCHK(OnDevoice2(pOpNick, Nick, Channel, bNoChange)); return false; }
 bool CModules::OnDevoice(const CNick& OpNick, const CNick& Nick, CChan& Channel, bool bNoChange) { MODUNLOADCHK(OnDevoice(OpNick, Nick, Channel, bNoChange)); return false; }
+bool CModules::OnRawMode2(const CNick* pOpNick, CChan& Channel, const CString& sModes, const CString& sArgs) { MODUNLOADCHK(OnRawMode2(pOpNick, Channel, sModes, sArgs)); return false; }
 bool CModules::OnRawMode(const CNick& OpNick, CChan& Channel, const CString& sModes, const CString& sArgs) { MODUNLOADCHK(OnRawMode(OpNick, Channel, sModes, sArgs)); return false; }
+bool CModules::OnMode2(const CNick* pOpNick, CChan& Channel, char uMode, const CString& sArg, bool bAdded, bool bNoChange) { MODUNLOADCHK(OnMode2(pOpNick, Channel, uMode, sArg, bAdded, bNoChange)); return false; }
 bool CModules::OnMode(const CNick& OpNick, CChan& Channel, char uMode, const CString& sArg, bool bAdded, bool bNoChange) { MODUNLOADCHK(OnMode(OpNick, Channel, uMode, sArg, bAdded, bNoChange)); return false; }
 bool CModules::OnRaw(CString& sLine) { MODHALTCHK(OnRaw(sLine)); }
 
@@ -762,6 +795,8 @@ bool CModules::OnTopic(CNick& Nick, CChan& Channel, CString& sTopic) { MODHALTCH
 bool CModules::OnTimerAutoJoin(CChan& Channel) { MODHALTCHK(OnTimerAutoJoin(Channel)); }
 bool CModules::OnAddNetwork(CIRCNetwork& Network, CString& sErrorRet) { MODHALTCHK(OnAddNetwork(Network, sErrorRet)); }
 bool CModules::OnDeleteNetwork(CIRCNetwork& Network) { MODHALTCHK(OnDeleteNetwork(Network)); }
+bool CModules::OnSendToClient(CString& sLine, CClient& Client) { MODHALTCHK(OnSendToClient(sLine, Client)); }
+bool CModules::OnSendToIRC(CString& sLine) { MODHALTCHK(OnSendToIRC(sLine)); }
 bool CModules::OnStatusCommand(CString& sCommand) { MODHALTCHK(OnStatusCommand(sCommand)); }
 bool CModules::OnModCommand(const CString& sCommand) { MODUNLOADCHK(OnModCommand(sCommand)); return false; }
 bool CModules::OnModNotice(const CString& sMessage) { MODUNLOADCHK(OnModNotice(sMessage)); return false; }

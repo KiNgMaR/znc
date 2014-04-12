@@ -88,7 +88,11 @@ public:
 
 	static CString CTime(time_t t, const CString& sTZ);
 	static CString FormatTime(time_t t, const CString& sFormat, const CString& sTZ);
+	static CString FormatServerTime(const timeval& tv);
 	static SCString GetTimezones();
+
+	static MCString GetMessageTags(const CString& sLine);
+	static void SetMessageTags(CString& sLine, const MCString& mssTags);
 
 #ifdef _WIN32
 	static bool Win32StringError(int iErrorCode, CString& strError);

@@ -69,13 +69,13 @@ public:
 	virtual void OnIRCConnectionError(CIRCSock *pIRCSock);
 	virtual EModRet OnIRCRegistration(CString& sPass, CString& sNick, CString& sIdent, CString& sRealName);
 	virtual EModRet OnBroadcast(CString& sMessage);
-	virtual void OnChanPermission(const CNick& OpNick, const CNick& Nick, CChan& Channel, unsigned char uMode, bool bAdded, bool bNoChange);
-	virtual void OnOp(const CNick& OpNick, const CNick& Nick, CChan& Channel, bool bNoChange);
-	virtual void OnDeop(const CNick& OpNick, const CNick& Nick, CChan& Channel, bool bNoChange);
-	virtual void OnVoice(const CNick& OpNick, const CNick& Nick, CChan& Channel, bool bNoChange);
-	virtual void OnDevoice(const CNick& OpNick, const CNick& Nick, CChan& Channel, bool bNoChange);
-	virtual void OnMode(const CNick& OpNick, CChan& Channel, char uMode, const CString& sArg, bool bAdded, bool bNoChange);
-	virtual void OnRawMode(const CNick& OpNick, CChan& Channel, const CString& sModes, const CString& sArgs);
+	virtual void OnChanPermission2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, unsigned char uMode, bool bAdded, bool bNoChange);
+	virtual void OnOp2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange);
+	virtual void OnDeop2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange);
+	virtual void OnVoice2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange);
+	virtual void OnDevoice2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange);
+	virtual void OnMode2(const CNick* pOpNick, CChan& Channel, char uMode, const CString& sArg, bool bAdded, bool bNoChange);
+	virtual void OnRawMode2(const CNick* pOpNick, CChan& Channel, const CString& sModes, const CString& sArgs);
 	virtual EModRet OnRaw(CString& sLine);
 	virtual EModRet OnStatusCommand(CString& sCommand);
 	virtual void OnModCommand(const CString& sCommand);
@@ -118,6 +118,8 @@ public:
 	virtual bool OnEmbeddedWebRequest(CWebSock&, const CString&, CTemplate&);
 	virtual EModRet OnAddNetwork(CIRCNetwork& Network, CString& sErrorRet);
 	virtual EModRet OnDeleteNetwork(CIRCNetwork& Network);
+	virtual EModRet OnSendToClient(CString& sLine, CClient& Client);
+	virtual EModRet OnSendToIRC(CString& sLine);
 
 	// Global Modules
 	virtual EModRet OnAddUser(CUser& User, CString& sErrorRet);
