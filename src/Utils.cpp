@@ -495,11 +495,9 @@ static CString icuDateTimeFormat(time_t t, const char* puformat, const CString& 
 
 	usdt->format(t * 1000.0, uresult);
 
-	uresult.toUTF8String(result);
-
 	delete usdt;
 
-	return result;
+	return uresult.toUTF8String(result);
 }
 
 CString CUtils::CTime(time_t t, const CString& sTimezone) {
@@ -524,6 +522,22 @@ CString CUtils::FormatTime(time_t t, const CString& sFormat, const CString& sTim
 
 	const std::string formatTranslated = strftime_format_to_icu(sFormat);
 	return icuDateTimeFormat(t, formatTranslated.c_str(), sTimezone);
+}
+
+CString CUtils::FormatServerTime(const timeval& tv) {
+	icu::UnicodeString uresult;
+	CString result;
+
+	UErrorCode ec = U_ZERO_ERROR;
+
+	// "%Y-%m-%dT%H:%M:%S" + "." + s_msec + "Z"
+	icu::SimpleDateFormat *usdt = new icu::SimpleDateFormat(L"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", ec);
+
+	usdt->format(tv.tv_sec * 1000.0 + tv.tv_usec * 0.001, uresult);
+
+	delete usdt;
+
+	return uresult.toUTF8String(result);
 }
 
 SCString CUtils::GetTimezones() {
