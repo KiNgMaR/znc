@@ -27,7 +27,7 @@ ArchitecturesInstallIn64BitMode=x64
 MinVersion=0,5.1sp2
 UninstallDisplayIcon={app}\ZNC_Tray.exe
 UninstallDisplayName=ZNC IRC Bouncer
-SignTool=kSign /d $qZNC IRC Bouncer$q /du $qhttp://znc-msvc.googlecode.com/$q $f
+;SignTool=kSign /d $qZNC IRC Bouncer$q /du $qhttp://znc-msvc.googlecode.com/$q $f
 WizardImageFile=compiler:WizModernImage-IS.bmp
 WizardSmallImageFile=compiler:WizModernSmallImage-IS.bmp
 ; don't show component sizes, they are incorrect because Sources with Checks are not considered.
