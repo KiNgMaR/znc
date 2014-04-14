@@ -254,6 +254,7 @@ std::string strftime_format_to_icu(const std::string& a_format)
 	cache_access.unlock();
 
 	std::string icu;
+	bool in_literal = false;
 
 	for(std::string::const_iterator it = a_format.begin(); it != a_format.end(); it++)
 	{
@@ -262,6 +263,12 @@ std::string strftime_format_to_icu(const std::string& a_format)
 		if (c == '%')
 		{
 			std::string::const_iterator next = ++it;
+
+			if (in_literal)
+			{
+				icu += "'";
+				in_literal = false;
+			}
 
 			if(next == a_format.end())
 			{
@@ -319,19 +326,33 @@ std::string strftime_format_to_icu(const std::string& a_format)
 #endif
 			case 'Z': icu += "z"; break;
 			default:
-				icu += "%'";
-				icu += spec;
+				;
 			}
 		}
-		else if(!isalpha(c) && c != '\'')
+		else if(isalpha(c))
 		{
+			if (!in_literal)
+			{
+				icu += "'";
+				in_literal = true;
+			}
+
 			icu += c;
 		}
-		else
+		else if (c == '\'')
 		{
 			// escape:
 			icu += "'" + c;
 		}
+		else
+		{
+			icu += c;
+		}
+	}
+
+	if (in_literal)
+	{
+		icu += "'";
 	}
 
 	cache_access.lock();
