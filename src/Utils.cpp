@@ -486,16 +486,15 @@ static CString icuDateTimeFormat(time_t t, const char* puformat, const CString& 
 
 	UErrorCode ec = U_ZERO_ERROR;
 
-	// never returns NULL:
-	icu::TimeZone *utz = icu::TimeZone::createTimeZone(sTimezone.c_str());
+	icu::SimpleDateFormat usdt(uformat, ec);
 
-	icu::SimpleDateFormat *usdt = new icu::SimpleDateFormat(uformat, ec);
+	if (ec == U_ZERO_ERROR || ec == U_USING_DEFAULT_WARNING) {
+		icu::TimeZone *utz = icu::TimeZone::createTimeZone(sTimezone.c_str()); // never returns NULL
 
-	usdt->adoptTimeZone(utz); // usdt now owns utz
+		usdt.adoptTimeZone(utz); // usdt now owns utz
 
-	usdt->format(t * 1000.0, uresult);
-
-	delete usdt;
+		usdt.format(t * 1000.0, uresult);
+	}
 
 	return uresult.toUTF8String(result);
 }
@@ -531,17 +530,17 @@ CString CUtils::FormatServerTime(const timeval& tv) {
 	UErrorCode ec = U_ZERO_ERROR;
 
 	// "%Y-%m-%dT%H:%M:%S" + "." + s_msec + "Z"
-	icu::SimpleDateFormat *usdt = new icu::SimpleDateFormat(L"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", ec);
+	icu::SimpleDateFormat usdt(L"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", ec);
 
-	usdt->format(tv.tv_sec * 1000.0 + tv.tv_usec * 0.001, uresult);
-
-	delete usdt;
+	if (ec == U_ZERO_ERROR || ec == U_USING_DEFAULT_WARNING) {
+		usdt.format(tv.tv_sec * 1000.0 + tv.tv_usec * 0.001, uresult);
+	}
 
 	return uresult.toUTF8String(result);
 }
 
 SCString CUtils::GetTimezones() {
-	// not thread-safe.
+	// not thread safe.
 	static SCString result;
 
 	if (result.empty()) {
@@ -552,7 +551,7 @@ SCString CUtils::GetTimezones() {
 		{
 			UErrorCode success = U_ZERO_ERROR;
 
-			for (int i = 0; i < ids->count(success); i++) {
+			for (int i = 0; i < ids->count(success); ++i) {
 				result.insert(ids->next(NULL, success));
 			}
 		}
