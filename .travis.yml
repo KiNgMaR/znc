@@ -3,7 +3,10 @@ compiler:
     - gcc
     - clang
 env:
-    - CFGFLAGS= MYCXXFLAGS= MYLDFLAGS=
+      matrix:
+          - CFGFLAGS= MYCXXFLAGS= MYLDFLAGS=
+      global:
+          - secure: "i2f2UVDnyHT/9z0U3XvgTj8eDERvnc1Wk7HpseEjb75JwGzqn/2R+RKHmoSrwK3hFgij2IMxZL19XtHFwMz9t5A/huAAKD74KMMI/QpeZEJ/sjT3CTLcE9HEVDdJOjc7dfLRxb2hZtgvx8clZIMrpeUdPhci8openff30KvXVbg="
 matrix:
     include:
         - compiler: clang
@@ -15,6 +18,7 @@ before_install:
     - sudo apt-get install -qq libperl-dev python3-dev tcl-dev libsasl2-dev libgtest-dev libicu-dev
     - apt-cache show swig
     - ( cd ~ && wget http://prdownloads.sourceforge.net/swig/swig-2.0.8.tar.gz && tar xvf swig-2.0.8.tar.gz && cd swig-2.0.8 && ./configure && make && sudo make install )
+    - sudo apt-get install doxygen graphviz
 script:
     - ./bootstrap.sh
     - mkdir build
@@ -24,10 +28,23 @@ script:
     - make V=1
     - make V=1 test
     - sudo make install
+    - cd ..
+after_success:
+    - test -r .travis_after_all.py && python .travis_after_all.py || echo No .travis_after_all.py found
+    - test -r .to_export_back && echo $(cat .to_export_back) || echo No .to_export_back found
+    - export DUMMY_VAR=dummy-value $(cat .to_export_back)
+    - |
+          if [ "$BUILD_LEADER" == "YES" ] && [ "$BUILD_AGGREGATE_STATUS" == "others_succeeded" ] && [ "$TRAVIS_REPO_SLUG" == "znc/znc" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ]; then
+              echo "All builds passed!"
+              openssl aes-256-cbc -d -in .travis-github.enc -out ~/znc-docs-key -k ${SECRET_KEY}
+              ./.travis-generate-docs.sh
+          else
+              echo "Not leader"
+          fi
 notifications:
     irc:
         channels:
             - "irc.freenode.net#znc"
-            - "irc.paraphysics.net#znc"
+            - "irc.arcti.ca#znc"
         on_success: always
         on_failure: always
