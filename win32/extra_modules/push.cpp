@@ -205,7 +205,7 @@ class CPushMod : public CModule
 		bool is_number(const CString& content)
 		{
 			CString::const_iterator it = content.begin();
-			while(it != content.end() && std::isdigit(*it)) ++it;
+			while(it != content.end() && isdigit(*it)) ++it;
 			return !content.empty() && it == content.end();
 		}
 
