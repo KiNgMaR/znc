@@ -205,7 +205,7 @@ public:
 		return (GetName() < Info.GetName());
 	}
 
-	bool SupportsType(EModuleType eType) {
+	bool SupportsType(EModuleType eType) const {
 		return m_seType.find(eType) != m_seType.end();
 	}
 
@@ -569,6 +569,11 @@ public:
 	 *  @param sMessage The kick message.
 	 */
 	virtual void OnKick(const CNick& OpNick, const CString& sKickedNick, CChan& Channel, const CString& sMessage);
+	/** This module hook is called just before ZNC tries to join an IRC channel.
+	 *  @param Chan The channel which is about to get joined.
+	 *  @return See CModule::EModRet.
+	 */
+	virtual EModRet OnJoining(CChan& Channel);
 	/** Called when a nick joins a channel.
 	 *  @param Nick The nick who joined.
 	 *  @param Channel The channel which was joined.
@@ -1114,6 +1119,7 @@ public:
 	bool OnQuit(const CNick& Nick, const CString& sMessage, const std::vector<CChan*>& vChans);
 	bool OnNick(const CNick& Nick, const CString& sNewNick, const std::vector<CChan*>& vChans);
 	bool OnKick(const CNick& Nick, const CString& sOpNick, CChan& Channel, const CString& sMessage);
+	bool OnJoining(CChan& Channel);
 	bool OnJoin(const CNick& Nick, CChan& Channel);
 	bool OnPart(const CNick& Nick, CChan& Channel, const CString& sMessage);
 	bool OnInvite(const CNick& Nick, const CString& sChan);
