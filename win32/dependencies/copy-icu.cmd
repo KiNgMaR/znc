@@ -2,7 +2,7 @@ set ICU=C:\Dev\icu
 
 cd %~dp0
 
-xcopy /Y %ICU%\include\unicode include
+xcopy /Y /I %ICU%\include\unicode include\unicode
 
 xcopy /Y %ICU%\bin\*51.dll lib_x86_release
 xcopy /Y %ICU%\bin\*51d.dll lib_x86_debug
