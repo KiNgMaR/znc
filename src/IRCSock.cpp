@@ -174,7 +174,7 @@ void CIRCSock::ReadLine(const CString& sData) {
 				}
 
 				m_pNetwork->SetIRCServer(sServer);
-				SetTimeout(540, TMO_READ);  // Now that we are connected, let nature take its course
+				SetTimeout(CIRCNetwork::NO_TRAFFIC_TIMEOUT, TMO_READ);  // Now that we are connected, let nature take its course
 				PutIRC("WHO " + sNick);
 
 				m_bAuthed = true;
@@ -198,6 +198,10 @@ void CIRCSock::ReadLine(const CString& sData) {
 
 				m_pNetwork->ClearRawBuffer();
 				m_pNetwork->AddRawBuffer(":" + _NAMEDFMT(sServer) + " " + sCmd + " {target} " + _NAMEDFMT(sRest));
+
+				// Join the first set of channels as soon as we are connected
+				// and let the CIRCNetworkJoinTimer join the rest.
+				m_pNetwork->JoinChans();
 
 				break;
 			}

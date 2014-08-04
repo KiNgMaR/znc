@@ -32,6 +32,8 @@ class CConfig;
 class CChan;
 class CServer;
 class CIRCSock;
+class CIRCNetworkPingTimer;
+class CIRCNetworkJoinTimer;
 
 class ZNC_API CIRCNetwork {
 public:
@@ -40,6 +42,17 @@ public:
 	CIRCNetwork(CUser *pUser, const CString& sName);
 	CIRCNetwork(CUser *pUser, const CIRCNetwork& Network);
 	~CIRCNetwork();
+
+	enum {
+		/** How long must an IRC connection be idle before ZNC sends a ping */
+		PING_FREQUENCY = 270,
+		/** Time between checks if PINGs need to be sent */
+		PING_SLACK = 30,
+		/** Timeout after which IRC connections are closed. Must
+		 *  obviously be greater than PING_FREQUENCY + PING_SLACK.
+		 */
+		NO_TRAFFIC_TIMEOUT = 540
+	};
 
 	void Clone(const CIRCNetwork& Network, bool bCloneName = true);
 
@@ -196,6 +209,9 @@ protected:
 	CBuffer            m_RawBuffer;
 	CBuffer            m_MotdBuffer;
 	CBuffer            m_QueryBuffer;
+
+	CIRCNetworkPingTimer* m_pPingTimer;
+	CIRCNetworkJoinTimer* m_pJoinTimer;
 };
 
 #endif // !_IRCNETWORK_H

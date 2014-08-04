@@ -53,12 +53,14 @@ class CAway : public CModule
 {
 	void AwayCommand(const CString& sCommand) {
 		CString sReason;
+		time_t curtime;
+		time(&curtime);
 
 		if (sCommand.Token(1) != "-quiet") {
-			sReason = sCommand.Token(1, true);
+			sReason = CUtils::FormatTime(curtime, sCommand.Token(1, true), m_pUser->GetTimezone());
 			PutModNotice("You have been marked as away");
 		} else {
-			sReason = sCommand.Token(2, true);
+			sReason = CUtils::FormatTime(curtime, sCommand.Token(2, true), m_pUser->GetTimezone());
 		}
 
 		Away(false, sReason);
@@ -395,6 +397,14 @@ public:
 		return(CONTINUE);
 	}
 
+	virtual EModRet OnPrivAction(CNick& Nick, CString& sMessage)
+	{
+		if (m_bIsAway) {
+			AddMessage(time(NULL), Nick, "* " + sMessage);
+		}
+		return(CONTINUE);
+	}
+
 	virtual EModRet OnUserNotice(CString& sTarget, CString& sMessage)
 	{
 		Ping();
@@ -454,7 +464,7 @@ private:
 		return(true);
 	}
 
-	void AddMessage(time_t iTime, const CNick & Nick, CString & sMessage)
+	void AddMessage(time_t iTime, const CNick & Nick, const CString & sMessage)
 	{
 		if (Nick.GetNick() == m_pNetwork->GetIRCNick().GetNick())
 			return; // ignore messages from self
