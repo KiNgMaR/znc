@@ -533,6 +533,7 @@ CString CUtils::FormatServerTime(const timeval& tv) {
 	icu::SimpleDateFormat usdt(L"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", ec);
 
 	if (ec == U_ZERO_ERROR || ec == U_USING_DEFAULT_WARNING) {
+		usdt.adoptTimeZone(icu::TimeZone::createTimeZone("UTC"));
 		usdt.format(tv.tv_sec * 1000.0 + tv.tv_usec * 0.001, uresult);
 	}
 
