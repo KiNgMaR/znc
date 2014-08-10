@@ -189,6 +189,7 @@
     <ClCompile Include="..\..\src\MD5.cpp" />
     <ClCompile Include="..\..\src\Modules.cpp" />
     <ClCompile Include="..\..\src\Nick.cpp" />
+    <ClCompile Include="..\..\src\Query.cpp" />
     <ClCompile Include="..\..\src\Server.cpp" />
     <ClCompile Include="..\..\src\SHA256.cpp" />
     <ClCompile Include="..\..\src\Socket.cpp" />
@@ -227,6 +228,7 @@
     <ClInclude Include="..\..\include\znc\MD5.h" />
     <ClInclude Include="..\..\include\znc\Modules.h" />
     <ClInclude Include="..\..\include\znc\Nick.h" />
+    <ClInclude Include="..\..\include\znc\Query.h" />
     <ClInclude Include="..\..\include\znc\Server.h" />
     <ClInclude Include="..\..\include\znc\SHA256.h" />
     <ClInclude Include="..\..\include\znc\Socket.h" />
