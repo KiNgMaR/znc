@@ -1091,7 +1091,7 @@ bool CZNC::DoRehash(CString& sError)
 		CString sModName = vit->Token(0);
 		CString sArgs = vit->Token(1, true);
 
-		if (sModName == "saslauth" && tSavedVersion < make_tuple(0, 207)) {
+		if (sModName == "saslauth" && tSavedVersion < make_tuple(0ul, 207ul)) {
 			// XXX compatibility crap, added in 0.207
 			CUtils::PrintMessage("saslauth module was renamed to cyrusauth. Loading cyrusauth instead.");
 			sModName = "cyrusauth";

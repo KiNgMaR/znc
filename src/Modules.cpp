@@ -1355,7 +1355,7 @@ ModHandle CModules::OpenModule(const CString& sModule, const CString& sModPath, 
 }
 
 CModCommand::CModCommand()
-	: m_sCmd(), m_pFunc(NULL), m_sArgs(), m_sDesc()
+	: m_sCmd(), m_pFunc(nullptr), m_sArgs(), m_sDesc()
 {
 }
 
