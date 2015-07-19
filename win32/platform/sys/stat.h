@@ -19,6 +19,7 @@
 #endif /* Not RC_INVOKED */
 
 #include <sys/types.h>
+#include <sys/fcntl.h>
 
 /*
  * Constants for the stat st_mode member.
