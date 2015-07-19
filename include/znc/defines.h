@@ -26,6 +26,7 @@
 
 #define CS_STRING CString
 #define _NO_CSOCKET_NS
+#define CS_EXPORT ZNC_API
 
 #ifdef _DEBUG
 #define __DEBUG__
