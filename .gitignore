@@ -44,6 +44,7 @@ __pycache__
 /.version_extra
 
 # Generated from third_party/Csocket/ by Makefile
-/src/Csocket.cpp
-/include/znc/Csocket.h
+# disabled for native Win32 build
+#/src/Csocket.cpp
+#/include/znc/Csocket.h
 

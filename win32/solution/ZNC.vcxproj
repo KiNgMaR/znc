@@ -99,7 +99,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;EXPORTS_GETOPT;HAVE_LIBSSL;_DEBUG;_WINDOWS;_USRDLL;ZNC_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../include;../platform;../dependencies/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../platform;../dependencies/include;../../third_party/Csocket</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>target_winver.h; znc_msvc.h</ForcedIncludeFiles>
       <MinimalRebuild>true</MinimalRebuild>
     </ClCompile>
@@ -118,7 +118,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;EXPORTS_GETOPT;HAVE_LIBSSL;_DEBUG;_WINDOWS;_USRDLL;ZNC_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../include;../platform;../dependencies/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../platform;../dependencies/include;../../third_party/Csocket</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>target_winver.h; znc_msvc.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
@@ -139,7 +139,7 @@
       <PreprocessorDefinitions>WIN32;EXPORTS_GETOPT;HAVE_LIBSSL;NDEBUG;_WINDOWS;_USRDLL;ZNC_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <StringPooling>true</StringPooling>
-      <AdditionalIncludeDirectories>../../include;../platform;../dependencies/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../platform;../dependencies/include;../../third_party/Csocket</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>target_winver.h; znc_msvc.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
@@ -162,7 +162,7 @@
       <PreprocessorDefinitions>WIN32;EXPORTS_GETOPT;HAVE_LIBSSL;NDEBUG;_WINDOWS;_USRDLL;ZNC_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <StringPooling>true</StringPooling>
-      <AdditionalIncludeDirectories>../../include;../platform;../dependencies/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../platform;../dependencies/include;../../third_party/Csocket</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>target_winver.h; znc_msvc.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>

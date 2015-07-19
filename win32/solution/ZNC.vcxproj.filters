@@ -203,9 +203,6 @@
     <ClInclude Include="..\..\include\znc\Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\znc\Csocket.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\platform\znc_msvc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -213,6 +210,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\znc\Query.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\znc\Csocket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
