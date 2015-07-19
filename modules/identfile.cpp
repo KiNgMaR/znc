@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,8 +73,8 @@ public:
 		}
 	}
 
-	void OnModCommand(const CString& sCommand) {
-		if (m_pUser->IsAdmin()) {
+	void OnModCommand(const CString& sCommand) override {
+		if (GetUser()->IsAdmin()) {
 			HandleCommand(sCommand);
 		} else {
 			PutModule("Access denied");
@@ -121,10 +121,10 @@ public:
 		// If the format doesn't contain anything expandable, we'll
 		// assume this is an "old"-style format string.
 		if (sData == GetNV("Format")) {
-			sData.Replace("%", m_pUser->GetIdent());
+			sData.Replace("%", GetUser()->GetIdent());
 		}
 
-		DEBUG("Writing [" + sData + "] to ident spoof file [" + m_pISpoofLockFile->GetLongName() + "] for user/network [" + m_pUser->GetUserName() + "/" + m_pNetwork->GetName() + "]");
+		DEBUG("Writing [" + sData + "] to ident spoof file [" + m_pISpoofLockFile->GetLongName() + "] for user/network [" + GetUser()->GetUserName() + "/" + GetNetwork()->GetName() + "]");
 
 		m_pISpoofLockFile->Write(sData + "\n");
 
@@ -147,7 +147,7 @@ public:
 		}
 	}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage) {
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override {
 		m_pISpoofLockFile = NULL;
 		m_pIRCSock = NULL;
 
@@ -162,7 +162,7 @@ public:
 		return true;
 	}
 
-	virtual EModRet OnIRCConnecting(CIRCSock *pIRCSock) {
+	virtual EModRet OnIRCConnecting(CIRCSock *pIRCSock) override {
 		if (m_pISpoofLockFile != NULL) {
 			DEBUG("Aborting connection, ident spoof lock file exists");
 			PutModule("Aborting connection, another user or network is currently connecting and using the ident spoof file");
@@ -179,20 +179,20 @@ public:
 		return CONTINUE;
 	}
 
-	virtual void OnIRCConnected() {
-		if (m_pIRCSock == m_pNetwork->GetIRCSock()) {
+	virtual void OnIRCConnected() override {
+		if (m_pIRCSock == GetNetwork()->GetIRCSock()) {
 			ReleaseISpoof();
 		}
 	}
 
-	virtual void OnIRCConnectionError(CIRCSock *pIRCSock) {
+	virtual void OnIRCConnectionError(CIRCSock *pIRCSock) override {
 		if (m_pIRCSock == pIRCSock) {
 			ReleaseISpoof();
 		}
 	}
 
-	virtual void OnIRCDisconnected() {
-		if (m_pIRCSock == m_pNetwork->GetIRCSock()) {
+	virtual void OnIRCDisconnected() override {
+		if (m_pIRCSock == GetNetwork()->GetIRCSock()) {
 			ReleaseISpoof();
 		}
 	}
@@ -202,4 +202,4 @@ template<> void TModInfo<CIdentFileModule>(CModInfo& Info) {
 	Info.SetWikiPage("identfile");
 }
 
-GLOBALMODULEDEFS(CIdentFileModule, "Write the ident of a user to a file when they are trying to connect")
+GLOBALMODULEDEFS(CIdentFileModule, "Write the ident of a user to a file when they are trying to connect.")

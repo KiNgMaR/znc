@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ void CNick::Parse(const CString& sNickMask) {
 		return;
 	}
 
-	m_sNick = sNickMask.substr((sNickMask[0] == ':'), uPos);
+	m_sNick = sNickMask.substr((sNickMask[0] == ':'), uPos - (sNickMask[0] == ':'));
 	m_sHost = sNickMask.substr(uPos +1);
 
 	if ((uPos = m_sHost.find('@')) != CString::npos) {

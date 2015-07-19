@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,9 @@ public:
 	MODCONSTRUCTOR(CClearBufferOnMsgMod) {}
 
 	void ClearAllBuffers() {
-		if (m_pNetwork) {
-			const vector<CChan*>& vChans = m_pNetwork->GetChans();
+		CIRCNetwork* pNetwork = GetNetwork();
+		if (pNetwork) {
+			const vector<CChan*>& vChans = pNetwork->GetChans();
 
 			for (vector<CChan*>::const_iterator it = vChans.begin(); it != vChans.end(); ++it) {
 				// Skip detached channels, they weren't read yet
@@ -39,40 +40,40 @@ public:
 				(*it)->SetAutoClearChanBuffer(false);
 			}
 
-			vector<CQuery*> VQueries = m_pNetwork->GetQueries();
+			vector<CQuery*> VQueries = pNetwork->GetQueries();
 
 			for (vector<CQuery*>::const_iterator it = VQueries.begin(); it != VQueries.end(); ++it) {
-				m_pNetwork->DelQuery((*it)->GetName());
+				pNetwork->DelQuery((*it)->GetName());
 			}
 		}
 	}
 
-	virtual EModRet OnUserMsg(CString& sTarget, CString& sMessage) {
+	virtual EModRet OnUserMsg(CString& sTarget, CString& sMessage) override {
 		ClearAllBuffers();
 		return CONTINUE;
 	}
 
-	virtual EModRet OnUserCTCP(CString& sTarget, CString& sMessage) {
+	virtual EModRet OnUserCTCP(CString& sTarget, CString& sMessage) override {
 		ClearAllBuffers();
 		return CONTINUE;
 	}
 
-	virtual EModRet OnUserAction(CString& sTarget, CString& sMessage) {
+	virtual EModRet OnUserAction(CString& sTarget, CString& sMessage) override {
 		ClearAllBuffers();
 		return CONTINUE;
 	}
 
-	virtual EModRet OnUserNotice(CString& sTarget, CString& sMessage) {
+	virtual EModRet OnUserNotice(CString& sTarget, CString& sMessage) override {
 		ClearAllBuffers();
 		return CONTINUE;
 	}
 
-	virtual EModRet OnUserPart(CString& sChannel, CString& sMessage) {
+	virtual EModRet OnUserPart(CString& sChannel, CString& sMessage) override {
 		ClearAllBuffers();
 		return CONTINUE;
 	}
 
-	virtual EModRet OnUserTopic(CString& sChannel, CString& sTopic) {
+	virtual EModRet OnUserTopic(CString& sChannel, CString& sTopic) override {
 		ClearAllBuffers();
 		return CONTINUE;
 	}

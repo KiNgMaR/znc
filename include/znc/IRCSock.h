@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,8 @@ class CIRCNetwork;
 class CClient;
 // !Forward Declarations
 
-class ZNC_API CIRCSock : public CZNCSock {
+// TODO: This class needs new name
+class ZNC_API CIRCSock : public CIRCSocket {
 public:
 	CIRCSock(CIRCNetwork* pNetwork);
 	virtual ~CIRCSock();

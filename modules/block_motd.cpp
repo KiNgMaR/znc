@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ public:
 	virtual ~CBlockMotd() {
 	}
 
-	virtual EModRet OnRaw(CString &sLine) {
+	virtual EModRet OnRaw(CString &sLine) override {
 		const CString sCmd = sLine.Token(1);
 
 		if (sCmd == "375" /* begin of MOTD */

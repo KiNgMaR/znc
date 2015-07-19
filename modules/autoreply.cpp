@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  * Copyright (C) 2008 Michael "Svedrin" Ziegler diese-addy@funzt-halt.net
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,12 +21,15 @@
 class CAutoReplyMod : public CModule {
 public:
 	MODCONSTRUCTOR(CAutoReplyMod) {
+		AddHelpCommand();
+		AddCommand("Set", static_cast<CModCommand::ModCmdFunc>(&CAutoReplyMod::OnSetCommand), "<reply>", "Sets a new reply");
+		AddCommand("Show", static_cast<CModCommand::ModCmdFunc>(&CAutoReplyMod::OnShowCommand), "", "Displays the current query reply");
 		m_Messaged.SetTTL(1000 * 120);
 	}
 
 	virtual ~CAutoReplyMod() {}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage) {
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override {
 		if (!sArgs.empty()) {
 			SetReply(sArgs);
 		}
@@ -49,7 +52,7 @@ public:
 	}
 
 	void Handle(const CString& sNick) {
-		CIRCSock *pIRCSock = m_pNetwork->GetIRCSock();
+		CIRCSock *pIRCSock = GetNetwork()->GetIRCSock();
 		if (!pIRCSock)
 			// WTF?
 			return;
@@ -58,32 +61,26 @@ public:
 		if (m_Messaged.HasItem(sNick))
 			return;
 
-		if (m_pNetwork->IsUserAttached())
+		if (GetNetwork()->IsUserAttached())
 			return;
 
 		m_Messaged.AddItem(sNick);
 		PutIRC("NOTICE " + sNick + " :" + GetReply());
 	}
 
-	virtual EModRet OnPrivMsg(CNick& Nick, CString& sMessage) {
+	virtual EModRet OnPrivMsg(CNick& Nick, CString& sMessage) override {
 		Handle(Nick.GetNick());
 		return CONTINUE;
 	}
 
-	virtual void OnModCommand(const CString& sCommand) {
-		const CString& sCmd = sCommand.Token(0);
+	void OnShowCommand(const CString& sCommand) {
+		PutModule("Current reply is: " + GetNV("Reply")
+				+ " (" + GetReply() + ")");
+	}
 
-		if (sCmd.Equals("SHOW")) {
-			PutModule("Current reply is: " + GetNV("Reply")
-					+ " (" + GetReply() + ")");
-		} else if (sCmd.Equals("SET")) {
-			SetReply(sCommand.Token(1, true));
-			PutModule("New reply set");
-		} else {
-			PutModule("Available commands are:");
-			PutModule("Show        - Displays the current query reply");
-			PutModule("Set <reply> - Sets a new reply");
-		}
+	void OnSetCommand(const CString& sCommand) {
+		SetReply(sCommand.Token(1, true));
+		PutModule("New reply set");
 	}
 
 private:

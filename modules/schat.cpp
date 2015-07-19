@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  * Author: imaginos <imaginos@imaginos.net>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,7 +47,7 @@ public:
 	}
 
 protected:
-	virtual void RunJob();
+	virtual void RunJob() override;
 	CString m_sNick;
 };
 
@@ -59,36 +59,36 @@ public:
 			u_short iPort, int iTimeout = 60);
 	~CSChatSock() {}
 
-	virtual Csock *GetSockObj(const CS_STRING & sHostname, u_short iPort)
+	virtual Csock *GetSockObj(const CS_STRING & sHostname, u_short iPort) override
 	{
 		CSChatSock *p = new CSChatSock(m_pModule, m_sChatNick, sHostname, iPort);
 		return(p);
 	}
 
-	virtual bool ConnectionFrom(const CS_STRING & sHost, u_short iPort)
+	virtual bool ConnectionFrom(const CS_STRING & sHost, u_short iPort) override
 	{
 		Close(); // close the listener after the first connection
 		return(true);
 	}
 
-	virtual void Connected();
-	virtual void Timeout();
+	virtual void Connected() override;
+	virtual void Timeout() override;
 
 	const CString & GetChatNick() const { return(m_sChatNick); }
 
 	void PutQuery(const CString& sText);
 
-	virtual void ReadLine(const CS_STRING & sLine);
-	virtual void Disconnected();
+	virtual void ReadLine(const CS_STRING & sLine) override;
+	virtual void Disconnected() override;
 
-	virtual void AddLine(const CString & sLine)
+	void AddLine(const CString & sLine)
 	{
 		m_vBuffer.insert(m_vBuffer.begin(), sLine);
 		if (m_vBuffer.size() > 200)
 			m_vBuffer.pop_back();
 	}
 
-	virtual void DumpBuffer()
+	void DumpBuffer()
 	{
 		if (m_vBuffer.empty()) {
 			// Always show a message to the user, so he knows
@@ -116,7 +116,7 @@ public:
 	MODCONSTRUCTOR(CSChat) {}
 	virtual ~CSChat() {}
 
-	virtual bool OnLoad(const CString & sArgs, CString & sMessage)
+	virtual bool OnLoad(const CString & sArgs, CString & sMessage) override
 	{
 		m_sPemFile = sArgs;
 
@@ -132,7 +132,7 @@ public:
 		return true;
 	}
 
-	virtual void OnClientLogin()
+	virtual void OnClientLogin() override
 	{
 		set<CSocket*>::const_iterator it;
 		for (it = BeginSockets(); it != EndSockets(); ++it) {
@@ -145,7 +145,7 @@ public:
 		}
 	}
 
-	virtual EModRet OnUserRaw(CString & sLine)
+	virtual EModRet OnUserRaw(CString & sLine) override
 	{
 		if (sLine.Equals("schat ", false, 6)) {
 			OnModCommand("chat " + sLine.substr(6));
@@ -160,7 +160,7 @@ public:
 		return(CONTINUE);
 	}
 
-	virtual void OnModCommand(const CString& sCommand)
+	virtual void OnModCommand(const CString& sCommand) override
 	{
 		CString sCom = sCommand.Token(0);
 		CString sArgs = sCommand.Token(1, true);
@@ -181,8 +181,8 @@ public:
 			pSock->SetCipher("HIGH");
 			pSock->SetPemLocation(m_sPemFile);
 
-			u_short iPort = m_pManager->ListenRand(pSock->GetSockName() + "::LISTENER",
-					m_pUser->GetLocalDCCIP(), true, SOMAXCONN, pSock, 60);
+			u_short iPort = GetManager()->ListenRand(pSock->GetSockName() + "::LISTENER",
+					GetUser()->GetLocalDCCIP(), true, SOMAXCONN, pSock, 60);
 
 			if (iPort == 0) {
 				PutModule("Failed to start chat!");
@@ -192,7 +192,7 @@ public:
 			stringstream s;
 			s << "PRIVMSG " << sArgs << " :\001";
 			s << "DCC SCHAT chat ";
-			s << CUtils::GetLongIP(m_pUser->GetLocalDCCIP());
+			s << CUtils::GetLongIP(GetUser()->GetLocalDCCIP());
 			s << " " << iPort << "\001";
 
 			PutIRC(s.str());
@@ -253,7 +253,7 @@ public:
 				}
 			}
 			PutModule("No Such Chat [" + sArgs + "]");
-		} else if (sCom.Equals("showsocks") && m_pUser->IsAdmin()) {
+		} else if (sCom.Equals("showsocks") && GetUser()->IsAdmin()) {
 			CTable Table;
 			Table.AddColumn("SockName");
 			Table.AddColumn("Created");
@@ -310,7 +310,7 @@ public:
 			PutModule("    list           - List current chats.");
 			PutModule("    close <nick>   - Close a chat to a nick.");
 			PutModule("    timers         - Shows related timers.");
-			if (m_pUser->IsAdmin()) {
+			if (GetUser()->IsAdmin()) {
 				PutModule("    showsocks      - Shows all socket connections.");
 			}
 		} else if (sCom.Equals("timers"))
@@ -319,7 +319,7 @@ public:
 			PutModule("Unknown command [" + sCom + "] [" + sArgs + "]");
 	}
 
-	virtual EModRet OnPrivCTCP(CNick& Nick, CString& sMessage)
+	virtual EModRet OnPrivCTCP(CNick& Nick, CString& sMessage) override
 	{
 		if (sMessage.Equals("DCC SCHAT ", false, 10)) {
 			// chat ip port
@@ -352,12 +352,12 @@ public:
 	void AcceptSDCC(const CString & sNick, u_long iIP, u_short iPort)
 	{
 		CSChatSock *p = new CSChatSock(this, sNick, CUtils::GetIP(iIP), iPort, 60);
-		m_pManager->Connect(CUtils::GetIP(iIP), iPort, p->GetSockName(), 60,
-				true, m_pUser->GetLocalDCCIP(), p);
+		GetManager()->Connect(CUtils::GetIP(iIP), iPort, p->GetSockName(), 60,
+				true, GetUser()->GetLocalDCCIP(), p);
 		RemTimer("Remove " + sNick); // delete any associated timer to this nick
 	}
 
-	virtual EModRet OnUserMsg(CString& sTarget, CString& sMessage)
+	virtual EModRet OnUserMsg(CString& sTarget, CString& sMessage) override
 	{
 		if (sTarget.Left(3) == "(s)") {
 			CString sSockName = GetModName().AsUpper() + "::" + sTarget;
@@ -386,7 +386,7 @@ public:
 		return(CONTINUE);
 	}
 
-	virtual void RemoveMarker(const CString & sNick)
+	void RemoveMarker(const CString & sNick)
 	{
 		map< CString,pair< u_long,u_short > >::iterator it = m_siiWaitingChats.find(sNick);
 		if (it != m_siiWaitingChats.end())
@@ -396,13 +396,13 @@ public:
 	void SendToUser(const CString & sFrom, const CString & sText)
 	{
 		//:*schat!znc@znc.in PRIVMSG Jim :
-		CString sSend = ":" + sFrom + " PRIVMSG " + m_pNetwork->GetCurNick() + " :" + sText;
+		CString sSend = ":" + sFrom + " PRIVMSG " + GetNetwork()->GetCurNick() + " :" + sText;
 		PutUser(sSend);
 	}
 
 	bool IsAttached()
 	{
-		return(m_pNetwork->IsUserAttached());
+		return(GetNetwork()->IsUserAttached());
 	}
 
 private:
@@ -470,7 +470,7 @@ void CSChatSock::Timeout()
 
 void CRemMarkerJob::RunJob()
 {
-	CSChat *p = (CSChat *)m_pModule;
+	CSChat *p = (CSChat *)GetModule();
 	p->RemoveMarker(m_sNick);
 
 	// store buffer

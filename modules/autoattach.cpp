@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@ public:
 	virtual ~CChanAttach() {
 	}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage) {
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override {
 		VCString vsChans;
 		sArgs.Split(" ", vsChans, false);
 
@@ -211,23 +211,23 @@ public:
 		// Now check for a positive match
 		for (it = m_vMatches.begin(); it != m_vMatches.end(); ++it) {
 			if (!it->IsNegated() && it->IsMatch(sChan, sHost, sMessage)) {
-				Channel.JoinUser();
+				Channel.AttachUser();
 				return;
 			}
 		}
 	}
 
-	virtual EModRet OnChanNotice(CNick& Nick, CChan& Channel, CString& sMessage) {
+	virtual EModRet OnChanNotice(CNick& Nick, CChan& Channel, CString& sMessage) override {
 		TryAttach(Nick, Channel, sMessage);
 		return CONTINUE;
 	}
 
-	virtual EModRet OnChanMsg(CNick& Nick, CChan& Channel, CString& sMessage) {
+	virtual EModRet OnChanMsg(CNick& Nick, CChan& Channel, CString& sMessage) override {
 		TryAttach(Nick, Channel, sMessage);
 		return CONTINUE;
 	}
 
-	virtual EModRet OnChanAction(CNick& Nick, CChan& Channel, CString& sMessage) {
+	virtual EModRet OnChanAction(CNick& Nick, CChan& Channel, CString& sMessage) override {
 		TryAttach(Nick, Channel, sMessage);
 		return CONTINUE;
 	}
@@ -281,9 +281,10 @@ private:
 };
 
 template<> void TModInfo<CChanAttach>(CModInfo& Info) {
+	Info.AddType(CModInfo::UserModule);
 	Info.SetWikiPage("autoattach");
 	Info.SetHasArgs(true);
 	Info.SetArgsHelpText("List of channel masks and channel masks with ! before them.");
 }
 
-USERMODULEDEFS(CChanAttach, "Reattaches you to channels on activity.")
+NETWORKMODULEDEFS(CChanAttach, "Reattaches you to channels on activity.")

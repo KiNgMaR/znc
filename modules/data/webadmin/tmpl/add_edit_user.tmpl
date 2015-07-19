@@ -1,3 +1,4 @@
+<? AddRow CSSLoop HREF=/modfiles/global/webadmin/webadmin.css ?>
 <? INC Header.tmpl ?>
 
 <form action="<? VAR URIPrefix TOP ?><? VAR ModPath TOP ?><? IF Edit ?>edituser<? ELSE ?>adduser<? ENDIF ?>" method="post">
@@ -205,7 +206,7 @@
 						<td align="center">
 							<? IF CanBeLoadedByNetwork ?>
 								<input type="checkbox" name="loaded_by_network" id="loaded_by_net_<? VAR Name ?>"
-								<? IF LoadedByAllNetworks ?>
+								<? IF LoadedBySomeNetworks && LoadedByAllNetworks ?>
 									checked="checked"
 								<? ENDIF ?>
 								disabled="disabled"/>
@@ -268,7 +269,7 @@
 				<div class="subsection">
 					<div class="inputlabel">Timestamp Format:</div>
 					<input type="text" name="timestampformat" value="<? VAR TimestampFormat ?>" class="full"
-						   title="The format for the timestamps used in buffers, for example [%H:%M:%S]." />
+						   title="The format for the timestamps used in buffers, for example [%H:%M:%S]. This setting is ignored in new IRC clients, which use server-time. If your client supports server-time, change timestamp format in client settings instead." />
 				</div>
 				<div class="subsection half">
 					<div class="inputlabel">Timezone:</div>
@@ -281,6 +282,12 @@
 						<? ENDLOOP ?>
 					</datalist>
 				</div>
+				<div style="clear:both;"></div>
+				<div class="subsection" title="Character encoding used between IRC client and ZNC. After changing this, reconnect client to ZNC.">
+					<div class="inputlabel">Client encoding:</div>
+					<? INC encoding_settings.tmpl ?>
+				</div>
+				<div style="clear:both;"></div>
 				<div class="subsection">
 					<div class="inputlabel">Join Tries:</div>
 					<input type="number" name="jointries" value="<? VAR JoinTries ?>" class="third" min="0"
@@ -307,6 +314,7 @@
 <? ENDLOOP ?>
 </textarea></div>
 					<br /><span class="info">One reply per line. Example: TIME Buy a watch!</span>
+					<br /><span class="info"><a href="http://wiki.znc.in/ExpandString" target="_blank" class="external">Substitutions</a> are available</span>
 				</div>
 				<div class="subsection">
 					<div class="inputlabel">Skin:</div>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
 #endif
 #include <utility>
 #include "../include/znc/Utils.h"
+#include "../include/znc/Threads.h"
 #include "../include/znc/Config.h"
 #include "../include/znc/Socket.h"
 #include "../include/znc/Modules.h"
@@ -51,6 +52,9 @@
 %}
 
 %apply long { off_t };
+%apply long { uint16_t };
+%apply long { uint32_t };
+%apply long { uint64_t };
 
 %begin %{
 #include "znc/zncconfig.h"
@@ -115,9 +119,11 @@ class MCString : public std::map<CString, CString> {};
 
 #define u_short unsigned short
 #define u_int unsigned int
+#include "../include/znc/zncconfig.h"
 #include "../include/znc/ZNCString.h"
 %include "../include/znc/defines.h"
 %include "../include/znc/Utils.h"
+%include "../include/znc/Threads.h"
 %include "../include/znc/Config.h"
 %include "../include/znc/Csocket.h"
 %template(ZNCSocketManager) TSocketManager<CZNCSock>;
@@ -239,7 +245,7 @@ typedef std::vector<std::pair<CString, CString> > VPair;
 
 %inline %{
 	TWebSubPage _CreateWebSubPage(const CString& sName, const CString& sTitle, const VPair& vParams, unsigned int uFlags) {
-		return new CWebSubPage(sName, sTitle, vParams, uFlags);
+		return std::make_shared<CWebSubPage>(sName, sTitle, vParams, uFlags);
 	}
 %}
 

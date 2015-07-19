@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,14 +57,14 @@ class CSendRaw_Mod: public CModule {
 
 	void CurrentClient(const CString& sLine) {
 		CString sData = sLine.Token(1, true);
-		m_pClient->PutClient(sData);
+		GetClient()->PutClient(sData);
 	}
 
 public:
 	virtual ~CSendRaw_Mod() {}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sErrorMsg) {
-		if (!m_pUser->IsAdmin()) {
+	virtual bool OnLoad(const CString& sArgs, CString& sErrorMsg) override {
+		if (!GetUser()->IsAdmin()) {
 			sErrorMsg = "You must have admin privileges to load this module";
 			return false;
 		}
@@ -72,10 +72,10 @@ public:
 		return true;
 	}
 
-	virtual CString GetWebMenuTitle() { return "Send Raw"; }
-	virtual bool WebRequiresAdmin() { return true; }
+	virtual CString GetWebMenuTitle() override { return "Send Raw"; }
+	virtual bool WebRequiresAdmin() override { return true; }
 
-	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) {
+	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) override {
 		if (sPageName == "index") {
 			if (WebSock.IsPost()) {
 				CUser *pUser = CZNC::Get().FindUser(WebSock.GetParam("network").Token(0, false, "/"));

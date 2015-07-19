@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 #include <znc/zncconfig.h>
 #include <znc/Template.h>
 #include <znc/HTTPSock.h>
+#include <znc/Utils.h>
 
 class CAuthBase;
 class CUser;
@@ -27,7 +28,7 @@ class CWebSock;
 class CModule;
 class CWebSubPage;
 
-typedef CSmartPtr<CWebSubPage> TWebSubPage;
+typedef std::shared_ptr<CWebSubPage> TWebSubPage;
 typedef std::vector<TWebSubPage> VWebSubPages;
 
 class ZNC_API CZNCTagHandler : public CTemplateTagHandler {
@@ -102,9 +103,9 @@ private:
 	VPair           m_vParams;
 };
 
-class CWebSessionMap : public TCacheMap<CString, CSmartPtr<CWebSession> > {
+class CWebSessionMap : public TCacheMap<CString, std::shared_ptr<CWebSession> > {
 	public:
-		CWebSessionMap(unsigned int uTTL = 5000) : TCacheMap<CString, CSmartPtr<CWebSession> >(uTTL) {}
+		CWebSessionMap(unsigned int uTTL = 5000) : TCacheMap<CString, std::shared_ptr<CWebSession> >(uTTL) {}
 		void FinishUserSessions(const CUser& User);
 };
 
@@ -120,9 +121,9 @@ public:
 	CWebSock(const CString& sURIPrefix);
 	virtual ~CWebSock();
 
-	virtual bool ForceLogin();
-	virtual bool OnLogin(const CString& sUser, const CString& sPass);
-	virtual void OnPageRequest(const CString& sURI);
+	bool ForceLogin() override;
+	bool OnLogin(const CString& sUser, const CString& sPass, bool bBasic) override;
+	void OnPageRequest(const CString& sURI) override;
 
 	EPageReqResult PrintTemplate(const CString& sPageName, CString& sPageRet, CModule* pModule = NULL);
 	EPageReqResult PrintStaticFile(const CString& sPath, CString& sPageRet, CModule* pModule = NULL);
@@ -131,11 +132,10 @@ public:
 
 	void PrintErrorPage(const CString& sMessage);
 
-	CSmartPtr<CWebSession> GetSession();
+	std::shared_ptr<CWebSession> GetSession();
 
 	virtual Csock* GetSockObj(const CString& sHost, unsigned short uPort);
 	static CString GetSkinPath(const CString& sSkinName);
-	CModule* GetModule() const { return (CModule*) m_pModule; }
 	void GetAvailSkins(VCString& vRet) const;
 	CString GetSkinName();
 
@@ -158,11 +158,11 @@ private:
 
 	bool                    m_bPathsSet;
 	CTemplate               m_Template;
-	CSmartPtr<CAuthBase>    m_spAuth;
+	std::shared_ptr<CAuthBase> m_spAuth;
 	CString                 m_sModName;
 	CString                 m_sPath;
 	CString                 m_sPage;
-	CSmartPtr<CWebSession>  m_spSession;
+	std::shared_ptr<CWebSession> m_spSession;
 
 	static const unsigned int m_uiMaxSessions;
 };

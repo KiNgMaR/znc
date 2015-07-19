@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public:
 	virtual ~CSimpleAwayJob() {}
 
 protected:
-	virtual void RunJob();
+	virtual void RunJob() override;
 };
 
 class CSimpleAway : public CModule {
@@ -47,11 +47,17 @@ public:
 		m_iAwayWait      = SIMPLE_AWAY_DEFAULT_TIME;
 		m_bClientSetAway = false;
 		m_bWeSetAway     = false;
+
+		AddHelpCommand();
+		AddCommand("Reason", static_cast<CModCommand::ModCmdFunc>(&CSimpleAway::OnReasonCommand), "[<text>]", "Prints or sets the away reason (%s is replaced with the time you were set away)");
+		AddCommand("Timer", static_cast<CModCommand::ModCmdFunc>(&CSimpleAway::OnTimerCommand), "", "Prints the current time to wait before setting you away");
+		AddCommand("SetTimer", static_cast<CModCommand::ModCmdFunc>(&CSimpleAway::OnSetTimerCommand), "<seconds>", "Sets the time to wait before setting you away");
+		AddCommand("DisableTimer", static_cast<CModCommand::ModCmdFunc>(&CSimpleAway::OnDisableTimerCommand), "", "Disables the wait time before setting you away");
 	}
 
 	virtual ~CSimpleAway() {}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage) {
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override {
 		CString sReasonArg;
 
 		// Load AwayWait
@@ -78,83 +84,63 @@ public:
 				SetReason(sSavedReason, false);
 		}
 
+		// Set away on load, required if loaded via webadmin
+		if (GetNetwork()->IsIRCConnected() && !GetNetwork()->IsUserAttached())
+			SetAway(false);
+
 		return true;
 	}
 
-	virtual void OnIRCConnected() {
-		if (m_pNetwork->IsUserAttached())
+	virtual void OnIRCConnected() override {
+		if (GetNetwork()->IsUserAttached())
 			SetBack();
 		else
 			SetAway(false);
 	}
 
-	virtual void OnClientLogin() {
+	virtual void OnClientLogin() override {
 		SetBack();
 	}
 
-	virtual void OnClientDisconnect() {
+	virtual void OnClientDisconnect() override {
 		/* There might still be other clients */
-		if (!m_pNetwork->IsUserAttached())
+		if (!GetNetwork()->IsUserAttached())
 			SetAway();
 	}
 
-	virtual void OnModCommand(const CString& sLine) {
-		CString sCommand = sLine.Token(0);
+	void OnReasonCommand(const CString& sLine) {
+		CString sReason = sLine.Token(1, true);
 
-		if (sCommand.Equals("help")) {
-			CTable Table;
-			Table.AddColumn("Command");
-			Table.AddColumn("Description");
-			Table.AddRow();
-			Table.SetCell("Command", "Reason [<text>]");
-			Table.SetCell("Description", "Prints and optionally sets the away reason.");
-			Table.AddRow();
-			Table.SetCell("Command", "Timer");
-			Table.SetCell("Description", "Prints the current time to wait before setting you away.");
-			Table.AddRow();
-			Table.SetCell("Command", "SetTimer <time>");
-			Table.SetCell("Description", "Sets the time to wait before setting you away (in seconds).");
-			Table.AddRow();
-			Table.SetCell("Command", "DisableTimer");
-			Table.SetCell("Description", "Disables the wait time before setting you away.");
-			PutModule(Table);
-
-			PutModule("In the away reason, %s will be replaced with the time you were set away.");
-
-		} else if (sCommand.Equals("reason")) {
-			CString sReason = sLine.Token(1, true);
-
-			if (!sReason.empty()) {
-				SetReason(sReason);
-				PutModule("Away reason set");
-			} else {
-				PutModule("Away reason: " + m_sReason);
-				PutModule("Current away reason would be: " + ExpandReason());
-			}
-
-		} else if (sCommand.Equals("timer")) {
-			PutModule("Current timer setting: "
-					+ CString(m_iAwayWait) + " seconds");
-
-		} else if (sCommand.Equals("settimer")) {
-			SetAwayWait(sLine.Token(1).ToUInt());
-
-			if (m_iAwayWait == 0)
-				PutModule("Timer disabled");
-			else
-				PutModule("Timer set to "
-						+ CString(m_iAwayWait) + " seconds");
-
-		} else if (sCommand.Equals("disabletimer")) {
-			SetAwayWait(0);
-			PutModule("Timer disabled");
-
+		if (!sReason.empty()) {
+			SetReason(sReason);
+			PutModule("Away reason set");
 		} else {
-			PutModule("Unknown command. Try 'help'.");
+			PutModule("Away reason: " + m_sReason);
+			PutModule("Current away reason would be: " + ExpandReason());
 		}
 	}
 
-	virtual EModRet OnUserRaw(CString &sLine) {
+	void OnTimerCommand(const CString& sLine) {
+		PutModule("Current timer setting: "
+				+ CString(m_iAwayWait) + " seconds");
+	}
+
+	void OnSetTimerCommand(const CString& sLine) {
+		SetAwayWait(sLine.Token(1).ToUInt());
+
+		if (m_iAwayWait == 0)
+			PutModule("Timer disabled");
+		else
+			PutModule("Timer set to "
+					+ CString(m_iAwayWait) + " seconds");
+	}
+
+	void OnDisableTimerCommand(const CString& sLine) {
+		SetAwayWait(0);
+		PutModule("Timer disabled");
+	}
+
+	virtual EModRet OnUserRaw(CString &sLine) override {
 		if (!sLine.Token(0).Equals("AWAY"))
 			return CONTINUE;
 
@@ -198,7 +184,7 @@ private:
 			sReason = SIMPLE_AWAY_DEFAULT_REASON;
 
 		time_t iTime = time(NULL);
-		CString sTime = CUtils::CTime(iTime, m_pUser->GetTimezone());
+		CString sTime = CUtils::CTime(iTime, GetUser()->GetTimezone());
 		sReason.Replace("%s", sTime);
 
 		return sReason;
@@ -220,7 +206,7 @@ private:
 };
 
 void CSimpleAwayJob::RunJob() {
-	((CSimpleAway*)m_pModule)->SetAway(false);
+	((CSimpleAway*)GetModule())->SetAway(false);
 }
 
 template<> void TModInfo<CSimpleAway>(CModInfo& Info) {

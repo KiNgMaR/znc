@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,14 @@ public:
 	CDCCSock(CDCCMod* pMod, const CString& sRemoteNick, const CString& sRemoteIP, unsigned short uRemotePort, const CString& sLocalFile, unsigned long uFileSize);
 	virtual ~CDCCSock();
 
-	virtual void ReadData(const char* data, size_t len);
-	virtual void ConnectionRefused();
-	virtual void SockError(int iErrno, const CString& sDescription);
-	virtual void Timeout();
-	virtual void Connected();
-	virtual void Disconnected();
+	virtual void ReadData(const char* data, size_t len) override;
+	virtual void ConnectionRefused() override;
+	virtual void SockError(int iErrno, const CString& sDescription) override;
+	virtual void Timeout() override;
+	virtual void Connected() override;
+	virtual void Disconnected() override;
 	void SendPacket();
-	virtual Csock* GetSockObj(const CString& sHost, unsigned short uPort);
+	virtual Csock* GetSockObj(const CString& sHost, unsigned short uPort) override;
 	CFile* OpenFile(bool bWrite = true);
 	bool Seek(unsigned long int uPos);
 
@@ -86,8 +86,8 @@ public:
 	virtual ~CDCCMod() {}
 
 #ifndef MOD_DCC_ALLOW_EVERYONE
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage) {
-		if (!m_pUser->IsAdmin()) {
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override {
+		if (!GetUser()->IsAdmin()) {
 			sMessage = "You must be admin to use the DCC module";
 			return false;
 		}
@@ -107,13 +107,14 @@ public:
 			return false;
 		}
 
-		unsigned short uPort = CZNC::Get().GetManager().ListenRand("DCC::LISTEN::" + sRemoteNick, m_pUser->GetLocalDCCIP(), false, SOMAXCONN, pSock, 120);
+		CString sLocalDCCIP = GetUser()->GetLocalDCCIP();
+		unsigned short uPort = CZNC::Get().GetManager().ListenRand("DCC::LISTEN::" + sRemoteNick, sLocalDCCIP, false, SOMAXCONN, pSock, 120);
 
-		if (m_pUser->GetNick().Equals(sRemoteNick)) {
-			PutUser(":*dcc!znc@znc.in PRIVMSG " + sRemoteNick + " :\001DCC SEND " + pFile->GetShortName() + " " + CString(CUtils::GetLongIP(m_pUser->GetLocalDCCIP())) + " "
+		if (GetUser()->GetNick().Equals(sRemoteNick)) {
+			PutUser(":*dcc!znc@znc.in PRIVMSG " + sRemoteNick + " :\001DCC SEND " + pFile->GetShortName() + " " + CString(CUtils::GetLongIP(sLocalDCCIP)) + " "
 				+ CString(uPort) + " " + CString(pFile->GetSize()) + "\001");
 		} else {
-			PutIRC("PRIVMSG " + sRemoteNick + " :\001DCC SEND " + pFile->GetShortName() + " " + CString(CUtils::GetLongIP(m_pUser->GetLocalDCCIP())) + " "
+			PutIRC("PRIVMSG " + sRemoteNick + " :\001DCC SEND " + pFile->GetShortName() + " " + CString(CUtils::GetLongIP(sLocalDCCIP)) + " "
 			    + CString(uPort) + " " + CString(pFile->GetSize()) + "\001");
 		}
 
@@ -134,7 +135,7 @@ public:
 			return false;
 		}
 
-		CZNC::Get().GetManager().Connect(sRemoteIP, uRemotePort, "DCC::GET::" + sRemoteNick, 60, false, m_pUser->GetLocalDCCIP(), pSock);
+		CZNC::Get().GetManager().Connect(sRemoteIP, uRemotePort, "DCC::GET::" + sRemoteNick, 60, false, GetUser()->GetLocalDCCIP(), pSock);
 
 		PutModule("DCC <- [" + sRemoteNick + "][" + sFileName + "] - Attempting to connect to [" + sRemoteIP + "]");
 		return true;
@@ -178,7 +179,7 @@ public:
 			return;
 		}
 
-		SendFile(m_pUser->GetNick(), sFile);
+		SendFile(GetUser()->GetNick(), sFile);
 	}
 
 	void ListTransfersCommand(const CString& sLine) {
@@ -218,7 +219,7 @@ public:
 		}
 	}
 
-	virtual void OnModCTCP(const CString& sMessage) {
+	virtual void OnModCTCP(const CString& sMessage) override {
 		if (sMessage.Equals("DCC RESUME ", false, 11)) {
 			CString sFile = sMessage.Token(2);
 			unsigned short uResumePort = sMessage.Token(3).ToUShort();
@@ -231,9 +232,9 @@ public:
 				if (pSock->GetLocalPort() == uResumePort) {
 					if (pSock->Seek(uResumeSize)) {
 						PutModule("DCC -> [" + pSock->GetRemoteNick() + "][" + pSock->GetFileName() + "] - Attempting to resume from file position [" + CString(uResumeSize) + "]");
-						PutUser(":*dcc!znc@znc.in PRIVMSG " + m_pUser->GetNick() + " :\001DCC ACCEPT " + sFile + " " + CString(uResumePort) + " " + CString(uResumeSize) + "\001");
+						PutUser(":*dcc!znc@znc.in PRIVMSG " + GetUser()->GetNick() + " :\001DCC ACCEPT " + sFile + " " + CString(uResumePort) + " " + CString(uResumeSize) + "\001");
 					} else {
-						PutModule("DCC -> [" + m_pUser->GetNick() + "][" + sFile + "] Unable to find send to initiate resume.");
+						PutModule("DCC -> [" + GetUser()->GetNick() + "][" + sFile + "] Unable to find send to initiate resume.");
 					}
 				}
 
@@ -246,7 +247,7 @@ public:
 			unsigned long uLongIP = sMessage.Token(3).ToULong();
 			unsigned short uPort = sMessage.Token(4).ToUShort();
 			unsigned long uFileSize = sMessage.Token(5).ToULong();
-			GetFile(m_pClient->GetNick(), CUtils::GetIP(uLongIP), uPort, sLocalFile, uFileSize);
+			GetFile(GetClient()->GetNick(), CUtils::GetIP(uLongIP), uPort, sLocalFile, uFileSize);
 		}
 	}
 };

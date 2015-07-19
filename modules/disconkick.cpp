@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,14 @@ class CKickClientOnIRCDisconnect: public CModule {
 public:
 	MODCONSTRUCTOR(CKickClientOnIRCDisconnect) {}
 
-	void OnIRCDisconnected()
+	void OnIRCDisconnected() override
 	{
-		const vector<CChan*>& vChans = m_pNetwork->GetChans();
+		const vector<CChan*>& vChans = GetNetwork()->GetChans();
 
 		for(vector<CChan*>::const_iterator it = vChans.begin(); it != vChans.end(); ++it)
 		{
 			if((*it)->IsOn()) {
-				PutUser(":ZNC!znc@znc.in KICK " + (*it)->GetName() + " " + m_pNetwork->GetIRCNick().GetNick()
+				PutUser(":ZNC!znc@znc.in KICK " + (*it)->GetName() + " " + GetNetwork()->GetIRCNick().GetNick()
 					+ " :You have been disconnected from the IRC server");
 			}
 		}

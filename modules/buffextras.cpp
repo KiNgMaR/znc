@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,22 +27,22 @@ public:
 
 	void AddBuffer(CChan& Channel, const CString& sMessage) {
 		// If they have AutoClearChanBuffer enabled, only add messages if no client is connected
-		if (Channel.AutoClearChanBuffer() && m_pNetwork->IsUserOnline())
+		if (Channel.AutoClearChanBuffer() && GetNetwork()->IsUserOnline())
 			return;
 
 		Channel.AddBuffer(":" + GetModNick() + "!" + GetModName() + "@znc.in PRIVMSG " + _NAMEDFMT(Channel.GetName()) + " :{text}", sMessage);
 	}
 
-	virtual void OnRawMode2(const CNick* pOpNick, CChan& Channel, const CString& sModes, const CString& sArgs) {
+	virtual void OnRawMode2(const CNick* pOpNick, CChan& Channel, const CString& sModes, const CString& sArgs) override {
 		const CString sNickMask = pOpNick ? pOpNick->GetNickMask() : "Server";
 		AddBuffer(Channel, sNickMask + " set mode: " + sModes + " " + sArgs);
 	}
 
-	virtual void OnKick(const CNick& OpNick, const CString& sKickedNick, CChan& Channel, const CString& sMessage) {
+	virtual void OnKick(const CNick& OpNick, const CString& sKickedNick, CChan& Channel, const CString& sMessage) override {
 		AddBuffer(Channel, OpNick.GetNickMask() + " kicked " + sKickedNick + " Reason: [" + sMessage + "]");
 	}
 
-	virtual void OnQuit(const CNick& Nick, const CString& sMessage, const vector<CChan*>& vChans) {
+	virtual void OnQuit(const CNick& Nick, const CString& sMessage, const vector<CChan*>& vChans) override {
 		vector<CChan*>::const_iterator it;
 		CString sMsg = Nick.GetNickMask() + " quit with message: [" + sMessage + "]";
 		for (it = vChans.begin(); it != vChans.end(); ++it) {
@@ -50,15 +50,15 @@ public:
 		}
 	}
 
-	virtual void OnJoin(const CNick& Nick, CChan& Channel) {
+	virtual void OnJoin(const CNick& Nick, CChan& Channel) override {
 		AddBuffer(Channel, Nick.GetNickMask() + " joined");
 	}
 
-	virtual void OnPart(const CNick& Nick, CChan& Channel, const CString& sMessage) {
+	virtual void OnPart(const CNick& Nick, CChan& Channel, const CString& sMessage) override {
 		AddBuffer(Channel, Nick.GetNickMask() + " parted with message: [" + sMessage + "]");
 	}
 
-	virtual void OnNick(const CNick& OldNick, const CString& sNewNick, const vector<CChan*>& vChans) {
+	virtual void OnNick(const CNick& OldNick, const CString& sNewNick, const vector<CChan*>& vChans) override {
 		vector<CChan*>::const_iterator it;
 		CString sMsg = OldNick.GetNickMask() + " is now known as " + sNewNick;
 		for (it = vChans.begin(); it != vChans.end(); ++it) {
@@ -66,7 +66,7 @@ public:
 		}
 	}
 
-	virtual EModRet OnTopic(CNick& Nick, CChan& Channel, CString& sTopic) {
+	virtual EModRet OnTopic(CNick& Nick, CChan& Channel, CString& sTopic) override {
 		AddBuffer(Channel, Nick.GetNickMask() + " changed the topic to: " + sTopic);
 
 		return CONTINUE;
@@ -75,6 +75,7 @@ public:
 
 template<> void TModInfo<CBuffExtras>(CModInfo& Info) {
 	Info.SetWikiPage("buffextras");
+	Info.AddType(CModInfo::NetworkModule);
 }
 
 USERMODULEDEFS(CBuffExtras, "Add joins, parts etc. to the playback buffer")

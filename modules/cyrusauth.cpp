@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  * Copyright (C) 2008 Heiko Hund <heiko@ist.eigentlich.net>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,15 +43,15 @@ public:
 		sasl_done();
 	}
 
-	void OnModCommand(const CString& sCommand) {
-		if (m_pUser->IsAdmin()) {
+	void OnModCommand(const CString& sCommand) override {
+		if (GetUser()->IsAdmin()) {
 			HandleCommand(sCommand);
 		} else {
 			PutModule("Access denied");
 		}
 	}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage) {
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override {
 		VCString vsArgs;
 		VCString::const_iterator it;
 		sArgs.Split(" ", vsArgs, false);
@@ -87,7 +87,7 @@ public:
 		return true;
 	}
 
-	virtual EModRet OnLoginAttempt(CSmartPtr<CAuthBase> Auth) {
+	virtual EModRet OnLoginAttempt(std::shared_ptr<CAuthBase> Auth) override {
 		const CString& sUsername = Auth->GetUsername();
 		const CString& sPassword = Auth->GetPassword();
 		CUser *pUser(CZNC::Get().FindUser(sUsername));

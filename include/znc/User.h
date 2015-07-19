@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public:
 		return CUtils::SaltedSHA256Hash(sPass, sSalt);
 	}
 
-	CConfig ToConfig();
+	CConfig ToConfig() const;
 	bool CheckPass(const CString& sPass) const;
 	bool AddAllowedHost(const CString& sHostMask);
 	bool IsHostAllowed(const CString& sHostMask) const;
@@ -91,7 +91,7 @@ public:
 	void UserConnected(CClient* pClient);
 	void UserDisconnected(CClient* pClient);
 
-	CString GetLocalDCCIP();
+	CString GetLocalDCCIP() const;
 
 	CString ExpandString(const CString& sStr) const;
 	CString& ExpandString(const CString& sStr, CString& sRet) const;
@@ -141,8 +141,8 @@ public:
 	// !Setters
 
 	// Getters
-	std::vector<CClient*>& GetUserClients() { return m_vClients; }
-	std::vector<CClient*> GetAllClients();
+	const std::vector<CClient*>& GetUserClients() const { return m_vClients; }
+	std::vector<CClient*> GetAllClients() const;
 	const CString& GetUserName() const;
 	const CString& GetCleanUserName() const;
 	const CString& GetNick(bool bAllowDefault = true) const;
@@ -238,6 +238,7 @@ protected:
 
 private:
 	void SetKeepBuffer(bool b) { SetAutoClearChanBuffer(!b); } // XXX compatibility crap, added in 0.207
+	bool LoadModule(const CString& sModName, const CString& sArgs, const CString& sNotice, CString& sError);
 };
 
 #endif // !_USER_H

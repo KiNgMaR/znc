@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,63 @@
 
 #include <znc/znc.h>
 #include <signal.h>
+
+#if defined(HAVE_LIBSSL) && defined(HAVE_PTHREAD)
+#include <znc/Threads.h>
+#include <openssl/crypto.h>
+#include <memory>
+
+static std::vector<std::unique_ptr<CMutex> > lock_cs;
+
+static void locking_callback(int mode, int type, const char *file, int line) {
+	if(mode & CRYPTO_LOCK) {
+		lock_cs[type]->lock();
+	} else {
+		lock_cs[type]->unlock();
+	}
+}
+
+static unsigned long thread_id_callback() {
+	return (unsigned long)pthread_self();
+}
+
+static CRYPTO_dynlock_value *dyn_create_callback(const char *file, int line) {
+	return (CRYPTO_dynlock_value*)new CMutex;
+}
+
+static void dyn_lock_callback(int mode, CRYPTO_dynlock_value *dlock, const char *file, int line) {
+	CMutex *mtx = (CMutex*)dlock;
+
+	if(mode & CRYPTO_LOCK) {
+		mtx->lock();
+	} else {
+		mtx->unlock();
+	}
+}
+
+static void dyn_destroy_callback(CRYPTO_dynlock_value *dlock, const char *file, int line) {
+	CMutex *mtx = (CMutex*)dlock;
+
+	delete mtx;
+}
+
+static void thread_setup() {
+	lock_cs.resize(CRYPTO_num_locks());
+
+	for(std::unique_ptr<CMutex> &mtx: lock_cs)
+		mtx = std::unique_ptr<CMutex>(new CMutex());
+
+	CRYPTO_set_id_callback(&thread_id_callback);
+	CRYPTO_set_locking_callback(&locking_callback);
+
+	CRYPTO_set_dynlock_create_callback(&dyn_create_callback);
+	CRYPTO_set_dynlock_lock_callback(&dyn_lock_callback);
+	CRYPTO_set_dynlock_destroy_callback(&dyn_destroy_callback);
+}
+
+#else
+#define thread_setup()
+#endif
 
 using std::cout;
 using std::endl;
@@ -92,7 +149,7 @@ static void signalHandler(int sig) {
 		break;
 	case SIGUSR1:
 		CUtils::PrintMessage("Caught SIGUSR1");
-		CZNC::Get().SetConfigState(CZNC::ECONFIG_NEED_WRITE);
+		CZNC::Get().SetConfigState(CZNC::ECONFIG_NEED_VERBOSE_WRITE);
 		break;
 	default:
 		CUtils::PrintMessage("WTF? Signal handler called for a signal it doesn't know?");
@@ -129,6 +186,8 @@ int main(int argc, char** argv) {
 	CString sConfig;
 	CString sDataDir = "";
 
+	thread_setup();
+
 #ifdef WIN_MSVC
 	if(CZNC::GetCoreDLLVersion() != VERSION) { // check must not be in DLL for obvious reasons
 		CUtils::PrintError("The version number in ZNC.dll doesn't match. Aborting.");
@@ -158,8 +217,8 @@ int main(int argc, char** argv) {
 		}
 	}
 #else
-	CUtils::SeedPRNG();
-	CDebug::SetStdoutIsTTY(isatty(1) != 0);
+	seedPRNG();
+	CDebug::SetStdoutIsTTY(isatty(1));
 #endif
 
 	int iArg, iOptIndex = -1;
@@ -173,6 +232,7 @@ int main(int argc, char** argv) {
 #ifdef HAVE_LIBSSL
 	bool bMakePem = false;
 #endif
+	CZNC::CreateInstance();
 
 	while ((iArg = getopt_long(argc, argv, "hvnrcspd:Df", g_LongOpts, &iOptIndex)) != -1) {
 		switch (iArg) {
@@ -221,12 +281,11 @@ int main(int argc, char** argv) {
 	}
 
 	if (optind < argc) {
-		CUtils::PrintError("Specifying a config file as an argument isn't supported anymore.");
-		CUtils::PrintError("Use --datadir instead.");
+		CUtils::PrintError("Unrecognized command line arguments.");
+		CUtils::PrintError("Did you mean to run `/znc " + CString(argv[optind]) + "' in IRC client instead?");
+		CUtils::PrintError("Hint: `/znc " + CString(argv[optind]) + "' is an alias for `/msg *status " + CString(argv[optind]) + "'");
 		return 1;
 	}
-
-	CZNC::CreateInstance();
 
 	CZNC* pZNC = &CZNC::Get();
 	pZNC->InitDirs(((argc) ? argv[0] : ""), sDataDir);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ public:
 	~CIRCNetwork();
 
 	enum {
+		JOIN_FREQUENCY = 30,
 		/** How long must an IRC connection be idle before ZNC sends a ping */
 		PING_FREQUENCY = 270,
 		/** Time between checks if PINGs need to be sent */
@@ -57,12 +58,12 @@ public:
 
 	void Clone(const CIRCNetwork& Network, bool bCloneName = true);
 
-	CString GetNetworkPath();
+	CString GetNetworkPath() const;
 
 	void DelServers();
 
 	bool ParseConfig(CConfig *pConfig, CString& sError, bool bUpgrade = false);
-	CConfig ToConfig();
+	CConfig ToConfig() const;
 
 	void BounceAllClients();
 
@@ -71,10 +72,11 @@ public:
 	void ClientConnected(CClient *pClient);
 	void ClientDisconnected(CClient *pClient);
 
-	CUser* GetUser();
+	CUser* GetUser() const;
 	const CString& GetName() const;
-	bool IsNetworkAttached() const { return !m_vClients.empty(); };
-	std::vector<CClient*>& GetClients() { return m_vClients; }
+	bool IsNetworkAttached() const { return !m_vClients.empty(); }
+	const std::vector<CClient*>& GetClients() const { return m_vClients; }
+	std::vector<CClient*> FindClients(const CString& sIdentifier) const;
 
 	void SetUser(CUser *pUser);
 	bool SetName(const CString& sName);
@@ -103,8 +105,8 @@ public:
 	CQuery* AddQuery(const CString& sName);
 	bool DelQuery(const CString& sName);
 
-	const CString& GetChanPrefixes() const { return m_sChanPrefixes; };
-	void SetChanPrefixes(const CString& s) { m_sChanPrefixes = s; };
+	const CString& GetChanPrefixes() const { return m_sChanPrefixes; }
+	void SetChanPrefixes(const CString& s) { m_sChanPrefixes = s; }
 	bool IsChan(const CString& sChan) const;
 
 	const std::vector<CServer*>& GetServers() const;
@@ -118,6 +120,10 @@ public:
 	void SetIRCServer(const CString& s);
 	bool SetNextServer(const CServer* pServer);
 	bool IsLastServer() const;
+
+	const SCString& GetTrustedFingerprints() const { return m_ssTrustedFingerprints; }
+	void AddTrustedFingerprint(const CString& sFP) { m_ssTrustedFingerprints.insert(sFP.Escape_n(CString::EHEXCOLON, CString::EHEXCOLON)); }
+	void DelTrustedFingerprint(const CString& sFP) { m_ssTrustedFingerprints.erase(sFP); }
 
 	void SetIRCConnectEnabled(bool b);
 	bool GetIRCConnectEnabled() const { return m_bIRCConnectEnabled; }
@@ -136,6 +142,7 @@ public:
 	 */
 	bool IsIRCConnected() const;
 	void SetIRCSocket(CIRCSock* pIRCSock);
+	void IRCConnected();
 	void IRCDisconnected();
 	void CheckIRCConnect();
 
@@ -163,6 +170,7 @@ public:
 	const CString& GetRealName() const;
 	const CString& GetBindHost() const;
 	const CString& GetEncoding() const;
+	CString GetQuitMsg() const;
 
 	void SetNick(const CString& s);
 	void SetAltNick(const CString& s);
@@ -170,16 +178,21 @@ public:
 	void SetRealName(const CString& s);
 	void SetBindHost(const CString& s);
 	void SetEncoding(const CString& s);
+	void SetQuitMsg(const CString& s);
 
 	double GetFloodRate() const { return m_fFloodRate; }
 	unsigned short int GetFloodBurst() const { return m_uFloodBurst; }
 	void SetFloodRate(double fFloodRate) { m_fFloodRate = fFloodRate; }
 	void SetFloodBurst(unsigned short int uFloodBurst) { m_uFloodBurst = uFloodBurst; }
 
+	unsigned short int GetJoinDelay() const { return m_uJoinDelay; }
+	void SetJoinDelay(unsigned short int uJoinDelay) { m_uJoinDelay = uJoinDelay; }
+
 	CString ExpandString(const CString& sStr) const;
 	CString& ExpandString(const CString& sStr, CString& sRet) const;
 private:
 	bool JoinChan(CChan* pChan);
+	bool LoadModule(const CString& sModName, const CString& sArgs, const CString& sNotice, CString& sError);
 
 protected:
 	CString            m_sName;
@@ -191,6 +204,8 @@ protected:
 	CString            m_sRealName;
 	CString            m_sBindHost;
 	CString            m_sEncoding;
+	CString            m_sQuitMsg;
+	SCString           m_ssTrustedFingerprints;
 
 	CModules*          m_pModules;
 
@@ -220,6 +235,8 @@ protected:
 
 	CIRCNetworkPingTimer* m_pPingTimer;
 	CIRCNetworkJoinTimer* m_pJoinTimer;
+
+	unsigned short int m_uJoinDelay;
 };
 
 #endif // !_IRCNETWORK_H

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,7 +122,7 @@ void CHTTPSock::ReadLine(const CString& sData) {
 		sLine.Token(2).Base64Decode(sUnhashed);
 		m_sUser = sUnhashed.Token(0, false, ":");
 		m_sPass = sUnhashed.Token(1, true, ":");
-		m_bLoggedIn = OnLogin(m_sUser, m_sPass);
+		// Postpone authorization attempt until end of headers, because cookies should be read before that, otherwise session id will be overwritten in GetSession()
 	} else if (sName.Equals("Content-Length:")) {
 		m_uPostLen = sLine.Token(1).ToULong();
 		if (m_uPostLen > MAX_POST_SIZE)
@@ -168,20 +168,25 @@ void CHTTPSock::ReadLine(const CString& sData) {
 		sLine.Token(1, true).Split(",", ssEncodings, false, "", "", false, true);
 		m_bAcceptGzip = (ssEncodings.find("gzip") != ssEncodings.end());
 	} else if (sLine.empty()) {
-		m_bGotHeader = true;
-
-		if (m_bPost) {
-			m_sPostData = GetInternalReadBuffer();
-			CheckPost();
+		if (!m_sUser.empty() && !m_bLoggedIn) {
+			m_bLoggedIn = OnLogin(m_sUser, m_sPass, true);
+			// After successful login ReadLine("") will be called again to trigger "else" block
 		} else {
-			GetPage();
-		}
+			m_bGotHeader = true;
 
-		DisableReadLine();
+			if (m_bPost) {
+				m_sPostData = GetInternalReadBuffer();
+				CheckPost();
+			} else {
+				GetPage();
+			}
+
+			DisableReadLine();
+		}
 	}
 }
 
-CString CHTTPSock::GetRemoteIP() {
+CString CHTTPSock::GetRemoteIP() const {
 	if (!m_sForwardedIP.empty()) {
 		return m_sForwardedIP;
 	}
@@ -270,6 +275,7 @@ void CHTTPSock::PrintPage(const CString& sPage) {
 			} while(zStatus == Z_OK);
 
 			Close(Csock::CLT_AFTERWRITE);
+			deflateEnd(&zStrm);
 			return;
 		}
 
@@ -633,10 +639,7 @@ bool CHTTPSock::PrintErrorPage(unsigned int uStatusId, const CString& sStatusMsg
 				"<h1>" + sStatusMsg.Escape_n(CString::EHTML) + "</h1>\r\n"
 				"<p>" + sMessage.Escape_n(CString::EHTML) + "</p>\r\n"
 				"<hr/>\r\n"
-				"<address>" +
-					CZNC::GetTag(false, /* bHTML = */ true) +
-					" at " + GetLocalIP().Escape_n(CString::EHTML) + " Port " + CString(GetLocalPort()) +
-				"</address>\r\n"
+				"<p>" + CZNC::GetTag(false, /* bHTML = */ true) + "</p>\r\n"
 			"</body>\r\n"
 		"</html>\r\n";
 
@@ -663,7 +666,7 @@ bool CHTTPSock::ForceLogin() {
 	return false;
 }
 
-bool CHTTPSock::OnLogin(const CString& sUser, const CString& sPass) {
+bool CHTTPSock::OnLogin(const CString& sUser, const CString& sPass, bool bBasic) {
 	return false;
 }
 

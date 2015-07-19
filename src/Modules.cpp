@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,6 +157,10 @@ CModule::~CModule() {
 	}
 
 	SaveRegistry();
+
+#ifdef HAVE_PTHREAD
+	CancelJobs(m_sJobs);
+#endif
 }
 
 void CModule::SetUser(CUser* pUser) { m_pUser = pUser; }
@@ -215,6 +219,22 @@ bool CModule::LoadRegistry() {
 bool CModule::SaveRegistry() const {
 	//CString sPrefix = (m_pUser) ? m_pUser->GetUserName() : ".global";
 	return (m_mssRegistry.WriteToDisk(GetSavePath() + "/.registry", 0600) == MCString::MCS_SUCCESS);
+}
+
+bool CModule::MoveRegistry(const CString& sPath) {
+	if (m_sSavePath != sPath) {
+		CFile fOldNVFile = CFile(m_sSavePath + "/.registry");
+		if (!fOldNVFile.Exists()) {
+			return false;
+		}
+		if (!CFile::Exists(sPath) && !CDir::MakeDir(sPath)) {
+			return false;
+		}
+		fOldNVFile.Copy(sPath + "/.registry");
+		m_sSavePath = sPath;
+		return true;
+	}
+	return false;
 }
 
 bool CModule::SetNV(const CString & sName, const CString & sValue, bool bWriteToDisk) {
@@ -449,6 +469,52 @@ void CModule::ListSockets() {
 	PutModule(Table);
 }
 
+#ifdef HAVE_PTHREAD
+CModuleJob::~CModuleJob()
+{
+	m_pModule->UnlinkJob(this);
+}
+
+void CModule::AddJob(CModuleJob *pJob)
+{
+	CThreadPool::Get().addJob(pJob);
+	m_sJobs.insert(pJob);
+}
+
+void CModule::CancelJob(CModuleJob *pJob)
+{
+	if (pJob == NULL)
+		return;
+	// Destructor calls UnlinkJob and removes the job from m_sJobs
+	CThreadPool::Get().cancelJob(pJob);
+}
+
+bool CModule::CancelJob(const CString& sJobName)
+{
+	set<CModuleJob*>::iterator it;
+	for (it = m_sJobs.begin(); it != m_sJobs.end(); ++it) {
+		if ((*it)->GetName().Equals(sJobName)) {
+			CancelJob(*it);
+			return true;
+		}
+	}
+	return false;
+}
+
+void CModule::CancelJobs(const std::set<CModuleJob*>& sJobs)
+{
+	set<CJob*> sPlainJobs(sJobs.begin(), sJobs.end());
+
+	// Destructor calls UnlinkJob and removes the jobs from m_sJobs
+	CThreadPool::Get().cancelJobs(sPlainJobs);
+}
+
+bool CModule::UnlinkJob(CModuleJob *pJob)
+{
+	return 0 != m_sJobs.erase(pJob);
+}
+#endif
+
 bool CModule::AddCommand(const CModCommand& Command)
 {
 	if (Command.GetFunction() == NULL)
@@ -464,8 +530,13 @@ bool CModule::AddCommand(const CModCommand& Command)
 
 bool CModule::AddCommand(const CString& sCmd, CModCommand::ModCmdFunc func, const CString& sArgs, const CString& sDesc)
 {
-	CModCommand cmd(sCmd, func, sArgs, sDesc);
+	CModCommand cmd(sCmd, this, func, sArgs, sDesc);
 	return AddCommand(cmd);
+}
+
+bool CModule::AddCommand(const CString& sCmd, const CString& sArgs, const CString& sDesc, std::function<void(const CString& sLine)> func) {
+	CModCommand cmd(sCmd, std::move(func), sArgs, sDesc);
+	return AddCommand(std::move(cmd));
 }
 
 void CModule::AddHelpCommand()
@@ -494,7 +565,7 @@ bool CModule::HandleCommand(const CString& sLine) {
 	const CModCommand* pCmd = FindCommand(sCmd);
 
 	if (pCmd) {
-		pCmd->Call(this, sLine);
+		pCmd->Call(sLine);
 		return true;
 	}
 
@@ -504,18 +575,23 @@ bool CModule::HandleCommand(const CString& sLine) {
 }
 
 void CModule::HandleHelpCommand(const CString& sLine) {
-	CString sFilter = sLine.Token(1, true);
+	CString sFilter = sLine.Token(1).AsLower();
 	CString::size_type  iFilterLength = sFilter.size();
 	CTable Table;
 	map<CString, CModCommand>::const_iterator it;
 
 	CModCommand::InitHelp(Table);
 	for (it = m_mCommands.begin(); it != m_mCommands.end(); ++it) {
-		if (sFilter.empty() || (it->second.GetCommand().Equals(sFilter, false, iFilterLength))) {
+		CString sCmd = it->second.GetCommand().AsLower();
+		if (sFilter.empty() || (sCmd.Equals(sFilter, true, iFilterLength)) || sCmd.WildCmp(sFilter)) {
 			it->second.AddHelp(Table);
 		}
 	}
-	PutModule(Table);
+	if (Table.empty()) {
+		PutModule("No matches for '" + sFilter + "'");
+	} else {
+		PutModule(Table);
+	}
 }
 
 CString CModule::GetModNick() const { return ((m_pUser) ? m_pUser->GetStatusPrefix() : "*") + m_sModName; }
@@ -598,6 +674,13 @@ CModule::EModRet CModule::OnChanBufferStarting(CChan& Chan, CClient& Client) { r
 CModule::EModRet CModule::OnChanBufferEnding(CChan& Chan, CClient& Client) { return CONTINUE; }
 CModule::EModRet CModule::OnChanBufferPlayLine(CChan& Chan, CClient& Client, CString& sLine) { return CONTINUE; }
 CModule::EModRet CModule::OnPrivBufferPlayLine(CClient& Client, CString& sLine) { return CONTINUE; }
+
+CModule::EModRet CModule::OnChanBufferPlayLine2(CChan& Chan, CClient& Client, CString& sLine, const timeval& tv) {
+	return OnChanBufferPlayLine(Chan, Client, sLine);
+}
+CModule::EModRet CModule::OnPrivBufferPlayLine2(CClient& Client, CString& sLine, const timeval& tv) {
+	return OnPrivBufferPlayLine(Client, sLine);
+}
 
 void CModule::OnClientLogin() {}
 void CModule::OnClientDisconnect() {}
@@ -685,7 +768,7 @@ bool CModule::PutModNotice(const CString& sLine) {
 CModule::EModRet CModule::OnAddUser(CUser& User, CString& sErrorRet) { return CONTINUE; }
 CModule::EModRet CModule::OnDeleteUser(CUser& User) { return CONTINUE; }
 void CModule::OnClientConnect(CZNCSock* pClient, const CString& sHost, unsigned short uPort) {}
-CModule::EModRet CModule::OnLoginAttempt(CSmartPtr<CAuthBase> Auth) { return CONTINUE; }
+CModule::EModRet CModule::OnLoginAttempt(std::shared_ptr<CAuthBase> Auth) { return CONTINUE; }
 void CModule::OnFailedLogin(const CString& sUsername, const CString& sRemoteIP) {}
 CModule::EModRet CModule::OnUnknownUserRaw(CClient* pClient, CString& sLine) { return CONTINUE; }
 void CModule::OnClientCapLs(CClient* pClient, SCString& ssCaps) {}
@@ -782,7 +865,9 @@ bool CModules::OnPart(const CNick& Nick, CChan& Channel, const CString& sMessage
 bool CModules::OnInvite(const CNick& Nick, const CString& sChan) { MODHALTCHK(OnInvite(Nick, sChan)); }
 bool CModules::OnChanBufferStarting(CChan& Chan, CClient& Client) { MODHALTCHK(OnChanBufferStarting(Chan, Client)); }
 bool CModules::OnChanBufferEnding(CChan& Chan, CClient& Client) { MODHALTCHK(OnChanBufferEnding(Chan, Client)); }
+bool CModules::OnChanBufferPlayLine2(CChan& Chan, CClient& Client, CString& sLine, const timeval& tv) { MODHALTCHK(OnChanBufferPlayLine2(Chan, Client, sLine, tv)); }
 bool CModules::OnChanBufferPlayLine(CChan& Chan, CClient& Client, CString& sLine) { MODHALTCHK(OnChanBufferPlayLine(Chan, Client, sLine)); }
+bool CModules::OnPrivBufferPlayLine2(CClient& Client, CString& sLine, const timeval& tv) { MODHALTCHK(OnPrivBufferPlayLine2(Client, sLine, tv)); }
 bool CModules::OnPrivBufferPlayLine(CClient& Client, CString& sLine) { MODHALTCHK(OnPrivBufferPlayLine(Client, sLine)); }
 bool CModules::OnCTCPReply(CNick& Nick, CString& sMessage) { MODHALTCHK(OnCTCPReply(Nick, sMessage)); }
 bool CModules::OnPrivCTCP(CNick& Nick, CString& sMessage) { MODHALTCHK(OnPrivCTCP(Nick, sMessage)); }
@@ -849,7 +934,7 @@ bool CModules::OnClientConnect(CZNCSock* pClient, const CString& sHost, unsigned
 	return false;
 }
 
-bool CModules::OnLoginAttempt(CSmartPtr<CAuthBase> Auth) {
+bool CModules::OnLoginAttempt(std::shared_ptr<CAuthBase> Auth) {
 	MODHALTCHK(OnLoginAttempt(Auth));
 }
 
@@ -1006,7 +1091,7 @@ bool CModules::LoadModule(const CString& sModule, const CString& sArgs, CModInfo
 	}
 
 	if (!sRetMsg.empty()) {
-		sRetMsg += "[" + sRetMsg + "] ";
+		sRetMsg += " ";
 	}
 	sRetMsg += "[" + sModPath + "]";
 	return true;
@@ -1146,6 +1231,28 @@ void CModules::GetAvailableMods(set<CModInfo>& ssMods, CModInfo::EModuleType eTy
 	GLOBALMODULECALL(OnGetAvailableMods(ssMods, eType), NOTHING);
 }
 
+void CModules::GetDefaultMods(set<CModInfo>& ssMods, CModInfo::EModuleType eType) {
+
+	GetAvailableMods(ssMods, eType);
+
+	const map<CString, CModInfo::EModuleType> ns = {
+		{ "chansaver", CModInfo::UserModule },
+		{ "controlpanel", CModInfo::UserModule },
+		{ "simple_away", CModInfo::NetworkModule },
+		{ "webadmin", CModInfo::GlobalModule }
+	};
+
+	auto it = ssMods.begin();
+	while (it != ssMods.end()) {
+		auto it2 = ns.find(it->GetName());
+		if (it2 != ns.end() && it2->second == eType) {
+			++it;
+		} else {
+			it = ssMods.erase(it);
+		}
+	}
+}
+
 bool CModules::FindModPath(const CString& sModule, CString& sModPath,
 		CString& sDataPath) {
 	CString sMod = sModule;
@@ -1252,10 +1359,11 @@ CModCommand::CModCommand()
 {
 }
 
-CModCommand::CModCommand(const CString& sCmd, ModCmdFunc func, const CString& sArgs, const CString& sDesc)
-	: m_sCmd(sCmd), m_pFunc(func), m_sArgs(sArgs), m_sDesc(sDesc)
-{
-}
+CModCommand::CModCommand(const CString& sCmd, CModule* pMod, ModCmdFunc func, const CString& sArgs, const CString& sDesc)
+	: m_sCmd(sCmd), m_pFunc([pMod, func](const CString& sLine) { (pMod->*func)(sLine); }), m_sArgs(sArgs), m_sDesc(sDesc) {}
+
+CModCommand::CModCommand(const CString& sCmd, CmdFunc func, const CString& sArgs, const CString& sDesc)
+	: m_sCmd(sCmd), m_pFunc(std::move(func)), m_sArgs(sArgs), m_sDesc(sDesc) {}
 
 CModCommand::CModCommand(const CModCommand& other)
 	: m_sCmd(other.m_sCmd), m_pFunc(other.m_pFunc), m_sArgs(other.m_sArgs), m_sDesc(other.m_sDesc)

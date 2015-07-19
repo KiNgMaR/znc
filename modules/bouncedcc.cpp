@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,15 +34,15 @@ public:
 	static unsigned short DCCRequest(const CString& sNick, unsigned long uLongIP, unsigned short uPort, const CString& sFileName, bool bIsChat, CBounceDCCMod* pMod, const CString& sRemoteIP);
 
 	void ReadLine(const CString& sData);
-	virtual void ReadData(const char* data, size_t len);
-	virtual void ReadPaused();
-	virtual void Timeout();
-	virtual void ConnectionRefused();
-	virtual void ReachedMaxBuffer();
-	virtual void SockError(int iErrno, const CString& sDescription);
-	virtual void Connected();
-	virtual void Disconnected();
-	virtual Csock* GetSockObj(const CString& sHost, unsigned short uPort);
+	virtual void ReadData(const char* data, size_t len) override;
+	virtual void ReadPaused() override;
+	virtual void Timeout() override;
+	virtual void ConnectionRefused() override;
+	virtual void ReachedMaxBuffer() override;
+	virtual void SockError(int iErrno, const CString& sDescription) override;
+	virtual void Connected() override;
+	virtual void Disconnected() override;
+	virtual Csock* GetSockObj(const CString& sHost, unsigned short uPort) override;
 	void Shutdown();
 	void PutServ(const CString& sLine);
 	void PutPeer(const CString& sLine);
@@ -57,7 +57,7 @@ public:
 
 	// Getters
 	unsigned short GetUserPort() const { return m_uRemotePort; }
-	const CString& GetRemoteIP() const { return m_sRemoteIP; }
+	const CString& GetRemoteAddr() const { return m_sRemoteIP; }
 	const CString& GetRemoteNick() const { return m_sRemoteNick; }
 	const CString& GetFileName() const { return m_sFileName; }
 	CDCCBounce* GetPeer() const { return m_pPeer; }
@@ -105,7 +105,7 @@ public:
 			if (!(pSock->IsRemote())) {
 				Table.AddRow();
 				Table.SetCell("Nick", pSock->GetRemoteNick());
-				Table.SetCell("IP", pSock->GetRemoteIP());
+				Table.SetCell("IP", pSock->GetRemoteAddr());
 
 				if (pSock->IsChat()) {
 					Table.SetCell("Type", "Chat");
@@ -117,7 +117,7 @@ public:
 				CString sState = "Waiting";
 				if ((pSock->IsConnected()) || (pSock->IsPeerConnected())) {
 					sState = "Halfway";
-					if ((pSock->IsPeerConnected()) && (pSock->IsPeerConnected())) {
+					if ((pSock->IsConnected()) && (pSock->IsPeerConnected())) {
 						sState = "Connected";
 					}
 				}
@@ -151,14 +151,14 @@ public:
 	virtual ~CBounceDCCMod() {}
 
 	CString GetLocalDCCIP() {
-		return m_pUser->GetLocalDCCIP();
+		return GetUser()->GetLocalDCCIP();
 	}
 
 	bool UseClientIP() {
 		return GetNV("UseClientIP").ToBool();
 	}
 
-	virtual EModRet OnUserCTCP(CString& sTarget, CString& sMessage) {
+	virtual EModRet OnUserCTCP(CString& sTarget, CString& sMessage) override {
 		if (sMessage.Equals("DCC ", false, 4)) {
 			CString sType = sMessage.Token(1, false, " ", false, "\"", "\"", true);
 			CString sFile = sMessage.Token(2, false, " ", false, "\"", "\"", false);
@@ -168,7 +168,7 @@ public:
 			CString sIP = GetLocalDCCIP();
 
 			if (!UseClientIP()) {
-				uLongIP = CUtils::GetLongIP(m_pClient->GetRemoteIP());
+				uLongIP = CUtils::GetLongIP(GetClient()->GetRemoteIP());
 			}
 
 			if (sType.Equals("CHAT")) {
@@ -212,8 +212,9 @@ public:
 		return CONTINUE;
 	}
 
-	virtual EModRet OnPrivCTCP(CNick& Nick, CString& sMessage) {
-		if (sMessage.Equals("DCC ", false, 4) && m_pNetwork->IsUserAttached()) {
+	virtual EModRet OnPrivCTCP(CNick& Nick, CString& sMessage) override {
+		CIRCNetwork* pNetwork = GetNetwork();
+		if (sMessage.Equals("DCC ", false, 4) && pNetwork->IsUserAttached()) {
 			// DCC CHAT chat 2453612361 44592
 			CString sType = sMessage.Token(1, false, " ", false, "\"", "\"", true);
 			CString sFile = sMessage.Token(2, false, " ", false, "\"", "\"", false);
@@ -226,14 +227,14 @@ public:
 				unsigned short uBNCPort = CDCCBounce::DCCRequest(FromNick.GetNick(), uLongIP, uPort, "", true, this, CUtils::GetIP(uLongIP));
 				if (uBNCPort) {
 					CString sIP = GetLocalDCCIP();
-					PutUser(":" + Nick.GetNickMask() + " PRIVMSG " + m_pNetwork->GetCurNick() + " :\001DCC CHAT chat " + CString(CUtils::GetLongIP(sIP)) + " " + CString(uBNCPort) + "\001");
+					PutUser(":" + Nick.GetNickMask() + " PRIVMSG " + pNetwork->GetCurNick() + " :\001DCC CHAT chat " + CString(CUtils::GetLongIP(sIP)) + " " + CString(uBNCPort) + "\001");
 				}
 			} else if (sType.Equals("SEND")) {
 				// DCC SEND readme.txt 403120438 5550 1104
 				unsigned short uBNCPort = CDCCBounce::DCCRequest(Nick.GetNick(), uLongIP, uPort, sFile, false, this, CUtils::GetIP(uLongIP));
 				if (uBNCPort) {
 					CString sIP = GetLocalDCCIP();
-					PutUser(":" + Nick.GetNickMask() + " PRIVMSG " + m_pNetwork->GetCurNick() + " :\001DCC SEND " + sFile + " " + CString(CUtils::GetLongIP(sIP)) + " " + CString(uBNCPort) + " " + CString(uFileSize) + "\001");
+					PutUser(":" + Nick.GetNickMask() + " PRIVMSG " + pNetwork->GetCurNick() + " :\001DCC SEND " + sFile + " " + CString(CUtils::GetLongIP(sIP)) + " " + CString(uBNCPort) + " " + CString(uFileSize) + "\001");
 				}
 			} else if (sType.Equals("RESUME")) {
 				// Need to lookup the connection by port, filter the port, and forward to the user
@@ -244,7 +245,7 @@ public:
 					CDCCBounce* pSock = (CDCCBounce*) *it;
 
 					if (pSock->GetLocalPort() == uResumePort) {
-						PutUser(":" + Nick.GetNickMask() + " PRIVMSG " + m_pNetwork->GetCurNick() + " :\001DCC " + sType + " " + sFile + " " + CString(pSock->GetUserPort()) + " " + sMessage.Token(4) + "\001");
+						PutUser(":" + Nick.GetNickMask() + " PRIVMSG " + pNetwork->GetCurNick() + " :\001DCC " + sType + " " + sFile + " " + CString(pSock->GetUserPort()) + " " + sMessage.Token(4) + "\001");
 					}
 				}
 			} else if (sType.Equals("ACCEPT")) {
@@ -254,7 +255,7 @@ public:
 					CDCCBounce* pSock = (CDCCBounce*) *it;
 
 					if (pSock->GetUserPort() == sMessage.Token(3).ToUShort()) {
-						PutUser(":" + Nick.GetNickMask() + " PRIVMSG " + m_pNetwork->GetCurNick() + " :\001DCC " + sType + " " + sFile + " " + CString(pSock->GetLocalPort()) + " " + sMessage.Token(4) + "\001");
+						PutUser(":" + Nick.GetNickMask() + " PRIVMSG " + pNetwork->GetCurNick() + " :\001DCC " + sType + " " + sFile + " " + CString(pSock->GetLocalPort()) + " " + sMessage.Token(4) + "\001");
 					}
 				}
 			}

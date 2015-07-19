@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,10 +44,16 @@ class CCryptMod : public CModule {
 	}
 
 public:
-	MODCONSTRUCTOR(CCryptMod) {}
+	MODCONSTRUCTOR(CCryptMod) {
+		AddHelpCommand();
+		AddCommand("DelKey", static_cast<CModCommand::ModCmdFunc>(&CCryptMod::OnDelKeyCommand), "<#chan|Nick>", "Remove a key for nick or channel");
+		AddCommand("SetKey", static_cast<CModCommand::ModCmdFunc>(&CCryptMod::OnSetKeyCommand), "<#chan|Nick> <Key>", "Set a key for nick or channel");
+		AddCommand("ListKeys", static_cast<CModCommand::ModCmdFunc>(&CCryptMod::OnListKeysCommand), "", "List all keys");
+	}
+
 	virtual ~CCryptMod() {}
 
-	virtual EModRet OnUserMsg(CString& sTarget, CString& sMessage) {
+	virtual EModRet OnUserMsg(CString& sTarget, CString& sMessage) override {
 		sTarget.TrimLeft(NickPrefix());
 
 		if (sMessage.Left(2) == "``") {
@@ -58,11 +64,12 @@ public:
 		MCString::iterator it = FindNV(sTarget.AsLower());
 
 		if (it != EndNV()) {
-			CChan* pChan = m_pNetwork->FindChan(sTarget);
+			CChan* pChan = GetNetwork()->FindChan(sTarget);
+			CString sNickMask = GetNetwork()->GetIRCNick().GetNickMask();
 			if (pChan) {
 				if (!pChan->AutoClearChanBuffer())
-					pChan->AddBuffer(":" + NickPrefix() + _NAMEDFMT(m_pNetwork->GetIRCNick().GetNickMask()) + " PRIVMSG " + _NAMEDFMT(sTarget) + " :{text}", sMessage);
-				m_pUser->PutUser(":" + NickPrefix() + m_pNetwork->GetIRCNick().GetNickMask() + " PRIVMSG " + sTarget + " :" + sMessage, NULL, m_pClient);
+					pChan->AddBuffer(":" + NickPrefix() + _NAMEDFMT(sNickMask) + " PRIVMSG " + _NAMEDFMT(sTarget) + " :{text}", sMessage);
+				GetUser()->PutUser(":" + NickPrefix() + sNickMask + " PRIVMSG " + sTarget + " :" + sMessage, NULL, GetClient());
 			}
 
 			CString sMsg = MakeIvec() + sMessage;
@@ -77,12 +84,12 @@ public:
 		return CONTINUE;
 	}
 
-	virtual EModRet OnPrivMsg(CNick& Nick, CString& sMessage) {
+	virtual EModRet OnPrivMsg(CNick& Nick, CString& sMessage) override {
 		FilterIncoming(Nick.GetNick(), Nick, sMessage);
 		return CONTINUE;
 	}
 
-	virtual EModRet OnChanMsg(CNick& Nick, CChan& Channel, CString& sMessage) {
+	virtual EModRet OnChanMsg(CNick& Nick, CChan& Channel, CString& sMessage) override {
 		FilterIncoming(Channel.GetName(), Nick, sMessage);
 		return CONTINUE;
 	}
@@ -103,61 +110,57 @@ public:
 
 	}
 
-	virtual void OnModCommand(const CString& sCommand) {
-		CString sCmd = sCommand.Token(0);
+	void OnDelKeyCommand(const CString& sCommand) {
+		CString sTarget = sCommand.Token(1);
 
-		if (sCmd.Equals("DELKEY")) {
-			CString sTarget = sCommand.Token(1);
-
-			if (!sTarget.empty()) {
-				if (DelNV(sTarget.AsLower())) {
-					PutModule("Target [" + sTarget + "] deleted");
-				} else {
-					PutModule("Target [" + sTarget + "] not found");
-				}
+		if (!sTarget.empty()) {
+			if (DelNV(sTarget.AsLower())) {
+				PutModule("Target [" + sTarget + "] deleted");
 			} else {
-				PutModule("Usage DelKey <#chan|Nick>");
+				PutModule("Target [" + sTarget + "] not found");
 			}
-		} else if (sCmd.Equals("SETKEY")) {
-			CString sTarget = sCommand.Token(1);
-			CString sKey = sCommand.Token(2, true);
-
-			// Strip "cbc:" from beginning of string incase someone pastes directly from mircryption
-			sKey.TrimPrefix("cbc:");
-
-			if (!sKey.empty()) {
-				SetNV(sTarget.AsLower(), sKey);
-				PutModule("Set encryption key for [" + sTarget + "] to [" + sKey + "]");
-			} else {
-				PutModule("Usage: SetKey <#chan|Nick> <Key>");
-			}
-		} else if (sCmd.Equals("LISTKEYS")) {
-			if (BeginNV() == EndNV()) {
-				PutModule("You have no encryption keys set.");
-			} else {
-				CTable Table;
-				Table.AddColumn("Target");
-				Table.AddColumn("Key");
-
-				for (MCString::iterator it = BeginNV(); it != EndNV(); ++it) {
-					Table.AddRow();
-					Table.SetCell("Target", it->first);
-					Table.SetCell("Key", it->second);
-				}
-
-				MCString::iterator it = FindNV(NICK_PREFIX_KEY);
-				if (it == EndNV()) {
-					Table.AddRow();
-					Table.SetCell("Target", NICK_PREFIX_KEY);
-					Table.SetCell("Key", NickPrefix());
-				}
-
-				PutModule(Table);
-			}
-		} else if (sCmd.Equals("HELP")) {
-			PutModule("Try: SetKey, DelKey, ListKeys");
 		} else {
-			PutModule("Unknown command, try 'Help'");
+			PutModule("Usage DelKey <#chan|Nick>");
+		}
+	}
+
+	void OnSetKeyCommand(const CString& sCommand) {
+		CString sTarget = sCommand.Token(1);
+		CString sKey = sCommand.Token(2, true);
+
+		// Strip "cbc:" from beginning of string incase someone pastes directly from mircryption
+		sKey.TrimPrefix("cbc:");
+
+		if (!sKey.empty()) {
+			SetNV(sTarget.AsLower(), sKey);
+			PutModule("Set encryption key for [" + sTarget + "] to [" + sKey + "]");
+		} else {
+			PutModule("Usage: SetKey <#chan|Nick> <Key>");
+		}
+	}
+
+	void OnListKeysCommand(const CString& sCommand) {
+		if (BeginNV() == EndNV()) {
+			PutModule("You have no encryption keys set.");
+		} else {
+			CTable Table;
+			Table.AddColumn("Target");
+			Table.AddColumn("Key");
+
+			for (MCString::iterator it = BeginNV(); it != EndNV(); ++it) {
+				Table.AddRow();
+				Table.SetCell("Target", it->first);
+				Table.SetCell("Key", it->second);
+			}
+
+			MCString::iterator it = FindNV(NICK_PREFIX_KEY);
+			if (it == EndNV()) {
+				Table.AddRow();
+				Table.SetCell("Target", NICK_PREFIX_KEY);
+				Table.SetCell("Key", NickPrefix());
+			}
+
+			PutModule(Table);
 		}
 	}
 

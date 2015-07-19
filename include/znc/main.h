@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,30 +77,30 @@ extern bool ZNC_NO_NEED_TO_DO_ANYTHING_ON_MODULE_CALL_EXITER;
 
 #define _USERMODULECALL(macFUNC, macUSER, macNETWORK, macCLIENT, macEXITER)  \
 	do {                                                              \
-		assert(macUSER != NULL);                                  \
 		bool bGlobalExited = false;                                \
 		_GLOBALMODULECALL(macFUNC, macUSER, macNETWORK, macCLIENT, &bGlobalExited); \
 		if (bGlobalExited) {                                       \
 			*macEXITER = true;                \
 			break;                                             \
 		}                                                         \
-		CModules& UMods = macUSER->GetModules();                  \
-		CIRCNetwork* pOldUNetwork = UMods.GetNetwork();           \
-		CClient* pOldUClient = UMods.GetClient();                 \
-		UMods.SetNetwork(macNETWORK);                             \
-		UMods.SetClient(macCLIENT);                               \
-		if (UMods.macFUNC) {                                      \
-			UMods.SetNetwork(pOldUNetwork);                   \
-			UMods.SetClient(pOldUClient);                     \
-			*macEXITER = true;                \
-		}                                                         \
-		UMods.SetNetwork(pOldUNetwork);                           \
-		UMods.SetClient(pOldUClient);                             \
+		if (macUSER != nullptr) { \
+			CModules& UMods = macUSER->GetModules();                  \
+			CIRCNetwork* pOldUNetwork = UMods.GetNetwork();           \
+			CClient* pOldUClient = UMods.GetClient();                 \
+			UMods.SetNetwork(macNETWORK);                             \
+			UMods.SetClient(macCLIENT);                               \
+			if (UMods.macFUNC) {                                      \
+				UMods.SetNetwork(pOldUNetwork);                   \
+				UMods.SetClient(pOldUClient);                     \
+				*macEXITER = true;                \
+			}                                                         \
+			UMods.SetNetwork(pOldUNetwork);                           \
+			UMods.SetClient(pOldUClient);                             \
+		} \
 	} while (false)
 
 #define NETWORKMODULECALL(macFUNC, macUSER, macNETWORK, macCLIENT, macEXITER)  \
 	do {                                                                   \
-		assert(macUSER != NULL);                                       \
 		bool bUserExited = false;                                   \
 		_USERMODULECALL(macFUNC, macUSER, macNETWORK, macCLIENT, &bUserExited); \
 		if (bUserExited) {                                         \

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,12 +64,15 @@ private:
 
 class CListSockets : public CModule {
 public:
-	MODCONSTRUCTOR(CListSockets) {}
+	MODCONSTRUCTOR(CListSockets) {
+		AddHelpCommand();
+		AddCommand("List", static_cast<CModCommand::ModCmdFunc>(&CListSockets::OnListCommand), "[-n]", "Show the list of active sockets. Pass -n to show IP addresses");
+	}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage)
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override
 	{
 #ifndef MOD_LISTSOCKETS_ALLOW_EVERYONE
-		if (!m_pUser->IsAdmin()) {
+		if (!GetUser()->IsAdmin()) {
 			sMessage = "You must be admin to use this module";
 			return false;
 		}
@@ -96,10 +99,10 @@ public:
 		return ret;
 	}
 
-	virtual bool WebRequiresAdmin() { return true; }
-	virtual CString GetWebMenuTitle() { return "List sockets"; }
+	virtual bool WebRequiresAdmin() override { return true; }
+	virtual CString GetWebMenuTitle() override { return "List sockets"; }
 
-	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) {
+	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) override {
 		if (sPageName == "index") {
 			if (CZNC::Get().GetManager().empty()) {
 				return false;
@@ -128,20 +131,14 @@ public:
 		return false;
 	}
 
-	virtual void OnModCommand(const CString& sLine) {
-		CString sCommand = sLine.Token(0);
+	void OnListCommand(const CString& sLine) {
 		CString sArg = sLine.Token(1, true);
 
-		if (sCommand.Equals("LIST")) {
-			bool bShowHosts = true;
-			if (sArg.Equals("-n")) {
-				bShowHosts = false;
-			}
-			ShowSocks(bShowHosts);
-		} else {
-			PutModule("Use 'list' to view a list of active sockets");
-			PutModule("Use 'list -n' if you want IP addresses to be displayed");
+		bool bShowHosts = true;
+		if (sArg.Equals("-n")) {
+			bShowHosts = false;
 		}
+		ShowSocks(bShowHosts);
 	}
 
 	CString GetSocketState(Csock* pSocket) {
@@ -163,7 +160,7 @@ public:
 	CString GetCreatedTime(Csock* pSocket) {
 		unsigned long long iStartTime = pSocket->GetStartTime();
 		time_t iTime = iStartTime / 1000;
-		return CUtils::FormatTime(iTime, "%Y-%m-%d %H:%M:%S", m_pUser->GetTimezone());
+		return CUtils::FormatTime(iTime, "%Y-%m-%d %H:%M:%S", GetUser()->GetTimezone());
 	}
 
 	CString GetLocalHost(Csock* pSocket, bool bShowHosts) {

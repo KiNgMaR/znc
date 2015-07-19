@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,24 +22,29 @@ using std::vector;
 class CStickyChan : public CModule
 {
 public:
-	MODCONSTRUCTOR(CStickyChan) {}
+	MODCONSTRUCTOR(CStickyChan) {
+		AddHelpCommand();
+		AddCommand("Stick", static_cast<CModCommand::ModCmdFunc>(&CStickyChan::OnStickCommand), "<#channel> [key]", "Sticks a channel");
+		AddCommand("Unstick", static_cast<CModCommand::ModCmdFunc>(&CStickyChan::OnUnstickCommand), "<#channel>", "Unsticks a channel");
+		AddCommand("List", static_cast<CModCommand::ModCmdFunc>(&CStickyChan::OnListCommand), "", "Lists sticky channels");
+	}
 	virtual ~CStickyChan()
 	{
 	}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage);
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override;
 
-	virtual EModRet OnUserPart(CString& sChannel, CString& sMessage)
+	virtual EModRet OnUserPart(CString& sChannel, CString& sMessage) override
 	{
 		for (MCString::iterator it = BeginNV(); it != EndNV(); ++it)
 		{
 			if (sChannel.Equals(it->first))
 			{
-				CChan* pChan = m_pNetwork->FindChan(sChannel);
+				CChan* pChan = GetNetwork()->FindChan(sChannel);
 
 				if (pChan)
 				{
-					pChan->JoinUser(true, "", m_pClient);
+					pChan->JoinUser();
 					return HALT;
 				}
 			}
@@ -48,62 +53,62 @@ public:
 		return CONTINUE;
 	}
 
-	virtual void OnModCommand(const CString& sCommand)
+	void OnStickCommand(const CString& sCommand)
 	{
-		CString sCmdName = sCommand.Token(0);
-		CString sChannel = sCommand.Token(1);
-		sChannel.MakeLower();
-		if ((sCmdName == "stick") && (!sChannel.empty()))
-		{
-			SetNV(sChannel, sCommand.Token(2));
-			PutModule("Stuck " + sChannel);
+		CString sChannel = sCommand.Token(1).AsLower();
+		if (sChannel.empty()) {
+			PutModule("Usage: Stick <#channel> [key]");
+			return;
 		}
-		else if ((sCmdName == "unstick") && (!sChannel.empty()))
-		{
-			MCString::iterator it = FindNV(sChannel);
-			if (it != EndNV())
-				DelNV(it);
-
-			PutModule("UnStuck " + sChannel);
-		}
-		else if ((sCmdName == "list") && (sChannel.empty()))
-		{
-			int i = 1;
-			for (MCString::iterator it = BeginNV(); it != EndNV(); ++it, i++)
-			{
-				if (it->second.empty())
-					PutModule(CString(i) + ": " + it->first);
-				else
-					PutModule(CString(i) + ": " + it->first + " (" + it->second + ")");
-			}
-			PutModule(" -- End of List");
-		}
-		else
-		{
-			PutModule("USAGE: [un]stick #channel [key], list");
-		}
+		SetNV(sChannel, sCommand.Token(2));
+		PutModule("Stuck " + sChannel);
 	}
 
-	virtual void RunJob()
+	void OnUnstickCommand(const CString& sCommand) {
+		CString sChannel = sCommand.Token(1);
+		if (sChannel.empty()) {
+			PutModule("Usage: Unstick <#channel>");
+			return;
+		}
+		MCString::iterator it = FindNV(sChannel);
+		if (it != EndNV())
+			DelNV(it);
+		PutModule("Unstuck " + sChannel);
+	}
+
+	void OnListCommand(const CString& sCommand) {
+		int i = 1;
+		for (MCString::iterator it = BeginNV(); it != EndNV(); ++it, i++)
+		{
+			if (it->second.empty())
+				PutModule(CString(i) + ": " + it->first);
+			else
+				PutModule(CString(i) + ": " + it->first + " (" + it->second + ")");
+		}
+		PutModule(" -- End of List");
+	}
+
+	void RunJob()
 	{
-		if (!m_pNetwork->GetIRCSock())
+		CIRCNetwork* pNetwork = GetNetwork();
+		if (!pNetwork->GetIRCSock())
 			return;
 
 		for (MCString::iterator it = BeginNV(); it != EndNV(); ++it)
 		{
-			CChan *pChan = m_pNetwork->FindChan(it->first);
+			CChan *pChan = pNetwork->FindChan(it->first);
 			if (!pChan) {
-				pChan = new CChan(it->first, m_pNetwork, true);
+				pChan = new CChan(it->first, pNetwork, true);
 				if (!it->second.empty())
 					pChan->SetKey(it->second);
-				if (!m_pNetwork->AddChan(pChan)) {
+				if (!pNetwork->AddChan(pChan)) {
 					/* AddChan() deleted that channel */
 					PutModule("Could not join [" + it->first
 							+ "] (# prefix missing?)");
 					continue;
 				}
 			}
-			if (!pChan->IsOn()) {
+			if (!pChan->IsOn() && pNetwork->IsIRCConnected()) {
 				PutModule("Joining [" + pChan->GetName() + "]");
 				PutIRC("JOIN " + pChan->GetName() + (pChan->GetKey().empty()
 							? "" : " " + pChan->GetKey()));
@@ -111,13 +116,13 @@ public:
 		}
 	}
 
-	virtual CString GetWebMenuTitle() { return "Sticky Chans"; }
+	virtual CString GetWebMenuTitle() override { return "Sticky Chans"; }
 
-	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) {
+	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) override {
 		if (sPageName == "index") {
 			bool bSubmitted = (WebSock.GetParam("submitted").ToInt() != 0);
 
-			const vector<CChan*>& Channels = m_pNetwork->GetChans();
+			const vector<CChan*>& Channels = GetNetwork()->GetChans();
 			for (unsigned int c = 0; c < Channels.size(); c++) {
 				const CString sChan = Channels[c]->GetName();
 				bool bStick = FindNV(sChan) != EndNV();
@@ -149,7 +154,7 @@ public:
 		return false;
 	}
 
-	virtual bool OnEmbeddedWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) {
+	virtual bool OnEmbeddedWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) override {
 		if (sPageName == "webadmin/channel") {
 			CString sChan = Tmpl["ChanName"];
 			bool bStick = FindNV(sChan) != EndNV();

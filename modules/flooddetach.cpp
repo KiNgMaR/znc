@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,12 @@ public:
 	MODCONSTRUCTOR(CFloodDetachMod) {
 		m_iThresholdSecs = 0;
 		m_iThresholdMsgs = 0;
+
+		AddHelpCommand();
+		AddCommand("Show", static_cast<CModCommand::ModCmdFunc>(&CFloodDetachMod::ShowCommand), "");
+		AddCommand("Secs", static_cast<CModCommand::ModCmdFunc>(&CFloodDetachMod::SecsCommand), "[<limit>]");
+		AddCommand("Lines", static_cast<CModCommand::ModCmdFunc>(&CFloodDetachMod::LinesCommand), "[<limit>]");
+		AddCommand("Silent", static_cast<CModCommand::ModCmdFunc>(&CFloodDetachMod::SilentCommand), "[yes|no]");
 	}
 
 	~CFloodDetachMod() {
@@ -39,7 +45,7 @@ public:
 		SetArgs(CString(m_iThresholdMsgs) + " " + CString(m_iThresholdSecs));
 	}
 
-	bool OnLoad(const CString& sArgs, CString& sMessage) {
+	bool OnLoad(const CString& sArgs, CString& sMessage) override {
 		m_iThresholdMsgs = sArgs.Token(0).ToUInt();
 		m_iThresholdSecs = sArgs.Token(1).ToUInt();
 
@@ -58,7 +64,7 @@ public:
 		return true;
 	}
 
-	void OnIRCDisconnected() {
+	void OnIRCDisconnected() override {
 		m_chans.clear();
 	}
 
@@ -71,7 +77,7 @@ public:
 			if (it->second.first + (time_t)m_iThresholdSecs >= now)
 				continue;
 
-			CChan *pChan = m_pNetwork->FindChan(it->first);
+			CChan *pChan = GetNetwork()->FindChan(it->first);
 			if (it->second.second >= m_iThresholdMsgs
 					&& pChan && pChan->IsDetached()) {
 				// The channel is detached and it is over the
@@ -80,11 +86,13 @@ public:
 				// channels which we detached, this means that
 				// we detached because of a flood.
 
-				PutModule("Flood in [" + pChan->GetName() + "] is over, "
-						"re-attaching...");
+				if (!GetNV("silent").ToBool()) {
+					PutModule("Flood in [" + pChan->GetName() + "] is over, "
+							"re-attaching...");
+				}
 				// No buffer playback, makes sense, doesn't it?
 				pChan->ClearBuffer();
-				pChan->JoinUser();
+				pChan->AttachUser();
 			}
 
 			Limits::iterator it2 = it++;
@@ -138,56 +146,82 @@ public:
 		it->second.first = now;
 
 		Channel.DetachUser();
-		PutModule("Channel [" + Channel.GetName() + "] was "
-				"flooded, you've been detached");
+		if (!GetNV("silent").ToBool()) {
+			PutModule("Channel [" + Channel.GetName() + "] was "
+					"flooded, you've been detached");
+		}
 	}
 
-	EModRet OnChanMsg(CNick& Nick, CChan& Channel, CString& sMessage) {
+	EModRet OnChanMsg(CNick& Nick, CChan& Channel, CString& sMessage) override {
 		Message(Channel);
 		return CONTINUE;
 	}
 
 	// This also catches OnChanAction()
-	EModRet OnChanCTCP(CNick& Nick, CChan& Channel, CString& sMessage) {
+	EModRet OnChanCTCP(CNick& Nick, CChan& Channel, CString& sMessage) override {
 		Message(Channel);
 		return CONTINUE;
 	}
 
-	EModRet OnChanNotice(CNick& Nick, CChan& Channel, CString& sMessage) {
+	EModRet OnChanNotice(CNick& Nick, CChan& Channel, CString& sMessage) override {
 		Message(Channel);
 		return CONTINUE;
 	}
 
-	EModRet OnTopic(CNick& Nick, CChan& Channel, CString& sTopic) {
+	EModRet OnTopic(CNick& Nick, CChan& Channel, CString& sTopic) override {
 		Message(Channel);
 		return CONTINUE;
 	}
 
-	void OnModCommand(const CString& sCommand) {
-		const CString& sCmd = sCommand.Token(0);
-		const CString& sArg = sCommand.Token(1, true);
+	void ShowCommand(const CString& sLine) {
+		PutModule("Current limit is " + CString(m_iThresholdMsgs) + " lines "
+				"in " + CString(m_iThresholdSecs) + " secs.");
+	}
 
-		if (sCmd.Equals("secs") && !sArg.empty()) {
+	void SecsCommand(const CString& sLine) {
+		const CString sArg = sLine.Token(1, true);
+
+		if (sArg.empty()) {
+			PutModule("Seconds limit is [" + CString(m_iThresholdSecs) + "]");
+		} else {
 			m_iThresholdSecs = sArg.ToUInt();
 			if (m_iThresholdSecs == 0)
 				m_iThresholdSecs = 1;
 
 			PutModule("Set seconds limit to [" + CString(m_iThresholdSecs) + "]");
 			Save();
-		} else if (sCmd.Equals("lines") && !sArg.empty()) {
+		}
+	}
+
+	void LinesCommand(const CString& sLine) {
+		const CString sArg = sLine.Token(1, true);
+
+		if (sArg.empty()) {
+			PutModule("Lines limit is [" + CString(m_iThresholdMsgs) + "]");
+		} else {
 			m_iThresholdMsgs = sArg.ToUInt();
 			if (m_iThresholdMsgs == 0)
 				m_iThresholdMsgs = 2;
 
 			PutModule("Set lines limit to [" + CString(m_iThresholdMsgs) + "]");
 			Save();
-		} else if (sCmd.Equals("show")) {
-			PutModule("Current limit is " + CString(m_iThresholdMsgs) + " lines "
-					"in " + CString(m_iThresholdSecs) + " secs.");
-		} else {
-			PutModule("Commands: show, secs <limit>, lines <limit>");
 		}
 	}
+
+	void SilentCommand(const CString& sLine) {
+		const CString sArg = sLine.Token(1, true);
+
+		if (!sArg.empty()) {
+			SetNV("silent", CString(sArg.ToBool()));
+		}
+
+		if (GetNV("silent").ToBool()) {
+			PutModule("Module messages are disabled");
+		} else {
+			PutModule("Module messages are enabled");
+		}
+	}
+
 private:
 	typedef map<CString, std::pair<time_t, unsigned int> > Limits;
 	Limits m_chans;

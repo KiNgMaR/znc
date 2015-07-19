@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,13 @@
 
 #include <znc/zncconfig.h>
 #include <znc/WebModules.h>
+#include <znc/Utils.h>
+#include <znc/Threads.h>
 #include <znc/main.h>
+#include <functional>
 #include <set>
 #include <queue>
+#include <sys/time.h>
 
 // Forward Declarations
 class CAuthBase;
@@ -179,6 +183,29 @@ private:
 	FPTimer_t  m_pFBCallback;
 };
 
+#ifdef HAVE_PTHREAD
+/// A CJob version which can be safely used in modules. The job will be
+/// cancelled when the module is unloaded.
+class CModuleJob : public CJob {
+public:
+	CModuleJob(CModule *pModule, const CString& sName, const CString& sDesc)
+		: CJob(), m_pModule(pModule), m_sName(sName), m_sDescription(sDesc) {
+	}
+	virtual ~CModuleJob();
+
+	// Getters
+	CModule* GetModule() const { return m_pModule; }
+	const CString& GetName() const { return m_sName; }
+	const CString& GetDescription() const { return m_sDescription; }
+	// !Getters
+
+protected:
+	CModule* m_pModule;
+	const CString  m_sName;
+	const CString  m_sDescription;
+};
+#endif
+
 class CModInfo {
 public:
 	typedef CModule* (*ModLoader)(ModHandle p, CUser* pUser, CIRCNetwork* pNetwork, const CString& sModName, const CString& sModPath);
@@ -261,6 +288,7 @@ class ZNC_API CModCommand {
 public:
 	/// Type for the callback function that handles the actual command.
 	typedef void (CModule::*ModCmdFunc)(const CString& sLine);
+	typedef std::function<void(const CString& sLine)> CmdFunc;
 
 	/// Default constructor, needed so that this can be saved in a std::map.
 	CModCommand();
@@ -271,7 +299,8 @@ public:
 	 * @param sArgs Help text describing the arguments to this command.
 	 * @param sDesc Help text describing what this command does.
 	 */
-	CModCommand(const CString& sCmd, ModCmdFunc func, const CString& sArgs, const CString& sDesc);
+	CModCommand(const CString& sCmd, CModule* pMod, ModCmdFunc func, const CString& sArgs, const CString& sDesc);
+	CModCommand(const CString& sCmd, CmdFunc func, const CString& sArgs, const CString& sDesc);
 
 	/** Copy constructor, needed so that this can be saved in a std::map.
 	 * @param other Object to copy from.
@@ -295,15 +324,15 @@ public:
 	void AddHelp(CTable& Table) const;
 
 	const CString& GetCommand() const { return m_sCmd; }
-	ModCmdFunc GetFunction() const { return m_pFunc; }
+	CmdFunc GetFunction() const { return m_pFunc; }
 	const CString& GetArgs() const { return m_sArgs; }
 	const CString& GetDescription() const { return m_sDesc; }
 
-	void Call(CModule *pMod, const CString& sLine) const { (pMod->*m_pFunc)(sLine); }
+	void Call(const CString& sLine) const { m_pFunc(sLine); }
 
 private:
 	CString m_sCmd;
-	ModCmdFunc m_pFunc;
+	CmdFunc m_pFunc;
 	CString m_sArgs;
 	CString m_sDesc;
 };
@@ -609,14 +638,18 @@ public:
 	 *  @param Client The client the buffer is played back to.
 	 *  @param sLine The current line of buffer playback. This is a raw IRC
 	 *               traffic line!
+	 *  @param tv The timestamp of the message.
 	 *  @return See CModule::EModRet.
 	 */
+	virtual EModRet OnChanBufferPlayLine2(CChan& Chan, CClient& Client, CString& sLine, const timeval& tv);
 	virtual EModRet OnChanBufferPlayLine(CChan& Chan, CClient& Client, CString& sLine);
 	/** Called when a line from the query buffer is played back.
 	 *  @param Client The client this line will go to.
 	 *  @param sLine The raw IRC traffic line from the buffer.
+	 *  @param tv The timestamp of the message.
 	 *  @return See CModule::EModRet.
 	 */
+	virtual EModRet OnPrivBufferPlayLine2(CClient& Client, CString& sLine, const timeval& tv);
 	virtual EModRet OnPrivBufferPlayLine(CClient& Client, CString& sLine);
 
 	/** Called when a client successfully logged in to ZNC. */
@@ -887,6 +920,16 @@ public:
 	virtual void ListSockets();
 	// !Socket stuff
 
+#ifdef HAVE_PTHREAD
+	// Job stuff
+	void AddJob(CModuleJob *pJob);
+	void CancelJob(CModuleJob *pJob);
+	bool CancelJob(const CString& sJobName);
+	void CancelJobs(const std::set<CModuleJob*>& sJobs);
+	bool UnlinkJob(CModuleJob *pJob);
+	// !Job stuff
+#endif
+
 	// Command stuff
 	/// Register the "Help" command.
 	void AddHelpCommand();
@@ -894,6 +937,8 @@ public:
 	bool AddCommand(const CModCommand& Command);
 	/// @return True if the command was successfully added.
 	bool AddCommand(const CString& sCmd, CModCommand::ModCmdFunc func, const CString& sArgs = "", const CString& sDesc = "");
+	/// @return True if the command was successfully added.
+	bool AddCommand(const CString& sCmd, const CString& sArgs, const CString& sDesc, std::function<void(const CString& sLine)> func);
 	/// @return True if the command was successfully removed.
 	bool RemCommand(const CString& sCmd);
 	/// @return The CModCommand instance or NULL if none was found.
@@ -914,6 +959,7 @@ public:
 
 	bool LoadRegistry();
 	bool SaveRegistry() const;
+	bool MoveRegistry(const CString& sPath);
 	bool SetNV(const CString & sName, const CString & sValue, bool bWriteToDisk = true);
 	CString GetNV(const CString & sName) const;
 	bool DelNV(const CString & sName, bool bWriteToDisk = true);
@@ -945,13 +991,13 @@ public:
 	 *           except when we are in a user-specific module hook in which
 	 *           case this is the user pointer.
 	 */
-	CUser* GetUser() { return m_pUser; }
+	CUser* GetUser() const { return m_pUser; }
 	/** @returns NULL except when we are in a client-specific module hook in
 	 *           which case this is the client for which the hook is called.
 	 */
-	CIRCNetwork* GetNetwork() { return m_pNetwork; }
-	CClient* GetClient() { return m_pClient; }
-	CSockManager* GetManager() { return m_pManager; }
+	CIRCNetwork* GetNetwork() const { return m_pNetwork; }
+	CClient* GetClient() const { return m_pClient; }
+	CSockManager* GetManager() const { return m_pManager; }
 	// !Getters
 
 	// Global Modules
@@ -980,15 +1026,15 @@ public:
 	 *  @param Auth The necessary authentication info for this login attempt.
 	 *  @return See CModule::EModRet.
 	 */
-	virtual EModRet OnLoginAttempt(CSmartPtr<CAuthBase> Auth);
+	virtual EModRet OnLoginAttempt(std::shared_ptr<CAuthBase> Auth);
 	/** Called after a client login was rejected.
 	 *  @param sUsername The username that tried to log in.
 	 *  @param sRemoteIP The IP address from which the client tried to login.
 	 */
 	virtual void OnFailedLogin(const CString& sUsername, const CString& sRemoteIP);
-	/** This function behaves like CModule::OnRaw(), but is also called
+	/** This function behaves like CModule::OnUserRaw(), but is also called
 	 *  before the client successfully logged in to ZNC. You should always
-	 *  prefer to use CModule::OnRaw() if possible.
+	 *  prefer to use CModule::OnUserRaw() if possible.
 	 *  @param pClient The client which send this line.
 	 *  @param sLine The raw traffic line which the client sent.
 	 */
@@ -1054,6 +1100,9 @@ protected:
 	CString            m_sDescription;
 	std::set<CTimer*>  m_sTimers;
 	std::set<CSocket*> m_sSockets;
+#ifdef HAVE_PTHREAD
+	std::set<CModuleJob*> m_sJobs;
+#endif
 	ModHandle          m_pDLL;
 	CSockManager*      m_pManager;
 	CUser*             m_pUser;
@@ -1078,9 +1127,9 @@ public:
 	void SetUser(CUser* pUser) { m_pUser = pUser; }
 	void SetNetwork(CIRCNetwork* pNetwork) { m_pNetwork = pNetwork; }
 	void SetClient(CClient* pClient) { m_pClient = pClient; }
-	CUser* GetUser() { return m_pUser; }
-	CIRCNetwork* GetNetwork() { return m_pNetwork; }
-	CClient* GetClient() { return m_pClient; }
+	CUser* GetUser() const { return m_pUser; }
+	CIRCNetwork* GetNetwork() const { return m_pNetwork; }
+	CClient* GetClient() const { return m_pClient; }
 
 	void UnloadAll();
 
@@ -1126,7 +1175,9 @@ public:
 
 	bool OnChanBufferStarting(CChan& Chan, CClient& Client);
 	bool OnChanBufferEnding(CChan& Chan, CClient& Client);
+	bool OnChanBufferPlayLine2(CChan& Chan, CClient& Client, CString& sLine, const timeval& tv);
 	bool OnChanBufferPlayLine(CChan& Chan, CClient& Client, CString& sLine);
+	bool OnPrivBufferPlayLine2(CClient& Client, CString& sLine, const timeval& tv);
 	bool OnPrivBufferPlayLine(CClient& Client, CString& sLine);
 
 	bool OnClientLogin();
@@ -1172,6 +1223,7 @@ public:
 	static bool GetModInfo(CModInfo& ModInfo, const CString& sModule, CString &sRetMsg);
 	static bool GetModPathInfo(CModInfo& ModInfo, const CString& sModule, const CString& sModPath, CString &sRetMsg);
 	static void GetAvailableMods(std::set<CModInfo>& ssMods, CModInfo::EModuleType eType = CModInfo::UserModule);
+	static void GetDefaultMods(std::set<CModInfo>& ssMods, CModInfo::EModuleType eType = CModInfo::UserModule);
 
 	// This returns the path to the .so and to the data dir
 	// which is where static data (webadmin skins) are saved
@@ -1186,7 +1238,7 @@ public:
 	bool OnAddUser(CUser& User, CString& sErrorRet);
 	bool OnDeleteUser(CUser& User);
 	bool OnClientConnect(CZNCSock* pSock, const CString& sHost, unsigned short uPort);
-	bool OnLoginAttempt(CSmartPtr<CAuthBase> Auth);
+	bool OnLoginAttempt(std::shared_ptr<CAuthBase> Auth);
 	bool OnFailedLogin(const CString& sUsername, const CString& sRemoteIP);
 	bool OnUnknownUserRaw(CClient* pClient, CString& sLine);
 	bool OnClientCapLs(CClient* pClient, SCString& ssCaps);

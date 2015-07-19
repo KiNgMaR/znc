@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ class CIMAPAuthMod;
 
 class CIMAPSock : public CSocket {
 public:
-	CIMAPSock(CIMAPAuthMod* pModule, CSmartPtr<CAuthBase> Auth)
+	CIMAPSock(CIMAPAuthMod* pModule, std::shared_ptr<CAuthBase> Auth)
 		: CSocket((CModule*) pModule), m_spAuth(Auth) {
 			m_pIMAPMod = pModule;
 			m_bSentReply = false;
@@ -36,13 +36,13 @@ public:
 		}
 	}
 
-	virtual void ReadLine(const CString& sLine);
+	virtual void ReadLine(const CString& sLine) override;
 private:
 protected:
-	CIMAPAuthMod*        m_pIMAPMod;
-	bool                 m_bSentLogin;
-	bool                 m_bSentReply;
-	CSmartPtr<CAuthBase> m_spAuth;
+	CIMAPAuthMod*              m_pIMAPMod;
+	bool                       m_bSentLogin;
+	bool                       m_bSentReply;
+	std::shared_ptr<CAuthBase> m_spAuth;
 };
 
 
@@ -57,11 +57,11 @@ public:
 
 	virtual ~CIMAPAuthMod() {}
 
-	virtual bool OnBoot() {
+	virtual bool OnBoot() override {
 		return true;
 	}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage) {
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override {
 		if (sArgs.Trim_n().empty()) {
 			return true; // use defaults
 		}
@@ -84,7 +84,7 @@ public:
 		return true;
 	}
 
-	virtual EModRet OnLoginAttempt(CSmartPtr<CAuthBase> Auth) {
+	virtual EModRet OnLoginAttempt(std::shared_ptr<CAuthBase> Auth) override {
 		CUser* pUser = CZNC::Get().FindUser(Auth->GetUsername());
 
 		if (!pUser) { // @todo Will want to do some sort of && !m_bAllowCreate in the future
@@ -104,7 +104,7 @@ public:
 		return HALT;
 	}
 
-	virtual void OnModCommand(const CString& sLine) {
+	virtual void OnModCommand(const CString& sLine) override {
 	}
 
 	void CacheLogin(const CString& sLogin) {
@@ -164,4 +164,4 @@ template<> void TModInfo<CIMAPAuthMod>(CModInfo& Info) {
 	Info.SetArgsHelpText("[ server [+]port [ UserFormatString ] ]");
 }
 
-GLOBALMODULEDEFS(CIMAPAuthMod, "Allow users to authenticate via imap")
+GLOBALMODULEDEFS(CIMAPAuthMod, "Allow users to authenticate via IMAP.")

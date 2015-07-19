@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,11 @@ public:
 	MODCONSTRUCTOR(CCtcpFloodMod) {
 		m_tLastCTCP = 0;
 		m_iNumCTCP = 0;
+
+		AddHelpCommand();
+		AddCommand("Secs", static_cast<CModCommand::ModCmdFunc>(&CCtcpFloodMod::OnSecsCommand), "<limit>", "Set seconds limit");
+		AddCommand("Lines", static_cast<CModCommand::ModCmdFunc>(&CCtcpFloodMod::OnLinesCommand), "<limit>", "Set lines limit");
+		AddCommand("Show", static_cast<CModCommand::ModCmdFunc>(&CCtcpFloodMod::OnShowCommand), "", "Show the current limits");
 	}
 
 	~CCtcpFloodMod() {
@@ -79,38 +84,49 @@ public:
 		return HALT;
 	}
 
-	EModRet OnPrivCTCP(CNick& Nick, CString& sMessage) {
+	EModRet OnPrivCTCP(CNick& Nick, CString& sMessage) override {
 		return Message(Nick, sMessage);
 	}
 
-	EModRet OnChanCTCP(CNick& Nick, CChan& Channel, CString& sMessage) {
+	EModRet OnChanCTCP(CNick& Nick, CChan& Channel, CString& sMessage) override {
 		return Message(Nick, sMessage);
 	}
 
-	void OnModCommand(const CString& sCommand) {
-		const CString& sCmd = sCommand.Token(0);
+	void OnSecsCommand(const CString& sCommand) {
 		const CString& sArg = sCommand.Token(1, true);
 
-		if (sCmd.Equals("secs") && !sArg.empty()) {
-			m_iThresholdSecs = sArg.ToUInt();
-			if (m_iThresholdSecs == 0)
-				m_iThresholdSecs = 1;
-
-			PutModule("Set seconds limit to [" + CString(m_iThresholdSecs) + "]");
-			Save();
-		} else if (sCmd.Equals("lines") && !sArg.empty()) {
-			m_iThresholdMsgs = sArg.ToUInt();
-			if (m_iThresholdMsgs == 0)
-				m_iThresholdMsgs = 2;
-
-			PutModule("Set lines limit to [" + CString(m_iThresholdMsgs) + "]");
-			Save();
-		} else if (sCmd.Equals("show")) {
-			PutModule("Current limit is " + CString(m_iThresholdMsgs) + " CTCPs "
-					"in " + CString(m_iThresholdSecs) + " secs");
-		} else {
-			PutModule("Commands: show, secs [limit], lines [limit]");
+		if (sArg.empty()) {
+			PutModule("Usage: Secs <limit>");
+			return;
 		}
+
+		m_iThresholdSecs = sArg.ToUInt();
+		if (m_iThresholdSecs == 0)
+			m_iThresholdSecs = 1;
+
+		PutModule("Set seconds limit to [" + CString(m_iThresholdSecs) + "]");
+		Save();
+	}
+
+	void OnLinesCommand(const CString& sCommand) {
+		const CString& sArg = sCommand.Token(1, true);
+
+		if (sArg.empty()) {
+			PutModule("Usage: Lines <limit>");
+			return;
+		}
+
+		m_iThresholdMsgs = sArg.ToUInt();
+		if (m_iThresholdMsgs == 0)
+			m_iThresholdMsgs = 2;
+
+		PutModule("Set lines limit to [" + CString(m_iThresholdMsgs) + "]");
+		Save();
+	}
+
+	void OnShowCommand(const CString& sCommand) {
+		PutModule("Current limit is " + CString(m_iThresholdMsgs) + " CTCPs "
+				"in " + CString(m_iThresholdSecs) + " secs");
 	}
 
 private:

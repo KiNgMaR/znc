@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ public:
 		SetWSock(open("/dev/null", O_WRONLY));
 	}
 	// These next two function's bodies are at the bottom of the file since they reference CShellMod
-	virtual void ReadLine(const CString& sData);
-	virtual void Disconnected();
+	virtual void ReadLine(const CString& sData) override;
+	virtual void Disconnected() override;
 
 	CShellMod* m_pParent;
 
@@ -60,17 +60,17 @@ public:
 	}
 
 	virtual ~CShellMod() {
-		vector<Csock*> vSocks = m_pManager->FindSocksByName("SHELL");
+		vector<Csock*> vSocks = GetManager()->FindSocksByName("SHELL");
 
 		for (unsigned int a = 0; a < vSocks.size(); a++) {
-			m_pManager->DelSockByAddr(vSocks[a]);
+			GetManager()->DelSockByAddr(vSocks[a]);
 		}
 	}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage)
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override
 	{
 #ifndef MOD_SHELL_ALLOW_EVERYONE
-		if (!m_pUser->IsAdmin()) {
+		if (!GetUser()->IsAdmin()) {
 			sMessage = "You must be admin to use the shell module";
 			return false;
 		}
@@ -79,7 +79,7 @@ public:
 		return true;
 	}
 
-	virtual void OnModCommand(const CString& sLine) {
+	virtual void OnModCommand(const CString& sLine) override {
 		CString sCommand = sLine.Token(0);
 		if (sCommand.Equals("cd")) {
 			CString sArg = sLine.Token(1, true);
@@ -103,12 +103,12 @@ public:
 	void PutShell(const CString& sMsg) {
 		CString sPath = m_sPath.Replace_n(" ", "_");
 		CString sSource = ":" + GetModNick() + "!shell@" + sPath;
-		CString sLine = sSource + " PRIVMSG " + m_pClient->GetNick() + " :" + sMsg;
-		m_pClient->PutClient(sLine);
+		CString sLine = sSource + " PRIVMSG " + GetClient()->GetNick() + " :" + sMsg;
+		GetClient()->PutClient(sLine);
 	}
 
 	void RunCommand(const CString& sCommand) {
-		m_pManager->AddSock(new CShellSock(this, m_pClient, "cd " + m_sPath + " && " + sCommand), "SHELL");
+		GetManager()->AddSock(new CShellSock(this, GetClient(), "cd " + m_sPath + " && " + sCommand), "SHELL");
 	}
 private:
 	CString m_sPath;

@@ -1,4 +1,5 @@
 <? AddRow JSLoop HREF=/modfiles/global/webadmin/webadmin.js ?>
+<? AddRow CSSLoop HREF=/modfiles/global/webadmin/webadmin.css ?>
 <? INC Header.tmpl ?>
 
 <div class="section">
@@ -10,19 +11,17 @@
 	<div class="section">
 		<input type="hidden" name="submitted" value="1" />
 		<input type="hidden" name="user" value="<? VAR Username ?>" />
-		<? IF Edit ?><input type="hidden" name="network" value="<? VAR Name ?>" /><? ENDIF ?>
+		<input type="hidden" name="network" value="<? VAR Name ?>" />
 
 		<h3>Network Info</h3>
         <span class="info">Nick, AltNick, Ident, RealName, BindHost can be left empty to use the value from the user.</span>
 		<div class="sectionbg">
 			<div class="sectionbody">
-				<? IF !Edit ?>
 				<div class="subsection">
 					<div class="inputlabel">Network Name:</div>
-					<input type="text" name="network" value="<? VAR Name ?>" class="half" maxlength="128"
+					<input type="text" name="name" value="<? VAR Name ?>" class="half" maxlength="128"
 						   title="The name of the IRC network." />
-					</div>
-				<? ENDIF ?>
+				</div>
 
             	<div class="subsection">
 					<div class="inputlabel">Nickname:</div>
@@ -62,6 +61,12 @@
 				<? ENDIF ?>
 
 				<div class="subsection">
+					<div class="inputlabel">Quit Message:</div>
+					<input type="text" name="quitmsg" value="<? VAR QuitMsg ?>" class="full" maxlength="256"
+						   title="You may define a Message shown, when you quit IRC." />
+				</div>
+
+				<div class="subsection">
 					<div class="inputlabel">Active:</div>
 					<div class="checkbox"><input type="checkbox" name="doconnect" id="doconnect_checkbox"<? IF IRCConnectEnabled ?> checked="checked"<? ENDIF ?> />
 						<label for="doconnect_checkbox">Connect to IRC &amp; automatically re-connect</label></div>
@@ -75,11 +80,19 @@
 					<br /><span class="info">One server per line, "host [[+]port] [password]", + means SSL</span>
 				</div>
 
+				<div class="subsection full">
+					<div class="inputlabel">Trusted SSL fingerprints of this IRC network:</div>
+					<div><textarea name="fingerprints" cols="50" rows="5"><? LOOP TrustedFingerprints ?><? VAR FP ?>
+<? ENDLOOP ?>
+</textarea></div>
+					<br /><span class="info">When these certificates are encountered, checks for hostname, expiration date, CA are skipped</span>
+				</div>
+
 				<div class="subsection">
 					<div class="inputlabel">Flood protection:</div>
 					<div class="checkbox">
 						<input type="checkbox" name="floodprotection" id="floodprotection_checkbox"
-							   title="You might enable the flood protection. This prevents `excess flood' errors, which occur, when your IRC bot is command flooded or spammed."
+							   title="You might enable the flood protection. This prevents `excess flood' errors, which occur, when your IRC bot is command flooded or spammed. After changing this, reconnect ZNC to server."
 							onchange="floodprotection_change();"
 							<? IF FloodProtection ?>checked="checked"<? ENDIF ?> />
 						<label for="floodprotection_checkbox">Enabled</label>
@@ -88,7 +101,7 @@
 				<div class="subsection">
 					<div class="inputlabel">Flood protection rate:</div>
 					<input type="number" name="floodrate" min="0.3" step="0.05" id="floodrate"
-						   title="The number of seconds per line."
+						   title="The number of seconds per line. After changing this, reconnect ZNC to server."
 						<? IF FloodProtection ?> value="<? VAR FloodRate ?>" <? ELSE ?> value="1.00" disabled="disabled" <? ENDIF ?>
 					/> seconds per line
 				</div>
@@ -96,11 +109,26 @@
 				<div class="subsection">
 					<div class="inputlabel">Flood protection burst:</div>
 					<input type="number" name="floodburst" min="1" id="floodburst"
-						   title="Defines the number of lines, which can be sent immediately."
+						   title="Defines the number of lines, which can be sent immediately. After changing this, reconnect ZNC to server."
 						<? IF FloodProtection ?> value="<? VAR FloodBurst ?>" <? ELSE ?> value="4" disabled="disabled" <? ENDIF ?>
 					/> lines can be sent immediately
 				</div>
+
+				<div class="subsection">
+					<div class="inputlabel">Channel join delay:</div>
+					<input type="number" name="joindelay" min="0" id="joindelay"
+						   title="Defines the delay in seconds, until channels are joined after getting connected."
+						value="<? VAR JoinDelay ?>"
+					/> seconds
+				</div>
 				<script type="text/javascript">floodprotection_change();</script>
+
+				<div style="clear:both;"></div>
+				<div class="subsection" title="Character encoding used between ZNC and IRC server. After changing this, reconnect ZNC to server.">
+					<div class="inputlabel">Server encoding:</div>
+					<? INC encoding_settings.tmpl ?>
+				</div>
+
 				<div style="clear: both;"></div>
 			</div>
 		</div>

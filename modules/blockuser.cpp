@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,16 @@ using std::vector;
 
 class CBlockUser : public CModule {
 public:
-	MODCONSTRUCTOR(CBlockUser) {}
+	MODCONSTRUCTOR(CBlockUser) {
+		AddHelpCommand();
+		AddCommand("List", static_cast<CModCommand::ModCmdFunc>(&CBlockUser::OnListCommand), "", "List blocked users");
+		AddCommand("Block", static_cast<CModCommand::ModCmdFunc>(&CBlockUser::OnBlockCommand), "<user>", "Block a user");
+		AddCommand("Unblock", static_cast<CModCommand::ModCmdFunc>(&CBlockUser::OnUnblockCommand), "<user>", "Unblock a user");
+	}
 
 	virtual ~CBlockUser() {}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage) {
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override {
 		VCString vArgs;
 		VCString::iterator it;
 		MCString::iterator it2;
@@ -51,7 +56,7 @@ public:
 		return true;
 	}
 
-	virtual EModRet OnLoginAttempt(CSmartPtr<CAuthBase> Auth) {
+	virtual EModRet OnLoginAttempt(std::shared_ptr<CAuthBase> Auth) override {
 		if (IsBlocked(Auth->GetUsername())) {
 			Auth->RefuseLogin(MESSAGE);
 			return HALT;
@@ -60,52 +65,63 @@ public:
 		return CONTINUE;
 	}
 
-	void OnModCommand(const CString& sCommand) {
-		CString sCmd = sCommand.Token(0);
-
-		if (!m_pUser->IsAdmin()) {
+	void OnModCommand(const CString& sCommand) override {
+		if (!GetUser()->IsAdmin()) {
 			PutModule("Access denied");
-			return;
-		}
-
-		if (sCmd.Equals("list")) {
-			CTable Table;
-			MCString::iterator it;
-
-			Table.AddColumn("Blocked user");
-
-			for (it = BeginNV(); it != EndNV(); ++it) {
-				Table.AddRow();
-				Table.SetCell("Blocked user", it->first);
-			}
-
-			if (PutModule(Table) == 0)
-				PutModule("No users blocked");
-		} else if (sCmd.Equals("block")) {
-			CString sUser = sCommand.Token(1, true);
-
-			if (m_pUser->GetUserName().Equals(sUser)) {
-				PutModule("You can't block yourself");
-				return;
-			}
-
-			if (Block(sUser))
-				PutModule("Blocked [" + sUser + "]");
-			else
-				PutModule("Could not block [" + sUser + "] (misspelled?)");
-		} else if (sCmd.Equals("unblock")) {
-			CString sUser = sCommand.Token(1, true);
-
-			if (DelNV(sUser))
-				PutModule("Unblocked [" + sUser + "]");
-			else
-				PutModule("This user is not blocked");
 		} else {
-			PutModule("Commands: list, block [user], unblock [user]");
+			HandleCommand(sCommand);
 		}
 	}
 
-	bool OnEmbeddedWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) {
+	void OnListCommand(const CString& sCommand) {
+		CTable Table;
+		MCString::iterator it;
+
+		Table.AddColumn("Blocked user");
+
+		for (it = BeginNV(); it != EndNV(); ++it) {
+			Table.AddRow();
+			Table.SetCell("Blocked user", it->first);
+		}
+
+		if (PutModule(Table) == 0)
+			PutModule("No users blocked");
+	}
+
+	void OnBlockCommand(const CString& sCommand) {
+		CString sUser = sCommand.Token(1, true);
+
+		if (sUser.empty()) {
+			PutModule("Usage: Block <user>");
+			return;
+		}
+
+		if (GetUser()->GetUserName().Equals(sUser)) {
+			PutModule("You can't block yourself");
+			return;
+		}
+
+		if (Block(sUser))
+			PutModule("Blocked [" + sUser + "]");
+		else
+			PutModule("Could not block [" + sUser + "] (misspelled?)");
+	}
+
+	void OnUnblockCommand(const CString& sCommand) {
+		CString sUser = sCommand.Token(1, true);
+
+		if (sUser.empty()) {
+			PutModule("Usage: Unblock <user>");
+			return;
+		}
+
+		if (DelNV(sUser))
+			PutModule("Unblocked [" + sUser + "]");
+		else
+			PutModule("This user is not blocked");
+	}
+
+	bool OnEmbeddedWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) override {
 		if (sPageName == "webadmin/user" && WebSock.GetSession()->IsAdmin()) {
 			CString sAction = Tmpl["WebadminAction"];
 			if (sAction == "display") {
@@ -180,4 +196,4 @@ template<> void TModInfo<CBlockUser>(CModInfo& Info) {
 	Info.SetArgsHelpText("Enter one or more user names. Separate them by spaces.");
 }
 
-GLOBALMODULEDEFS(CBlockUser, "Block certain users from logging in")
+GLOBALMODULEDEFS(CBlockUser, "Block certain users from logging in.")

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,17 +76,16 @@ public:
 	MODCONSTRUCTOR(CWebAdminMod) {
 		VPair vParams;
 		vParams.push_back(make_pair("user", ""));
-		AddSubPage(new CWebSubPage("settings", "Global Settings", CWebSubPage::F_ADMIN));
-		AddSubPage(new CWebSubPage("edituser", "Your Settings", vParams));
-		AddSubPage(new CWebSubPage("traffic", "Traffic Info", CWebSubPage::F_ADMIN));
-		AddSubPage(new CWebSubPage("listusers", "List Users", CWebSubPage::F_ADMIN));
-		AddSubPage(new CWebSubPage("adduser", "Add User", CWebSubPage::F_ADMIN));
+		AddSubPage(std::make_shared<CWebSubPage>("settings", "Global Settings", CWebSubPage::F_ADMIN));
+		AddSubPage(std::make_shared<CWebSubPage>("edituser", "Your Settings", vParams));
+		AddSubPage(std::make_shared<CWebSubPage>("traffic", "Traffic Info", CWebSubPage::F_ADMIN));
+		AddSubPage(std::make_shared<CWebSubPage>("listusers", "Manage Users", CWebSubPage::F_ADMIN));
 	}
 
 	virtual ~CWebAdminMod() {
 	}
 
-	virtual bool OnLoad(const CString& sArgStr, CString& sMessage) {
+	virtual bool OnLoad(const CString& sArgStr, CString& sMessage) override {
 		if (sArgStr.empty() || CModInfo::GlobalModule != GetType())
 			return true;
 
@@ -165,7 +164,7 @@ public:
 	}
 
 	CUser* GetNewUser(CWebSock& WebSock, CUser* pUser) {
-		CSmartPtr<CWebSession> spSession = WebSock.GetSession();
+		std::shared_ptr<CWebSession> spSession = WebSock.GetSession();
 		CString sUsername = WebSock.GetParam("newuser");
 
 		if (sUsername.empty()) {
@@ -280,6 +279,24 @@ public:
 		pNewUser->SetMaxJoins(WebSock.GetParam("maxjoins").ToUInt());
 		pNewUser->SetAutoClearQueryBuffer(WebSock.GetParam("autoclearquerybuffer").ToBool());
 		pNewUser->SetMaxQueryBuffers(WebSock.GetParam("maxquerybuffers").ToUInt());
+
+#ifdef HAVE_ICU
+		CString sEncodingUtf = WebSock.GetParam("encoding_utf");
+		if (sEncodingUtf == "legacy") {
+			pNewUser->SetClientEncoding("");
+		}
+		CString sEncoding = WebSock.GetParam("encoding");
+		if (sEncoding.empty()) {
+			sEncoding = "UTF-8";
+		}
+		if (sEncodingUtf == "send") {
+			pNewUser->SetClientEncoding("^" + sEncoding);
+		} else if (sEncodingUtf == "receive") {
+			pNewUser->SetClientEncoding("*" + sEncoding);
+		} else if (sEncodingUtf == "simple") {
+			pNewUser->SetClientEncoding(sEncoding);
+		}
+#endif
 
 		if (spSession->IsAdmin()) {
 			pNewUser->SetDenyLoadMod(WebSock.GetParam("denyloadmod").ToBool());
@@ -401,9 +418,9 @@ public:
 		return pNetwork;
 	}
 
-	virtual CString GetWebMenuTitle() { return "webadmin"; }
-	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) {
-		CSmartPtr<CWebSession> spSession = WebSock.GetSession();
+	virtual CString GetWebMenuTitle() override { return "webadmin"; }
+	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) override {
+		std::shared_ptr<CWebSession> spSession = WebSock.GetSession();
 
 		if (sPageName == "settings") {
 			// Admin Check
@@ -598,7 +615,7 @@ public:
 	}
 
 	bool ChanPage(CWebSock& WebSock, CTemplate& Tmpl, CIRCNetwork* pNetwork, CChan* pChan = NULL) {
-		CSmartPtr<CWebSession> spSession = WebSock.GetSession();
+		std::shared_ptr<CWebSession> spSession = WebSock.GetSession();
 		Tmpl.SetFile("add_edit_chan.tmpl");
 		CUser* pUser = pNetwork->GetUser();
 
@@ -611,6 +628,14 @@ public:
 			Tmpl["User"] = pUser->GetUserName();
 			Tmpl["Network"] = pNetwork->GetName();
 
+			CTemplate& breadUser = Tmpl.AddRow("BreadCrumbs");
+			breadUser["Text"] = "Edit User [" + pUser->GetUserName() + "]";
+			breadUser["URL"] = GetWebPath() + "edituser?user=" + pUser->GetUserName();
+			CTemplate& breadNet = Tmpl.AddRow("BreadCrumbs");
+			breadNet["Text"] = "Edit Network [" + pNetwork->GetName() + "]";
+			breadNet["URL"] = GetWebPath() + "editnetwork?user=" + pUser->GetUserName() + "&network=" + pNetwork->GetName();
+			CTemplate& breadChan = Tmpl.AddRow("BreadCrumbs");
+
 			if (pChan) {
 				Tmpl["Action"] = "editchan";
 				Tmpl["Edit"] = "true";
@@ -619,6 +644,7 @@ public:
 				Tmpl["BufferCount"] = CString(pChan->GetBufferCount());
 				Tmpl["DefModes"] = pChan->GetDefaultModes();
 				Tmpl["Key"] = pChan->GetKey();
+				breadChan["Text"] = "Edit Channel [" + pChan->GetName() + "]";
 
 				if (pChan->InConfig()) {
 					Tmpl["InConfig"] = "true";
@@ -629,6 +655,7 @@ public:
 				Tmpl["BufferCount"] = CString(pUser->GetBufferCount());
 				Tmpl["DefModes"] = CString(pUser->GetDefaultChanModes());
 				Tmpl["InConfig"] = "true";
+				breadChan["Text"] = "Add Channel";
 			}
 
 			// o1 used to be AutoCycle which was removed
@@ -685,10 +712,16 @@ public:
 			}
 		}
 
-		pChan->SetBufferCount(WebSock.GetParam("buffercount").ToUInt(), spSession->IsAdmin());
+		unsigned int uBufferCount = WebSock.GetParam("buffercount").ToUInt();
+		if (pChan->GetBufferCount() != uBufferCount) {
+			pChan->SetBufferCount(uBufferCount, spSession->IsAdmin());
+		}
 		pChan->SetDefaultModes(WebSock.GetParam("defmodes"));
 		pChan->SetInConfig(WebSock.GetParam("save").ToBool());
-		pChan->SetAutoClearChanBuffer(WebSock.GetParam("autoclearchanbuffer").ToBool());
+		bool bAutoClearChanBuffer = WebSock.GetParam("autoclearchanbuffer").ToBool();
+		if (pChan->AutoClearChanBuffer() != bAutoClearChanBuffer) {
+			pChan->SetAutoClearChanBuffer(WebSock.GetParam("autoclearchanbuffer").ToBool());
+		}
 		pChan->SetKey(WebSock.GetParam("key"));
 
 		bool bDetached = WebSock.GetParam("detached").ToBool();
@@ -728,7 +761,7 @@ public:
 	}
 
 	bool NetworkPage(CWebSock& WebSock, CTemplate& Tmpl, CUser* pUser, CIRCNetwork* pNetwork = NULL) {
-		CSmartPtr<CWebSession> spSession = WebSock.GetSession();
+		std::shared_ptr<CWebSession> spSession = WebSock.GetSession();
 		Tmpl.SetFile("add_edit_network.tmpl");
 
 		if (!WebSock.GetParam("submitted").ToUInt()) {
@@ -799,6 +832,11 @@ public:
 				}
 			}
 
+			CTemplate& breadUser = Tmpl.AddRow("BreadCrumbs");
+			breadUser["Text"] = "Edit User [" + pUser->GetUserName() + "]";
+			breadUser["URL"] = GetWebPath() + "edituser?user=" + pUser->GetUserName();
+			CTemplate& breadNet = Tmpl.AddRow("BreadCrumbs");
+
 			if (pNetwork) {
 				Tmpl["Action"] = "editnetwork";
 				Tmpl["Edit"] = "true";
@@ -810,11 +848,17 @@ public:
 				Tmpl["Ident"] = pNetwork->GetIdent();
 				Tmpl["RealName"] = pNetwork->GetRealName();
 
+				Tmpl["QuitMsg"] = pNetwork->GetQuitMsg();
+
 				Tmpl["FloodProtection"] = CString(CIRCSock::IsFloodProtected(pNetwork->GetFloodRate()));
 				Tmpl["FloodRate"] = CString(pNetwork->GetFloodRate());
 				Tmpl["FloodBurst"] = CString(pNetwork->GetFloodBurst());
 
+				Tmpl["JoinDelay"] = CString(pNetwork->GetJoinDelay());
+
 				Tmpl["IRCConnectEnabled"] = CString(pNetwork->GetIRCConnectEnabled());
+
+				breadNet["Text"] = "Edit Network [" + pNetwork->GetName() + "]";
 
 				const vector<CServer*>& vServers = pNetwork->GetServers();
 				for (unsigned int a = 0; a < vServers.size(); a++) {
@@ -833,12 +877,20 @@ public:
 					l["Perms"] = pChan->GetPermStr();
 					l["CurModes"] = pChan->GetModeString();
 					l["DefModes"] = pChan->GetDefaultModes();
-					l["BufferCount"] = CString(pChan->GetBufferCount());
+					if (pChan->HasBufferCountSet()) {
+						l["BufferCount"] = CString(pChan->GetBufferCount());
+					} else {
+						l["BufferCount"] = CString(pChan->GetBufferCount()) + " (default)";
+					}
 					l["Options"] = pChan->GetOptions();
 
 					if (pChan->InConfig()) {
 						l["InConfig"] = "true";
 					}
+				}
+				for (const CString& sFP : pNetwork->GetTrustedFingerprints()) {
+					CTemplate& l = Tmpl.AddRow("TrustedFingerprints");
+					l["FP"] = sFP;
 				}
 			} else {
 				if (!spSession->IsAdmin() && !pUser->HasSpaceForNewNetwork()) {
@@ -852,6 +904,8 @@ public:
 				Tmpl["FloodProtection"] = "true";
 				Tmpl["FloodRate"] = "1.0";
 				Tmpl["FloodBurst"] = "4";
+				Tmpl["JoinDelay"] = "0";
+				breadNet["Text"] = "Add Network";
 			}
 
 			FOR_EACH_MODULE(i, make_pair(pUser, pNetwork)) {
@@ -864,29 +918,56 @@ public:
 				}
 			}
 
+#ifdef HAVE_ICU
+			for (const CString& sEncoding : CUtils::GetEncodings()) {
+				CTemplate& l = Tmpl.AddRow("EncodingLoop");
+				l["Encoding"] = sEncoding;
+			}
+			const CString sEncoding = pNetwork ? pNetwork->GetEncoding() : "^UTF-8";
+			if (sEncoding.empty()) {
+				Tmpl["EncodingUtf"] = "legacy";
+			} else if (sEncoding[0] == '*') {
+				Tmpl["EncodingUtf"] = "receive";
+				Tmpl["Encoding"] = sEncoding.substr(1);
+			} else if (sEncoding[0] == '^') {
+				Tmpl["EncodingUtf"] = "send";
+				Tmpl["Encoding"] = sEncoding.substr(1);
+			} else {
+				Tmpl["EncodingUtf"] = "simple";
+				Tmpl["Encoding"] = sEncoding;
+			}
+#else
+			Tmpl["EncodingDisabled"] = "true";
+			Tmpl["EncodingUtf"] = "legacy";
+#endif
+
 			return true;
 		}
 
-		CString sName = WebSock.GetParam("network").Trim_n();
+		CString sName = WebSock.GetParam("name").Trim_n();
 		if (sName.empty()) {
 			WebSock.PrintErrorPage("Network name is a required argument");
 			return true;
 		}
-
-		if (!pNetwork) {
-			if (!spSession->IsAdmin() && !pUser->HasSpaceForNewNetwork()) {
-				WebSock.PrintErrorPage("Network number limit reached. Ask an admin to increase the limit for you, or delete few old ones from Your Settings");
-				return true;
-			}
-			if (!CIRCNetwork::IsValidNetwork(sName)) {
-				WebSock.PrintErrorPage("Network name should be alphanumeric");
-				return true;
-			}
+		if (!pNetwork && !spSession->IsAdmin() && !pUser->HasSpaceForNewNetwork()) {
+			WebSock.PrintErrorPage("Network number limit reached. Ask an admin to increase the limit for you, or delete few old ones from Your Settings");
+			return true;
+		}
+		if (!pNetwork || pNetwork->GetName() != sName) {
 			CString sNetworkAddError;
+			CIRCNetwork* pOldNetwork = pNetwork;
 			pNetwork = pUser->AddNetwork(sName, sNetworkAddError);
 			if (!pNetwork) {
 				WebSock.PrintErrorPage(sNetworkAddError);
 				return true;
+			}
+			if (pOldNetwork) {
+				for (CModule* pModule : pOldNetwork->GetModules()) {
+					CString sPath = pUser->GetUserPath() + "/networks/" + sName + "/moddata/" + pModule->GetModName();
+					pModule->MoveRegistry(sPath);
+				}
+				pNetwork->Clone(*pOldNetwork, false);
+				pUser->DeleteNetwork(pOldNetwork->GetName());
 			}
 		}
 
@@ -896,6 +977,8 @@ public:
 		pNetwork->SetAltNick(WebSock.GetParam("altnick"));
 		pNetwork->SetIdent(WebSock.GetParam("ident"));
 		pNetwork->SetRealName(WebSock.GetParam("realname"));
+
+		pNetwork->SetQuitMsg(WebSock.GetParam("quitmsg"));
 
 		pNetwork->SetIRCConnectEnabled(WebSock.GetParam("doconnect").ToBool());
 
@@ -929,12 +1012,40 @@ public:
 			pNetwork->SetFloodRate(-1);
 		}
 
+		pNetwork->SetJoinDelay(WebSock.GetParam("joindelay").ToUShort());
+
+#ifdef HAVE_ICU
+		CString sEncodingUtf = WebSock.GetParam("encoding_utf");
+		if (sEncodingUtf == "legacy") {
+			pNetwork->SetEncoding("");
+		}
+		CString sEncoding = WebSock.GetParam("encoding");
+		if (sEncoding.empty()) {
+			sEncoding = "UTF-8";
+		}
+		if (sEncodingUtf == "send") {
+			pNetwork->SetEncoding("^" + sEncoding);
+		} else if (sEncodingUtf == "receive") {
+			pNetwork->SetEncoding("*" + sEncoding);
+		} else if (sEncodingUtf == "simple") {
+			pNetwork->SetEncoding(sEncoding);
+		}
+#endif
+
 		VCString vsArgs;
 
 		pNetwork->DelServers();
 		WebSock.GetRawParam("servers").Split("\n", vsArgs);
 		for (unsigned int a = 0; a < vsArgs.size(); a++) {
 			pNetwork->AddServer(vsArgs[a].Trim_n());
+		}
+
+		WebSock.GetRawParam("fingerprints").Split("\n", vsArgs);
+		while (!pNetwork->GetTrustedFingerprints().empty()) {
+			pNetwork->DelTrustedFingerprint(*pNetwork->GetTrustedFingerprints().begin());
+		}
+		for (const CString& sFP : vsArgs) {
+			pNetwork->AddTrustedFingerprint(sFP);
 		}
 
 		WebSock.GetParamValues("channel", vsArgs);
@@ -1070,12 +1181,10 @@ public:
 	}
 
 	bool UserPage(CWebSock& WebSock, CTemplate& Tmpl, CUser* pUser = NULL) {
-		CSmartPtr<CWebSession> spSession = WebSock.GetSession();
+		std::shared_ptr<CWebSession> spSession = WebSock.GetSession();
 		Tmpl.SetFile("add_edit_user.tmpl");
 
 		if (!WebSock.GetParam("submitted").ToUInt()) {
-			CString sAllowedHosts, sServers, sChans, sCTCPReplies;
-
 			if (pUser) {
 				Tmpl["Action"] = "edituser";
 				Tmpl["Title"] = "Edit User [" + pUser->GetUserName() + "]";
@@ -1145,6 +1254,29 @@ public:
 				CTemplate& l = Tmpl.AddRow("TZLoop");
 				l["TZ"] = *i;
 			}
+
+#ifdef HAVE_ICU
+			for (const CString& sEncoding : CUtils::GetEncodings()) {
+				CTemplate& l = Tmpl.AddRow("EncodingLoop");
+				l["Encoding"] = sEncoding;
+			}
+			const CString sEncoding = pUser ? pUser->GetClientEncoding() : "^UTF-8";
+			if (sEncoding.empty()) {
+				Tmpl["EncodingUtf"] = "legacy";
+			} else if (sEncoding[0] == '*') {
+				Tmpl["EncodingUtf"] = "receive";
+				Tmpl["Encoding"] = sEncoding.substr(1);
+			} else if (sEncoding[0] == '^') {
+				Tmpl["EncodingUtf"] = "send";
+				Tmpl["Encoding"] = sEncoding.substr(1);
+			} else {
+				Tmpl["EncodingUtf"] = "simple";
+				Tmpl["Encoding"] = sEncoding;
+			}
+#else
+			Tmpl["EncodingDisabled"] = "true";
+			Tmpl["EncodingUtf"] = "legacy";
+#endif
 
 			// To change BindHosts be admin or don't have DenySetBindHost
 			if (spSession->IsAdmin() || !spSession->GetUser()->DenySetBindHost()) {
@@ -1379,9 +1511,9 @@ public:
 	}
 
 	bool ListUsersPage(CWebSock& WebSock, CTemplate& Tmpl) {
-		CSmartPtr<CWebSession> spSession = WebSock.GetSession();
+		std::shared_ptr<CWebSession> spSession = WebSock.GetSession();
 		const map<CString,CUser*>& msUsers = CZNC::Get().GetUserMap();
-		Tmpl["Title"] = "List Users";
+		Tmpl["Title"] = "Manage Users";
 		Tmpl["Action"] = "listusers";
 
 		unsigned int a = 0;
@@ -1403,7 +1535,7 @@ public:
 	}
 
 	bool TrafficPage(CWebSock& WebSock, CTemplate& Tmpl) {
-		CSmartPtr<CWebSession> spSession = WebSock.GetSession();
+		Tmpl["Title"] = "Traffic Info";
 		Tmpl["Uptime"] = CZNC::Get().GetUptime();
 
 		const map<CString,CUser*>& msUsers = CZNC::Get().GetUserMap();
@@ -1562,7 +1694,6 @@ public:
 	bool SettingsPage(CWebSock& WebSock, CTemplate& Tmpl) {
 		Tmpl.SetFile("settings.tmpl");
 		if (!WebSock.GetParam("submitted").ToUInt()) {
-			CString sBindHosts, sMotd;
 			Tmpl["Action"] = "settings";
 			Tmpl["Title"] = "Settings";
 			Tmpl["StatusPrefix"] = CZNC::Get().GetStatusPrefix();
@@ -1571,6 +1702,7 @@ public:
 			Tmpl["ServerThrottle"] = CString(CZNC::Get().GetServerThrottle());
 			Tmpl["AnonIPLimit"] = CString(CZNC::Get().GetAnonIPLimit());
 			Tmpl["ProtectWebSessions"] = CString(CZNC::Get().GetProtectWebSessions());
+			Tmpl["HideVersion"] = CString(CZNC::Get().GetHideVersion());
 
 			const VCString& vsBindHosts = CZNC::Get().GetBindHosts();
 			for (unsigned int a = 0; a < vsBindHosts.size(); a++) {
@@ -1704,6 +1836,7 @@ public:
 		sArg = WebSock.GetParam("serverthrottle"); CZNC::Get().SetServerThrottle(sArg.ToUInt());
 		sArg = WebSock.GetParam("anoniplimit"); CZNC::Get().SetAnonIPLimit(sArg.ToUInt());
 		sArg = WebSock.GetParam("protectwebsessions"); CZNC::Get().SetProtectWebSessions(sArg.ToBool());
+		sArg = WebSock.GetParam("hideversion"); CZNC::Get().SetHideVersion(sArg.ToBool());
 
 		VCString vsArgs;
 		WebSock.GetRawParam("motd").Split("\n", vsArgs);
@@ -1783,4 +1916,4 @@ template<> void TModInfo<CWebAdminMod>(CModInfo& Info) {
 	Info.SetWikiPage("webadmin");
 }
 
-GLOBALMODULEDEFS(CWebAdminMod, "Web based administration module")
+GLOBALMODULEDEFS(CWebAdminMod, "Web based administration module.")

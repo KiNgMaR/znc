@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  * This was originally written by cycomate.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,8 +34,8 @@ public:
 	virtual ~CRejoinJob() {}
 
 protected:
-	virtual void RunJob() {
-		CIRCNetwork* pNetwork = m_pModule->GetNetwork();
+	virtual void RunJob() override {
+		CIRCNetwork* pNetwork = GetModule()->GetNetwork();
 		CChan* pChan = pNetwork->FindChan(GetName().Token(1, true));
 
 		if (pChan) {
@@ -50,10 +50,14 @@ private:
 	unsigned int delay;
 
 public:
-	MODCONSTRUCTOR(CRejoinMod) {}
+	MODCONSTRUCTOR(CRejoinMod) {
+		AddHelpCommand();
+		AddCommand("SetDelay", static_cast<CModCommand::ModCmdFunc>(&CRejoinMod::OnSetDelayCommand), "<secs>", "Set the rejoin delay");
+		AddCommand("ShowDelay", static_cast<CModCommand::ModCmdFunc>(&CRejoinMod::OnShowDelayCommand), "", "Show the rejoin delay");
+	}
 	virtual ~CRejoinMod() {}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sErrorMsg) {
+	virtual bool OnLoad(const CString& sArgs, CString& sErrorMsg) override {
 		if (sArgs.empty()) {
 			CString sDelay = GetNV("delay");
 
@@ -75,37 +79,33 @@ public:
 		return true;
 	}
 
-	virtual void OnModCommand(const CString& sCommand) {
-		CString sCmdName = sCommand.Token(0).AsLower();
+	void OnSetDelayCommand(const CString& sCommand) {
+		int i;
+		i = sCommand.Token(1).ToInt();
 
-		if (sCmdName == "setdelay") {
-			int i;
-			i = sCommand.Token(1).ToInt();
-
-			if (i < 0) {
-				PutModule("Negative delays don't make any sense!");
-				return;
-			}
-
-			delay = i;
-			SetNV("delay", CString(delay));
-
-			if (delay)
-				PutModule("Rejoin delay set to " + CString(delay) + " seconds");
-			else
-				PutModule("Rejoin delay disabled");
-		} else if (sCmdName == "showdelay") {
-			if (delay)
-				PutModule("Rejoin delay enabled, " + CString(delay) + " seconds");
-			else
-				PutModule("Rejoin delay disabled");
-		} else {
-			PutModule("Commands: setdelay <secs>, showdelay");
+		if (i < 0) {
+			PutModule("Negative delays don't make any sense!");
+			return;
 		}
+
+		delay = i;
+		SetNV("delay", CString(delay));
+
+		if (delay)
+			PutModule("Rejoin delay set to " + CString(delay) + " seconds");
+		else
+			PutModule("Rejoin delay disabled");
 	}
 
-	virtual void OnKick(const CNick& OpNick, const CString& sKickedNick, CChan& pChan, const CString& sMessage) {
-		if (m_pNetwork->GetCurNick().Equals(sKickedNick)) {
+	void OnShowDelayCommand(const CString& sCommand) {
+		if (delay)
+			PutModule("Rejoin delay enabled, " + CString(delay) + " seconds");
+		else
+			PutModule("Rejoin delay disabled");
+	}
+
+	virtual void OnKick(const CNick& OpNick, const CString& sKickedNick, CChan& pChan, const CString& sMessage) override {
+		if (GetNetwork()->GetCurNick().Equals(sKickedNick)) {
 			if (!delay) {
 				PutIRC("JOIN " + pChan.GetName() + " " + pChan.GetKey());
 				pChan.Enable();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public:
 
 	// Hooks
 	virtual bool ForceLogin();
-	virtual bool OnLogin(const CString& sUser, const CString& sPass);
+	virtual bool OnLogin(const CString& sUser, const CString& sPass, bool bBasic);
 	virtual void OnPageRequest(const CString& sURI) = 0;
 	virtual bool PrintFile(const CString& sFileName, CString sContentType = "");
 	// !Hooks
@@ -56,7 +56,7 @@ public:
 	void ParseURI();
 	void GetPage();
 	static CString GetDate(time_t tm = 0);
-	virtual CString GetRemoteIP();
+	CString GetRemoteIP() const override;
 
 	// Cookies
 	CString GetRequestCookie(const CString& sKey) const;

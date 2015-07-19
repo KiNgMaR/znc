@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  * Author: imaginos <imaginos@imaginos.net>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,7 +46,7 @@ public:
 	virtual ~CAwayJob() {}
 
 protected:
-	virtual void RunJob();
+	virtual void RunJob() override;
 };
 
 class CAway : public CModule
@@ -57,10 +57,10 @@ class CAway : public CModule
 		time(&curtime);
 
 		if (sCommand.Token(1) != "-quiet") {
-			sReason = CUtils::FormatTime(curtime, sCommand.Token(1, true), m_pUser->GetTimezone());
+			sReason = CUtils::FormatTime(curtime, sCommand.Token(1, true), GetUser()->GetTimezone());
 			PutModNotice("You have been marked as away");
 		} else {
-			sReason = CUtils::FormatTime(curtime, sCommand.Token(2, true), m_pUser->GetTimezone());
+			sReason = CUtils::FormatTime(curtime, sCommand.Token(2, true), GetUser()->GetTimezone());
 		}
 
 		Away(false, sReason);
@@ -233,7 +233,7 @@ public:
 			SaveBufferToDisk();
 	}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage)
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override
 	{
 		CString sMyArgs = sArgs;
 		size_t uIndex = 0;
@@ -273,7 +273,7 @@ public:
 		return true;
 	}
 
-	virtual void OnIRCConnected()
+	virtual void OnIRCConnected() override
 	{
 		if (m_bIsAway)
 			Away(true); // reset away if we are reconnected
@@ -329,24 +329,24 @@ public:
 		}
 	}
 
-	virtual void OnClientLogin()
+	virtual void OnClientLogin() override
 	{
 		Back(true);
 	}
-	virtual void OnClientDisconnect()
+	virtual void OnClientDisconnect() override
 	{
 		Away();
 	}
 
 	CString GetPath()
 	{
-		CString sBuffer = m_pUser->GetUserName();
+		CString sBuffer = GetUser()->GetUserName();
 		CString sRet = GetSavePath();
 		sRet += "/.znc-away-" + CBlowfish::MD5(sBuffer, true);
 		return(sRet);
 	}
 
-	virtual void Away(bool bForce = false, const CString & sReason = "")
+	void Away(bool bForce = false, const CString & sReason = "")
 	{
 		if ((!m_bIsAway) || (bForce))
 		{
@@ -370,7 +370,7 @@ public:
 		}
 	}
 
-	virtual void Back(bool bUsePrivMessage = false)
+	void Back(bool bUsePrivMessage = false)
 	{
 		PutIRC("away");
 		m_bIsAway = false;
@@ -390,14 +390,14 @@ public:
 		m_sReason = "";
 	}
 
-	virtual EModRet OnPrivMsg(CNick& Nick, CString& sMessage)
+	virtual EModRet OnPrivMsg(CNick& Nick, CString& sMessage) override
 	{
 		if (m_bIsAway)
 			AddMessage(time(NULL), Nick, sMessage);
 		return(CONTINUE);
 	}
 
-	virtual EModRet OnPrivAction(CNick& Nick, CString& sMessage)
+	virtual EModRet OnPrivAction(CNick& Nick, CString& sMessage) override
 	{
 		if (m_bIsAway) {
 			AddMessage(time(NULL), Nick, "* " + sMessage);
@@ -405,7 +405,7 @@ public:
 		return(CONTINUE);
 	}
 
-	virtual EModRet OnUserNotice(CString& sTarget, CString& sMessage)
+	virtual EModRet OnUserNotice(CString& sTarget, CString& sMessage) override
 	{
 		Ping();
 		if (m_bIsAway)
@@ -413,7 +413,17 @@ public:
 
 		return(CONTINUE);
 	}
-	virtual EModRet OnUserMsg(CString& sTarget, CString& sMessage)
+
+	virtual EModRet OnUserMsg(CString& sTarget, CString& sMessage) override
+	{
+		Ping();
+		if (m_bIsAway)
+			Back();
+
+		return(CONTINUE);
+	}
+
+	virtual EModRet OnUserAction(CString& sTarget, CString& sMessage) override
 	{
 		Ping();
 		if (m_bIsAway)
@@ -466,7 +476,7 @@ private:
 
 	void AddMessage(time_t iTime, const CNick & Nick, const CString & sMessage)
 	{
-		if (Nick.GetNick() == m_pNetwork->GetIRCNick().GetNick())
+		if (Nick.GetNick() == GetNetwork()->GetIRCNick().GetNick())
 			return; // ignore messages from self
 		AddMessage(CString(iTime) + " " + Nick.GetNickMask() + " " + sMessage);
 	}
@@ -490,7 +500,7 @@ private:
 
 void CAwayJob::RunJob()
 {
-	CAway *p = (CAway *)m_pModule;
+	CAway *p = (CAway *)GetModule();
 	p->SaveBufferToDisk();
 
 	if (!p->IsAway())

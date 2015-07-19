@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@
 #include <znc/Server.h>
 #include <znc/Chan.h>
 #include <znc/Query.h>
+#include <algorithm>
 
 using std::vector;
 using std::set;
@@ -44,7 +45,7 @@ protected:
 			pIRCSock->PutIRC("PING :ZNC");
 		}
 
-		vector<CClient*>& vClients = m_pNetwork->GetClients();
+		const vector<CClient*>& vClients = m_pNetwork->GetClients();
 		for (size_t b = 0; b < vClients.size(); b++) {
 			CClient* pClient = vClients[b];
 
@@ -60,22 +61,31 @@ private:
 
 class CIRCNetworkJoinTimer : public CCron {
 public:
-	CIRCNetworkJoinTimer(CIRCNetwork *pNetwork) : CCron() {
-		m_pNetwork = pNetwork;
+	CIRCNetworkJoinTimer(CIRCNetwork *pNetwork) : CCron(), m_bDelayed(false), m_pNetwork(pNetwork) {
 		SetName("CIRCNetworkJoinTimer::" + m_pNetwork->GetUser()->GetUserName() + "::" + m_pNetwork->GetName());
-		Start(30);
+		Start(CIRCNetwork::JOIN_FREQUENCY);
 	}
 
 	virtual ~CIRCNetworkJoinTimer() {}
 
+	void Delay(unsigned short int uDelay) {
+		m_bDelayed = true;
+		Start(uDelay);
+	}
+
 protected:
 	virtual void RunJob() {
+		if (m_bDelayed) {
+			m_bDelayed = false;
+			Start(CIRCNetwork::JOIN_FREQUENCY);
+		}
 		if (m_pNetwork->IsIRCConnected()) {
 			m_pNetwork->JoinChans();
 		}
 	}
 
 private:
+	bool         m_bDelayed;
 	CIRCNetwork* m_pNetwork;
 };
 
@@ -114,6 +124,8 @@ CIRCNetwork::CIRCNetwork(CUser *pUser, const CString& sName) {
 
 	m_fFloodRate = 1;
 	m_uFloodBurst = 4;
+
+	m_uJoinDelay = 0;
 
 	m_RawBuffer.SetLineCount(100, true);   // This should be more than enough raws, especially since we are buffering the MOTD separately
 	m_MotdBuffer.SetLineCount(200, true);  // This should be more than enough motd lines
@@ -155,6 +167,7 @@ void CIRCNetwork::Clone(const CIRCNetwork& Network, bool bCloneName) {
 
 	m_fFloodRate = Network.GetFloodRate();
 	m_uFloodBurst = Network.GetFloodBurst();
+	m_uJoinDelay = Network.GetJoinDelay();
 
 	SetNick(Network.GetNick());
 	SetAltNick(Network.GetAltNick());
@@ -162,6 +175,8 @@ void CIRCNetwork::Clone(const CIRCNetwork& Network, bool bCloneName) {
 	SetRealName(Network.GetRealName());
 	SetBindHost(Network.GetBindHost());
 	SetEncoding(Network.GetEncoding());
+	SetQuitMsg(Network.GetQuitMsg());
+	m_ssTrustedFingerprints = Network.m_ssTrustedFingerprints;
 
 	// Servers
 	const vector<CServer*>& vServers = Network.GetServers();
@@ -304,7 +319,7 @@ void CIRCNetwork::DelServers() {
 	m_vServers.clear();
 }
 
-CString CIRCNetwork::GetNetworkPath() {
+CString CIRCNetwork::GetNetworkPath() const {
 	CString sNetworkPath = m_pUser->GetUserPath() + "/networks/" + m_sName;
 
 	if (!CFile::Exists(sNetworkPath)) {
@@ -332,6 +347,7 @@ bool CIRCNetwork::ParseConfig(CConfig *pConfig, CString& sError, bool bUpgrade) 
 			{ "realname", &CIRCNetwork::SetRealName },
 			{ "bindhost", &CIRCNetwork::SetBindHost },
 			{ "encoding", &CIRCNetwork::SetEncoding },
+			{ "quitmsg", &CIRCNetwork::SetQuitMsg },
 		};
 		size_t numStringOptions = sizeof(StringOptions) / sizeof(StringOptions[0]);
 		TOption<bool> BoolOptions[] = {
@@ -344,6 +360,7 @@ bool CIRCNetwork::ParseConfig(CConfig *pConfig, CString& sError, bool bUpgrade) 
 		size_t numDoubleOptions = sizeof(DoubleOptions) / sizeof(DoubleOptions[0]);
 		TOption<short unsigned int> SUIntOptions[] = {
 			{ "floodburst", &CIRCNetwork::SetFloodBurst },
+			{ "joindelay", &CIRCNetwork::SetJoinDelay },
 		};
 		size_t numSUIntOptions = sizeof(SUIntOptions) / sizeof(SUIntOptions[0]);
 
@@ -375,38 +392,46 @@ bool CIRCNetwork::ParseConfig(CConfig *pConfig, CString& sError, bool bUpgrade) 
 		for (vit = vsList.begin(); vit != vsList.end(); ++vit) {
 			CString sValue = *vit;
 			CString sModName = sValue.Token(0);
+			CString sNotice = "Loading network module [" + sModName + "]";
 
 			// XXX Legacy crap, added in ZNC 0.203, modified in 0.207
 			// Note that 0.203 == 0.207
 			if (sModName == "away") {
-				CUtils::PrintMessage("NOTICE: [away] was renamed, "
-						"loading [awaystore] instead");
+				sNotice = "NOTICE: [away] was renamed, loading [awaystore] instead";
 				sModName = "awaystore";
 			}
 
 			// XXX Legacy crap, added in ZNC 0.207
 			if (sModName == "autoaway") {
-				CUtils::PrintMessage("NOTICE: [autoaway] was renamed, "
-						"loading [awaystore] instead");
+				sNotice = "NOTICE: [autoaway] was renamed, loading [awaystore] instead";
 				sModName = "awaystore";
 			}
 		
 			// XXX Legacy crap, added in 1.1; fakeonline module was dropped in 1.0 and returned in 1.1
 			if (sModName == "fakeonline") {
-				CUtils::PrintMessage("NOTICE: [fakeonline] was renamed, loading [modules_online] instead");
+				sNotice = "NOTICE: [fakeonline] was renamed, loading [modules_online] instead";
 				sModName = "modules_online";
 			}
 
-			CUtils::PrintAction("Loading network module [" + sModName + "]");
 			CString sModRet;
 			CString sArgs = sValue.Token(1, true);
 
-			bool bModRet = GetModules().LoadModule(sModName, sArgs, CModInfo::NetworkModule, GetUser(), this, sModRet);
+			bool bModRet = LoadModule(sModName, sArgs, sNotice, sModRet);
 
-			CUtils::PrintStatus(bModRet, sModRet);
 			if (!bModRet) {
-				sError = sModRet;
-				return false;
+				// XXX The awaynick module was retired in 1.6 (still available as external module)
+				if (sModName == "awaynick") {
+					// load simple_away instead, unless it's already on the list
+					if (std::find(vsList.begin(), vsList.end(), "simple_away") == vsList.end()) {
+						sNotice = "Loading network module [simple_away] instead";
+						sModName = "simple_away";
+						// not a fatal error if simple_away is not available
+						LoadModule(sModName, sArgs, sNotice, sModRet);
+					}
+				} else {
+					sError = sModRet;
+					return false;
+				}
 			}
 		}
 	}
@@ -415,6 +440,11 @@ bool CIRCNetwork::ParseConfig(CConfig *pConfig, CString& sError, bool bUpgrade) 
 	for (vit = vsList.begin(); vit != vsList.end(); ++vit) {
 		CUtils::PrintAction("Adding server [" + *vit + "]");
 		CUtils::PrintStatus(AddServer(*vit));
+	}
+
+	pConfig->FindStringVector("trustedserverfingerprint", vsList);
+	for (const CString& sFP : vsList) {
+		AddTrustedFingerprint(sFP);
 	}
 
 	pConfig->FindStringVector("chan", vsList);
@@ -453,7 +483,7 @@ bool CIRCNetwork::ParseConfig(CConfig *pConfig, CString& sError, bool bUpgrade) 
 	return true;
 }
 
-CConfig CIRCNetwork::ToConfig() {
+CConfig CIRCNetwork::ToConfig() const {
 	CConfig config;
 
 	if (!m_sNick.empty()) {
@@ -478,10 +508,15 @@ CConfig CIRCNetwork::ToConfig() {
 	config.AddKeyValuePair("IRCConnectEnabled", CString(GetIRCConnectEnabled()));
 	config.AddKeyValuePair("FloodRate", CString(GetFloodRate()));
 	config.AddKeyValuePair("FloodBurst", CString(GetFloodBurst()));
+	config.AddKeyValuePair("JoinDelay", CString(GetJoinDelay()));
 	config.AddKeyValuePair("Encoding", m_sEncoding);
 
+	if (!m_sQuitMsg.empty()) {
+		config.AddKeyValuePair("QuitMsg", m_sQuitMsg);
+	}
+
 	// Modules
-	CModules& Mods = GetModules();
+	const CModules& Mods = GetModules();
 
 	if (!Mods.empty()) {
 		for (unsigned int a = 0; a < Mods.size(); a++) {
@@ -498,6 +533,10 @@ CConfig CIRCNetwork::ToConfig() {
 	// Servers
 	for (unsigned int b = 0; b < m_vServers.size(); b++) {
 		config.AddKeyValuePair("Server", m_vServers[b]->GetString());
+	}
+
+	for (const CString& sFP : m_ssTrustedFingerprints) {
+		config.AddKeyValuePair("TrustedServerFingerprint", sFP);
 	}
 
 	// Chans
@@ -539,6 +578,8 @@ void CIRCNetwork::ClientConnected(CClient *pClient) {
 	m_vClients.push_back(pClient);
 
 	size_t uIdx, uSize;
+
+	pClient->SetPlaybackActive(true);
 
 	if (m_RawBuffer.IsEmpty()) {
 		pClient->PutClient(":irc.znc.in 001 " + pClient->GetNick() + " :- Welcome to ZNC -");
@@ -592,7 +633,7 @@ void CIRCNetwork::ClientConnected(CClient *pClient) {
 	const vector<CChan*>& vChans = GetChans();
 	for (size_t a = 0; a < vChans.size(); a++) {
 		if ((vChans[a]->IsOn()) && (!vChans[a]->IsDetached())) {
-			vChans[a]->JoinUser(true, "", pClient);
+			vChans[a]->AttachUser(pClient);
 		}
 	}
 
@@ -609,13 +650,16 @@ void CIRCNetwork::ClientConnected(CClient *pClient) {
 
 	uSize = m_NoticeBuffer.Size();
 	for (uIdx = 0; uIdx < uSize; uIdx++) {
-		CString sLine = m_NoticeBuffer.GetLine(uIdx, *pClient, msParams);
+		const CBufLine& BufLine = m_NoticeBuffer.GetBufLine(uIdx);
+		CString sLine = BufLine.GetLine(*pClient, msParams);
 		bool bContinue = false;
-		NETWORKMODULECALL(OnPrivBufferPlayLine(*pClient, sLine), m_pUser, this, NULL, &bContinue);
+		NETWORKMODULECALL(OnPrivBufferPlayLine2(*pClient, sLine, BufLine.GetTime()), m_pUser, this, NULL, &bContinue);
 		if (bContinue) continue;
 		pClient->PutClient(sLine);
 	}
 	m_NoticeBuffer.Clear();
+
+	pClient->SetPlaybackActive(false);
 
 	// Tell them why they won't connect
 	if (!GetIRCConnectEnabled())
@@ -632,12 +676,23 @@ void CIRCNetwork::ClientDisconnected(CClient *pClient) {
 	}
 }
 
-CUser* CIRCNetwork::GetUser() {
+CUser* CIRCNetwork::GetUser() const {
 	return m_pUser;
 }
 
 const CString& CIRCNetwork::GetName() const {
 	return m_sName;
+}
+
+std::vector<CClient*> CIRCNetwork::FindClients(const CString& sIdentifier) const {
+	std::vector<CClient*> vClients;
+	for (CClient* pClient : m_vClients) {
+		if (pClient->GetIdentifier().Equals(sIdentifier)) {
+			vClients.push_back(pClient);
+		}
+	}
+
+	return vClients;
 }
 
 void CIRCNetwork::SetUser(CUser *pUser) {
@@ -732,8 +787,9 @@ CChan* CIRCNetwork::FindChan(CString sName) const {
 std::vector<CChan*> CIRCNetwork::FindChans(const CString& sWild) const {
 	std::vector<CChan*> vChans;
 	vChans.reserve(m_vChans.size());
+	const CString sLower = sWild.AsLower();
 	for (std::vector<CChan*>::const_iterator it = m_vChans.begin(); it != m_vChans.end(); ++it) {
-		if ((*it)->GetName().WildCmp(sWild))
+		if ((*it)->GetName().AsLower().WildCmp(sLower))
 			vChans.push_back(*it);
 	}
 	return vChans;
@@ -891,8 +947,9 @@ CQuery* CIRCNetwork::FindQuery(const CString& sName) const {
 std::vector<CQuery*> CIRCNetwork::FindQueries(const CString& sWild) const {
 	std::vector<CQuery*> vQueries;
 	vQueries.reserve(m_vQueries.size());
+	const CString sLower = sWild.AsLower();
 	for (std::vector<CQuery*>::const_iterator it = m_vQueries.begin(); it != m_vQueries.end(); ++it) {
-		if ((*it)->GetName().WildCmp(sWild))
+		if ((*it)->GetName().AsLower().WildCmp(sLower))
 			vQueries.push_back(*it);
 	}
 	return vQueries;
@@ -1156,6 +1213,7 @@ bool CIRCNetwork::Connect() {
 
 	CIRCSock *pIRCSock = new CIRCSock(this);
 	pIRCSock->SetPass(pServer->GetPass());
+	pIRCSock->SetSSLTrustedPeerFingerprints(m_ssTrustedFingerprints);
 
 	DEBUG("Connecting user/network [" << m_pUser->GetUserName() << "/" << m_sName << "]");
 
@@ -1182,6 +1240,14 @@ bool CIRCNetwork::IsIRCConnected() const {
 
 void CIRCNetwork::SetIRCSocket(CIRCSock* pIRCSock) {
 	m_pIRCSock = pIRCSock;
+}
+
+void CIRCNetwork::IRCConnected() {
+	if (m_uJoinDelay > 0) {
+		m_pJoinTimer->Delay(m_uJoinDelay);
+	} else {
+		JoinChans();
+	}
 }
 
 void CIRCNetwork::IRCDisconnected() {
@@ -1269,6 +1335,14 @@ const CString& CIRCNetwork::GetEncoding() const {
 	return m_sEncoding;
 }
 
+CString CIRCNetwork::GetQuitMsg() const {
+	if (m_sQuitMsg.empty()) {
+		return m_pUser->GetQuitMsg();
+	}
+
+	return m_sQuitMsg;
+}
+
 void CIRCNetwork::SetNick(const CString& s) {
 	if (m_pUser->GetNick().Equals(s)) {
 		m_sNick = "";
@@ -1313,6 +1387,14 @@ void CIRCNetwork::SetEncoding(const CString& s) {
 	m_sEncoding = s;
 }
 
+void CIRCNetwork::SetQuitMsg(const CString& s) {
+	if (m_pUser->GetQuitMsg().Equals(s)) {
+		m_sQuitMsg = "";
+	} else {
+		m_sQuitMsg = s;
+	}
+}
+
 CString CIRCNetwork::ExpandString(const CString& sStr) const {
 	CString sRet;
 	return ExpandString(sStr, sRet);
@@ -1328,4 +1410,18 @@ CString& CIRCNetwork::ExpandString(const CString& sStr, CString& sRet) const {
 	sRet.Replace("%bindhost%", GetBindHost());
 
 	return m_pUser->ExpandString(sRet, sRet);
+}
+
+bool CIRCNetwork::LoadModule(const CString& sModName, const CString& sArgs, const CString& sNotice, CString& sError)
+{
+	CUtils::PrintAction(sNotice);
+	CString sModRet;
+
+	bool bModRet = GetModules().LoadModule(sModName, sArgs, CModInfo::NetworkModule, GetUser(), this, sModRet);
+
+	CUtils::PrintStatus(bModRet, sModRet);
+	if (!bModRet) {
+		sError = sModRet;
+	}
+	return bModRet;
 }

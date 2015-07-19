@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,8 @@ public:
 	enum ConfigState {
 		ECONFIG_NOTHING,
 		ECONFIG_NEED_REHASH,
-		ECONFIG_NEED_WRITE
+		ECONFIG_NEED_WRITE,
+		ECONFIG_NEED_VERBOSE_WRITE
 	};
 
 	void DeleteUsers();
@@ -90,8 +91,7 @@ public:
 
 	// Authenticate a user.
 	// The result is passed back via callbacks to CAuthBase.
-	// CSmartPtr handles freeing this pointer!
-	void AuthUser(CSmartPtr<CAuthBase> AuthClass);
+	void AuthUser(std::shared_ptr<CAuthBase> AuthClass);
 
 	// Setters
 	void SetConfigState(enum ConfigState e) { m_eConfigState = e; }
@@ -101,6 +101,7 @@ public:
 	void SetAnonIPLimit(unsigned int i) { m_uiAnonIPLimit = i; }
 	void SetServerThrottle(unsigned int i) { m_sConnectThrottle.SetTTL(i*1000); }
 	void SetProtectWebSessions(bool b) { m_bProtectWebSessions = b; }
+	void SetHideVersion(bool b) { m_bHideVersion = b; }
 	void SetConnectDelay(unsigned int i);
 	// !Setters
 
@@ -109,7 +110,6 @@ public:
 	CSockManager& GetManager() { return m_Manager; }
 	const CSockManager& GetManager() const { return m_Manager; }
 	CModules& GetModules() { return *m_pModules; }
-	size_t FilterUncommonModules(std::set<CModInfo>& ssModules);
 	CString GetSkinName() const { return m_sSkinName; }
 	const CString& GetStatusPrefix() const { return m_sStatusPrefix; }
 	const CString& GetCurPath() const;
@@ -130,6 +130,9 @@ public:
 	unsigned int GetServerThrottle() const { return m_sConnectThrottle.GetTTL() / 1000; }
 	unsigned int GetConnectDelay() const { return m_uiConnectDelay; }
 	bool GetProtectWebSessions() const { return m_bProtectWebSessions; }
+	bool GetHideVersion() const { return m_bHideVersion; }
+	CString GetSSLCiphers() const { return m_sSSLCiphers; }
+	Csock::EDisableProtocol GetDisabledSSLProtocols() const { return static_cast<Csock::EDisableProtocol>(m_uDisabledSSLProtocols); }
 	// !Getters
 
 	// Static allocator
@@ -213,6 +216,8 @@ protected:
 	CString                m_sStatusPrefix;
 	CString                m_sPidFile;
 	CString                m_sSSLCertFile;
+	CString                m_sSSLCiphers;
+	CString                m_sSSLProtocols;
 	VCString               m_vsBindHosts;
 	VCString               m_vsTrustedProxies;
 	VCString               m_vsMotd;
@@ -220,6 +225,7 @@ protected:
 	unsigned int           m_uiConnectDelay;
 	unsigned int           m_uiAnonIPLimit;
 	unsigned int           m_uiMaxBufferSize;
+	unsigned int           m_uDisabledSSLProtocols;
 	CModules*              m_pModules;
 	unsigned long long     m_uBytesRead;
 	unsigned long long     m_uBytesWritten;
@@ -228,6 +234,7 @@ protected:
 	unsigned int           m_uiConnectPaused;
 	TCacheMap<CString>     m_sConnectThrottle;
 	bool                   m_bProtectWebSessions;
+	bool                   m_bHideVersion;
 };
 
 #endif // !_ZNC_H

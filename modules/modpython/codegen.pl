@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+# Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ open my $out, ">", $ARGV[1] or die;
 
 print $out <<'EOF';
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -292,7 +292,7 @@ while (<$in>) {
 					say $out "Py_BuildValue(\"l\", (long int)$a->{var});";
 				}
 			}
-			when (/^CSmartPtr/) {
+			when (/^std::shared_ptr/) {
 				say $out "SWIG_NewInstanceObj(new $a->{type}($a->{var}), SWIG_TypeQuery(\"$a->{type}*\"), SWIG_POINTER_OWN);";
 			}
 			when (/\*$/) {

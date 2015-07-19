@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+# Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+from functools import wraps
 import imp
 import re
 import traceback
@@ -630,6 +631,8 @@ def gather_mod_info(cl, modinfo):
     modinfo.SetDescription(cl.description)
     modinfo.SetWikiPage(cl.wiki_page)
     modinfo.SetDefaultType(cl.module_types[0])
+    modinfo.SetArgsHelpText(cl.args_help_text);
+    modinfo.SetHasArgs(cl.has_args);
     for module_type in cl.module_types:
         modinfo.AddType(module_type)
 
@@ -704,6 +707,36 @@ def CreateWebSubPage(name, title='', params=dict(), admin=False):
 CUser.GetNetworks = CUser.GetNetworks_
 CIRCNetwork.GetChans = CIRCNetwork.GetChans_
 CChan.GetNicks = CChan.GetNicks_
+CZNC.GetUserMap = CZNC.GetUserMap_
+
+
+def FreeOwnership(func):
+    """
+        Force release of python ownership of user object when adding it to znc
+
+        This solves #462
+    """
+    @wraps(func)
+    def _wrap(self, obj, *args):
+        # Bypass if first argument is not an SWIG object (like base type str)
+        if not hasattr(obj, 'thisown'):
+            return func(self, obj, *args)
+        # Change ownership of C++ object from SWIG/python to ZNC core if function was successful
+        if func(self, obj, *args):
+            # .thisown is magic SWIG's attribute which makes it call C++ "delete" when python's garbage collector deletes python wrapper
+            obj.thisown = 0
+            return True
+        else:
+            return False
+    return _wrap
+
+CZNC.AddListener = FreeOwnership(func=CZNC.AddListener)
+CZNC.AddUser = FreeOwnership(func=CZNC.AddUser)
+CZNC.AddNetworkToQueue = FreeOwnership(func=CZNC.AddNetworkToQueue)
+CUser.AddNetwork = FreeOwnership(func=CUser.AddNetwork)
+CIRCNetwork.AddChan = FreeOwnership(func=CIRCNetwork.AddChan)
+CModule.AddSocket = FreeOwnership(func=CModule.AddSocket)
+CModule.AddSubPage = FreeOwnership(func=CModule.AddSubPage)
 
 
 class ModulesIter(collections.Iterator):

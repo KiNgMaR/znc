@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,16 @@ public:
 	MODCONSTRUCTOR(CRawMod) {}
 	virtual ~CRawMod() {}
 
-	virtual EModRet OnRaw(CString& sLine) {
+	virtual EModRet OnRaw(CString& sLine) override {
 		PutModule("IRC -> [" + sLine + "]");
 		return CONTINUE;
 	}
 
-	virtual void OnModCommand(const CString& sCommand) {
+	virtual void OnModCommand(const CString& sCommand) override {
 		PutIRC(sCommand);
 	}
 
-	virtual EModRet OnUserRaw(CString& sLine) {
+	virtual EModRet OnUserRaw(CString& sLine) override {
 		PutModule("YOU -> [" + sLine + "]");
 		return CONTINUE;
 	}

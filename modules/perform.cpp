@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,21 +121,21 @@ public:
 		return sPerf;
 	}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage) {
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override {
 		GetNV("Perform").Split("\n", m_vPerform, false);
 
 		return true;
 	}
 
-	virtual void OnIRCConnected() {
+	virtual void OnIRCConnected() override {
 		for (VCString::const_iterator it = m_vPerform.begin(); it != m_vPerform.end(); ++it) {
 			PutIRC(ExpandString(*it));
 		}
 	}
 
-	virtual CString GetWebMenuTitle() { return "Perform"; }
+	virtual CString GetWebMenuTitle() override { return "Perform"; }
 
-	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) {
+	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) override {
 		if (sPageName != "index") {
 			// only accept requests to index
 			return false;

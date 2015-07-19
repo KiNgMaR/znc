@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public:
 
 	virtual ~CSSLClientCertMod() {}
 
-	virtual bool OnBoot() {
+	virtual bool OnBoot() override {
 		const vector<CListener*>& vListeners = CZNC::Get().GetListeners();
 		vector<CListener*>::const_iterator it;
 
@@ -65,11 +65,11 @@ public:
 		return true;
 	}
 
-	virtual void OnPostRehash() {
+	virtual void OnPostRehash() override {
 		OnBoot();
 	}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage) {
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override {
 		OnBoot();
 
 		return true;
@@ -101,7 +101,7 @@ public:
 		return pair.second;
 	}
 
-	virtual EModRet OnLoginAttempt(CSmartPtr<CAuthBase> Auth) {
+	virtual EModRet OnLoginAttempt(std::shared_ptr<CAuthBase> Auth) override {
 		const CString sUser = Auth->GetUsername();
 		Csock *pSock = Auth->GetSocket();
 		CUser *pUser = CZNC::Get().FindUser(sUser);
@@ -137,7 +137,7 @@ public:
 	}
 
 	void HandleShowCommand(const CString& sLine) {
-		const CString sPubKey = GetKey(m_pClient);
+		const CString sPubKey = GetKey(GetClient());
 
 		if (sPubKey.empty()) {
 			PutModule("You are not connected with any valid public key");
@@ -150,13 +150,13 @@ public:
 		CString sPubKey = sLine.Token(1);
 
 		if (sPubKey.empty()) {
-			sPubKey = GetKey(m_pClient);
+			sPubKey = GetKey(GetClient());
 		}
 
 		if (sPubKey.empty()) {
 			PutModule("You did not supply a public key or connect with one.");
 		} else {
-			if (AddKey(m_pUser, sPubKey)) {
+			if (AddKey(GetUser(), sPubKey)) {
 				PutModule("'" + sPubKey + "' added.");
 			} else {
 				PutModule("The key '" + sPubKey + "' is already added.");
@@ -170,7 +170,7 @@ public:
 		Table.AddColumn("Id");
 		Table.AddColumn("Key");
 
-		MSCString::const_iterator it = m_PubKeys.find(m_pUser->GetUserName());
+		MSCString::const_iterator it = m_PubKeys.find(GetUser()->GetUserName());
 		if (it == m_PubKeys.end()) {
 			PutModule("No keys set for your user");
 			return;
@@ -192,7 +192,7 @@ public:
 
 	void HandleDelCommand(const CString& sLine) {
 		unsigned int id = sLine.Token(1, true).ToUInt();
-		MSCString::iterator it = m_PubKeys.find(m_pUser->GetUserName());
+		MSCString::iterator it = m_PubKeys.find(GetUser()->GetUserName());
 
 		if (it == m_PubKeys.end()) {
 			PutModule("No keys set for your user");
@@ -236,9 +236,9 @@ public:
 		}
 	}
 
-	virtual CString GetWebMenuTitle() { return "certauth"; }
+	virtual CString GetWebMenuTitle() override { return "certauth"; }
 
-	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) {
+	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) override {
 		CUser *pUser = WebSock.GetSession()->GetUser();
 
 		if (sPageName == "index") {
@@ -284,4 +284,4 @@ template<> void TModInfo<CSSLClientCertMod>(CModInfo& Info) {
 	Info.SetWikiPage("certauth");
 }
 
-GLOBALMODULEDEFS(CSSLClientCertMod, "Allow users to authenticate via SSL client certificates")
+GLOBALMODULEDEFS(CSSLClientCertMod, "Allow users to authenticate via SSL client certificates.")

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ bool CIRCSock::IsFloodProtected(double fRate) {
 	return fRate > FLOOD_MINIMAL_RATE;
 }
 
-CIRCSock::CIRCSock(CIRCNetwork* pNetwork) : CZNCSock() {
+CIRCSock::CIRCSock(CIRCNetwork* pNetwork) : CIRCSocket() {
 	m_pNetwork = pNetwork;
 	m_bAuthed = false;
 	m_bNamesx = false;
@@ -124,7 +124,7 @@ void CIRCSock::Quit(const CString& sQuitMsg) {
 	if (!sQuitMsg.empty()) {
 		PutIRC("QUIT :" + sQuitMsg);
 	} else {
-		PutIRC("QUIT :" + m_pNetwork->ExpandString(m_pNetwork->GetUser()->GetQuitMsg()));
+		PutIRC("QUIT :" + m_pNetwork->ExpandString(m_pNetwork->GetQuitMsg()));
 	}
 	Close(CLT_AFTERWRITE);
 }
@@ -181,7 +181,7 @@ void CIRCSock::ReadLine(const CString& sData) {
 				m_bAuthed = true;
 				m_pNetwork->PutStatus("Connected!");
 
-				vector<CClient*>& vClients = m_pNetwork->GetClients();
+				const vector<CClient*>& vClients = m_pNetwork->GetClients();
 
 				for (unsigned int a = 0; a < vClients.size(); a++) {
 					CClient* pClient = vClients[a];
@@ -200,9 +200,7 @@ void CIRCSock::ReadLine(const CString& sData) {
 				m_pNetwork->ClearRawBuffer();
 				m_pNetwork->AddRawBuffer(":" + _NAMEDFMT(sServer) + " " + sCmd + " {target} " + _NAMEDFMT(sRest));
 
-				// Join the first set of channels as soon as we are connected
-				// and let the CIRCNetworkJoinTimer join the rest.
-				m_pNetwork->JoinChans();
+				m_pNetwork->IRCConnected();
 
 				break;
 			}
@@ -354,8 +352,8 @@ void CIRCSock::ReadLine(const CString& sData) {
 				if (m_bNamesx && (sNick.size() > 1) && IsPermChar(sNick[1])) {
 					// sLine uses multi-prefix
 
-					vector<CClient*>& vClients = m_pNetwork->GetClients();
-					vector<CClient*>::iterator it;
+					const vector<CClient*>& vClients = m_pNetwork->GetClients();
+					vector<CClient*>::const_iterator it;
 					for (it = vClients.begin(); it != vClients.end(); ++it) {
 						CClient *pClient = *it;
 
@@ -918,7 +916,7 @@ bool CIRCSock::OnGeneralCTCP(CNick& Nick, CString& sMessage) {
 
 	if (!bHaveReply && !m_pNetwork->IsUserAttached()) {
 		if (sQuery == "VERSION") {
-			sReply = CZNC::GetTag();
+			sReply = CZNC::GetTag(false);
 		} else if (sQuery == "PING") {
 			sReply = sMessage.Token(1, true);
 		}
@@ -933,7 +931,7 @@ bool CIRCSock::OnGeneralCTCP(CNick& Nick, CString& sMessage) {
 		// If we are over the limit, don't reply to this CTCP
 		if (m_uNumCTCP >= m_uCTCPFloodCount) {
 			DEBUG("CTCP flood detected - not replying to query");
-			return false;
+			return true;
 		}
 		m_uNumCTCP++;
 
@@ -1051,7 +1049,7 @@ void CIRCSock::TrySend() {
 		m_iSendsAllowed--;
 		bool bSkip = false;
 		CString& sLine = m_vsSendQueue.front();
-		ALLMODULECALL(OnSendToIRC(sLine), &bSkip);
+		IRCSOCKMODULECALL(OnSendToIRC(sLine), &bSkip);
 		if (!bSkip) {;
 			DEBUG("(" << m_pNetwork->GetUser()->GetUserName() << "/" << m_pNetwork->GetName() << ") ZNC -> IRC [" << sLine << "]");
 			Write(sLine + "\r\n");
@@ -1129,6 +1127,34 @@ void CIRCSock::SockError(int iErrno, const CString& sDescription) {
 		} else {
 			m_pNetwork->PutStatus("Disconnected from IRC (" + sError + "). Reconnecting...");
 		}
+#ifdef HAVE_LIBSSL
+		if (iErrno == errnoBadSSLCert) {
+			// Stringify bad cert
+			X509* pCert = GetX509();
+			if (pCert) {
+				BIO* mem = BIO_new(BIO_s_mem());
+				X509_print(mem, pCert);
+				X509_free(pCert);
+				char* pCertStr = nullptr;
+				long iLen = BIO_get_mem_data(mem, &pCertStr);
+				CString sCert(pCertStr, iLen);
+				BIO_free(mem);
+
+				VCString vsCert;
+				sCert.Split("\n", vsCert);
+				for (const CString& s : vsCert) {
+					// It shouldn't contain any bad characters, but let's be safe...
+					m_pNetwork->PutStatus("|" + s.Escape_n(CString::EDEBUG));
+				}
+				CString sSHA1;
+				if (GetPeerFingerprint(sSHA1))
+					m_pNetwork->PutStatus("SHA1: " + sSHA1.Escape_n(CString::EHEXCOLON, CString::EHEXCOLON));
+				CString sSHA256 = GetSSLPeerFingerprint();
+				m_pNetwork->PutStatus("SHA-256: " + sSHA256);
+				m_pNetwork->PutStatus("If you trust this certificate, do /znc AddTrustedServerFingerprint " + sSHA256);
+			}
+		}
+#endif
 	}
 	m_pNetwork->ClearRawBuffer();
 	m_pNetwork->ClearMotdBuffer();
@@ -1233,8 +1259,8 @@ CString CIRCSock::GetISupport(const CString& sKey, const CString& sDefault) cons
 }
 
 void CIRCSock::ForwardRaw353(const CString& sLine) const {
-	vector<CClient*>& vClients = m_pNetwork->GetClients();
-	vector<CClient*>::iterator it;
+	const vector<CClient*>& vClients = m_pNetwork->GetClients();
+	vector<CClient*>::const_iterator it;
 
 	for (it = vClients.begin(); it != vClients.end(); ++it) {
 		ForwardRaw353(sLine, *it);
@@ -1296,22 +1322,22 @@ void CIRCSock::SendAltNick(const CString& sBadNick) {
 
 	const CString& sConfNick = m_pNetwork->GetNick();
 	const CString& sAltNick  = m_pNetwork->GetAltNick();
-	CString sNewNick;
+	CString sNewNick = sConfNick.Left(uMax - 1);
 
 	if (sLastNick.Equals(sConfNick)) {
 		if ((!sAltNick.empty()) && (!sConfNick.Equals(sAltNick))) {
 			sNewNick = sAltNick;
 		} else {
-			sNewNick = sConfNick.Left(uMax - 1) + "-";
+			sNewNick += "-";
 		}
-	} else if (sLastNick.Equals(sAltNick)) {
-		sNewNick = sConfNick.Left(uMax -1) + "-";
-	} else if (sLastNick.Equals(CString(sConfNick.Left(uMax -1) + "-"))) {
-		sNewNick = sConfNick.Left(uMax -1) + "|";
-	} else if (sLastNick.Equals(CString(sConfNick.Left(uMax -1) + "|"))) {
-		sNewNick = sConfNick.Left(uMax -1) + "^";
-	} else if (sLastNick.Equals(CString(sConfNick.Left(uMax -1) + "^"))) {
-		sNewNick = sConfNick.Left(uMax -1) + "a";
+	} else if (sLastNick.Equals(sAltNick) && !sAltNick.Equals(sNewNick + "-")) {
+		sNewNick += "-";
+	} else if (sLastNick.Equals(sNewNick + "-") && !sAltNick.Equals(sNewNick + "|")) {
+		sNewNick += "|";
+	} else if (sLastNick.Equals(sNewNick + "|") && !sAltNick.Equals(sNewNick + "^")) {
+		sNewNick += "^";
+	} else if (sLastNick.Equals(sNewNick + "^") && !sAltNick.Equals(sNewNick + "a")) {
+		sNewNick += "a";
 	} else {
 		char cLetter = 0;
 		if (sBadNick.empty()) {
@@ -1329,6 +1355,8 @@ void CIRCSock::SendAltNick(const CString& sBadNick) {
 		}
 
 		sNewNick = sConfNick.Left(uMax -1) + ++cLetter;
+		if (sNewNick.Equals(sAltNick))
+			sNewNick = sConfNick.Left(uMax -1) + ++cLetter;
 	}
 	PutIRC("NICK " + sNewNick);
 	m_Nick.SetNick(sNewNick);

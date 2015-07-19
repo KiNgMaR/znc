@@ -42,15 +42,16 @@ endif
 LIB_SRCS  := ZNCString.cpp Csocket.cpp znc.cpp IRCNetwork.cpp User.cpp IRCSock.cpp \
 	Client.cpp Chan.cpp Nick.cpp Server.cpp Modules.cpp MD5.cpp Buffer.cpp Utils.cpp \
 	FileUtils.cpp HTTPSock.cpp Template.cpp ClientCommand.cpp Socket.cpp SHA256.cpp \
-	WebModules.cpp Listener.cpp Config.cpp ZNCDebug.cpp Threads.cpp version.cpp Query.cpp
+	WebModules.cpp Listener.cpp Config.cpp ZNCDebug.cpp Threads.cpp version.cpp Query.cpp \
+	SSLVerifyHost.cpp
 LIB_SRCS  := $(addprefix src/,$(LIB_SRCS))
 BIN_SRCS  := src/main.cpp
 LIB_OBJS  := $(patsubst %cpp,%o,$(LIB_SRCS))
 BIN_OBJS  := $(patsubst %cpp,%o,$(BIN_SRCS))
-TESTS     := StringTest ConfigTest UtilsTest
+TESTS     := StringTest ConfigTest UtilsTest ThreadTest NickTest ClientTest NetworkTest
 TESTS     := $(addprefix test/,$(addsuffix .o,$(TESTS)))
 CLEAN     := znc src/*.o test/*.o core core.* .version_extra .depend modules/.depend unittest
-DISTCLEAN := Makefile config.log config.status znc-buildmod \
+DISTCLEAN := Makefile config.log config.status znc-buildmod include/znc/zncconfig.h \
 	modules/Makefile man/Makefile znc.pc znc-uninstalled.pc test/Makefile
 
 CXXFLAGS += -D_MODDIR_=\"$(MODDIR)\" -D_DATADIR_=\"$(DATADIR)\"
@@ -100,7 +101,7 @@ unittest: $(LIB_OBJS) test/gtest-all.o test/gtest-main.o $(TESTS)
 man:
 	@$(MAKE) -C man $(C)
 
-modules: $(LIBZNC)
+modules: $(LIBZNC) include/znc/Csocket.h
 	@$(MAKE) -C modules $(C)
 
 clean:
@@ -111,12 +112,12 @@ clean:
 distclean: clean
 	rm -rf $(DISTCLEAN)
 
-src/%.o: src/%.cpp Makefile
+src/%.o: src/%.cpp Makefile include/znc/Csocket.h
 	@mkdir -p .depend src
 	$(E) Building core object $*...
 	$(Q)$(CXX) $(CXXFLAGS) -c -o $@ $< -MD -MF .depend/$*.dep -MT $@
 
-test/%.o: test/%.cpp Makefile
+test/%.o: test/%.cpp Makefile include/znc/Csocket.h
 	@mkdir -p .depend test
 	$(E) Building test object $*...
 	$(Q)$(CXX) $(CXXFLAGS) -I$(GTEST_DIR)/include -c -o $@ $< -MD -MF .depend/$*.test.dep -MT $@
@@ -147,12 +148,24 @@ endif
 ifneq "THIS_IS_NOT_TARBALL" ""
 # If git commit was changed since previous build, add a phony target to dependencies, forcing version.o to be recompiled
 # Nightlies have pregenerated version.cpp
-src/version.cpp: Makefile version.sh $(shell if [ x`cat .version_extra 2> /dev/null` != x`$(srcdir)/version.sh $(GIT) 2> /dev/null` ]; then echo version_extra_recompile; fi)
+src/version.cpp: Makefile version.sh $(shell if [ x`cat .version_extra 2> /dev/null` != x`$(srcdir)/version.sh $(GIT) 3>&2 2> /dev/null` ]; then echo version_extra_recompile; fi)
 	@mkdir -p .depend src
 	$(E) Building source file version.cpp...
 	$(Q)WRITE_OUTPUT=yes $(srcdir)/version.sh "$(GIT)" > .version_extra 2> /dev/null
 
-CLEAN += src/version.cpp
+CLEAN += src/version.cpp src/Csocket.cpp include/znc/Csocket.h
+
+src/Csocket.cpp: third_party/Csocket/Csocket.cc
+	@rm -f $@
+	@mkdir -p src
+	@sed -e 's:#include "Csocket.h":#include <znc/Csocket.h>:' $^ > $@
+include/znc/Csocket.h: third_party/Csocket/Csocket.h
+	@rm -f $@
+	@mkdir -p include/znc
+	@sed -e 's:#include "defines.h":#include <znc/defines.h>:' $^ > $@
+third_party/Csocket/Csocket.h third_party/Csocket/Csocket.cc:
+	@echo It looks like git submodules are not initialized. Run: git submodule update --init --recursive
+	@exit 1
 endif
 
 install: znc $(LIBZNC)

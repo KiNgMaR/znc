@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,18 +35,23 @@ protected:
 
 	void SendNotification(const CString& sMessage) {
 		if(m_sMethod == "message") {
-			m_pUser->PutStatus(sMessage, NULL, m_pClient);
+			GetUser()->PutStatus(sMessage, NULL, GetClient());
 		}
 		else if(m_sMethod == "notice") {
-			m_pUser->PutStatusNotice(sMessage, NULL, m_pClient);
+			GetUser()->PutStatusNotice(sMessage, NULL, GetClient());
 		}
 	}
 
 public:
 	MODCONSTRUCTOR(CClientNotifyMod) {
+		AddHelpCommand();
+		AddCommand("Method", static_cast<CModCommand::ModCmdFunc>(&CClientNotifyMod::OnMethodCommand), "<message|notice|off>", "Sets the notify method");
+		AddCommand("NewOnly", static_cast<CModCommand::ModCmdFunc>(&CClientNotifyMod::OnNewOnlyCommand), "<on|off>", "Turns notifies for unseen IP addresses only on or off");
+		AddCommand("OnDisconnect", static_cast<CModCommand::ModCmdFunc>(&CClientNotifyMod::OnDisconnectCommand), "<on|off>", "Turns notifies on disconnecting clients on or off");
+		AddCommand("Show", static_cast<CModCommand::ModCmdFunc>(&CClientNotifyMod::OnShowCommand), "", "Show the current settings");
 	}
 
-	bool OnLoad(const CString& sArgs, CString& sMessage) {
+	bool OnLoad(const CString& sArgs, CString& sMessage) override {
 		m_sMethod = GetNV("method");
 
 		if(m_sMethod != "notice" && m_sMethod != "message" && m_sMethod != "off") {
@@ -61,54 +66,68 @@ public:
 		return true;
 	}
 
-	void OnClientLogin() {
-		if(!m_bNewOnly || m_sClientsSeen.find(m_pClient->GetRemoteIP()) == m_sClientsSeen.end()) {
+	void OnClientLogin() override {
+		CString sRemoteIP = GetClient()->GetRemoteIP();
+		if(!m_bNewOnly || m_sClientsSeen.find(sRemoteIP) == m_sClientsSeen.end()) {
 			SendNotification("Another client authenticated as your user. "
 				"Use the 'ListClients' command to see all " +
-				CString(m_pUser->GetAllClients().size())  + " clients.");
+				CString(GetUser()->GetAllClients().size())  + " clients.");
 
 			// the set<> will automatically disregard duplicates:
-			m_sClientsSeen.insert(m_pClient->GetRemoteIP());
+			m_sClientsSeen.insert(sRemoteIP);
 		}
 	}
 
-	void OnClientDisconnect() {
+	void OnClientDisconnect() override {
 		if(m_bOnDisconnect) {
 			SendNotification("A client disconnected from your user. "
 				"Use the 'ListClients' command to see the " +
-				CString(m_pUser->GetAllClients().size()) + " remaining client(s).");
+				CString(GetUser()->GetAllClients().size()) + " remaining client(s).");
 		}
 	}
 
-	void OnModCommand(const CString& sCommand) {
-		const CString& sCmd = sCommand.Token(0).AsLower();
+	void OnMethodCommand(const CString& sCommand) {
 		const CString& sArg = sCommand.Token(1, true).AsLower();
 
-		if (sCmd.Equals("method") && !sArg.empty()) {
-			if(sArg != "notice" && sArg != "message" && sArg != "off") {
-				PutModule("Unknown method. Use one of: message / notice / off");
-			}
-			else {
-				m_sMethod = sArg;
-				SaveSettings();
-				PutModule("Saved.");
-			}
+		if (sArg != "notice" && sArg != "message" && sArg != "off") {
+			PutModule("Usage: Method <message|notice|off>");
+			return;
 		}
-		else if (sCmd.Equals("newonly") && !sArg.empty()) {
-			m_bNewOnly = (sArg == "on" || sArg == "true");
-			SaveSettings();
-			PutModule("Saved.");
+
+		m_sMethod = sArg;
+		SaveSettings();
+		PutModule("Saved.");
+	}
+
+	void OnNewOnlyCommand(const CString& sCommand) {
+		const CString& sArg = sCommand.Token(1, true).AsLower();
+
+		if (sArg.empty()) {
+			PutModule("Usage: NewOnly <on|off>");
+			return;
 		}
-		else if (sCmd.Equals("ondisconnect") && !sArg.empty()) {
-			m_bOnDisconnect = (sArg == "on" || sArg == "true");
-			SaveSettings();
-			PutModule("Saved.");
+
+		m_bNewOnly = sArg.ToBool();
+		SaveSettings();
+		PutModule("Saved.");
+	}
+
+	void OnDisconnectCommand(const CString& sCommand) {
+		const CString& sArg = sCommand.Token(1, true).AsLower();
+
+		if (sArg.empty()) {
+			PutModule("Usage: OnDisconnect <on|off>");
+			return;
 		}
-		else {
-			PutModule("Current settings: Method: " + m_sMethod + ", for unseen IP addresses only: " + CString(m_bNewOnly) +
-				", notify on disconnecting clients: " + CString(m_bOnDisconnect));
-			PutModule("Commands: show, method <message|notice|off>, newonly <on|off>, ondisconnect <on|off>");
-		}
+
+		m_bOnDisconnect = sArg.ToBool();
+		SaveSettings();
+		PutModule("Saved.");
+	}
+
+	void OnShowCommand(const CString& sLine) {
+		PutModule("Current settings: Method: " + m_sMethod + ", for unseen IP addresses only: " + CString(m_bNewOnly) +
+			", notify on disconnecting clients: " + CString(m_bOnDisconnect));
 	}
 };
 

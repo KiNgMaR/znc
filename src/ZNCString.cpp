@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,14 @@ int CString::StrCmp(const CString& s, CString::size_type uLen) const {
 		return strncmp(c_str(), s.c_str(), uLen);
 	}
 	return strcmp(c_str(), s.c_str());
+}
+
+bool CString::Equals(const CString& s, CaseSensitivity cs) const {
+	if (cs == CaseSensitive) {
+		return (StrCmp(s) == 0);
+	} else {
+		return (CaseCmp(s) == 0);
+	}
 }
 
 bool CString::Equals(const CString& s, bool bCaseSensitive, CString::size_type uLen) const {
@@ -174,6 +182,10 @@ CString::EEscape CString::ToEscape(const CString& sEsc) {
 		return ENAMEDFMT;
 	} else if (sEsc.Equals("DEBUG")) {
 		return EDEBUG;
+	} else if (sEsc.Equals("MSGTAG")) {
+		return EMSGTAG;
+	} else if (sEsc.Equals("HEXCOLON")) {
+		return EHEXCOLON;
 	}
 
 	return EASCII;
@@ -314,6 +326,62 @@ CString CString::Escape_n(EEscape eFrom, EEscape eTo) const {
 				} else {
 					ch = *p;
 				}
+
+				break;
+			case EMSGTAG:
+				if (*p != '\\' || iLength < (a +1)) {
+					ch = *p;
+				} else {
+					a++;
+					p++;
+
+					if (*p == ':') {
+						ch = ';';
+					} else if (*p == 's') {
+						ch = ' ';
+					} else if (*p == '0') {
+						ch = '\0';
+					} else if (*p == '\\') {
+						ch = '\\';
+					} else if (*p == 'r') {
+						ch = '\r';
+					} else if (*p == 'n') {
+						ch = '\n';
+					} else {
+						ch = *p;
+					}
+				}
+
+				break;
+			case EHEXCOLON: {
+					while (!isxdigit(*p) && a < iLength) {
+						a++;
+						p++;
+					}
+					if (a == iLength) {
+						continue;
+					}
+					if (isdigit(*p)) {
+						ch = (unsigned char)((*p - '0') << 4);
+					} else {
+						ch = (unsigned char)((tolower(*p) - 'a' +10) << 4);
+					}
+					a++;
+					p++;
+					while (!isxdigit(*p) && a < iLength) {
+						a++;
+						p++;
+					}
+					if (a == iLength) {
+						continue;
+					}
+					if (isdigit(*p)) {
+						ch |= (unsigned char)(*p - '0');
+					} else {
+						ch |= (unsigned char)(tolower(*p) - 'a' +10);
+					}
+				}
+				break;
 		}
 
 		switch (eTo) {
@@ -373,10 +441,29 @@ CString CString::Escape_n(EEscape eFrom, EEscape eTo) const {
 				}
 
 				break;
+			case EMSGTAG:
+				if (ch == ';') { sRet += '\\'; sRet += ':';
+				} else if (ch == ' ') { sRet += '\\'; sRet += 's';
+				} else if (ch == '\0') { sRet += '\\'; sRet += '0';
+				} else if (ch == '\\') { sRet += '\\'; sRet += '\\';
+				} else if (ch == '\r') { sRet += '\\'; sRet += 'r';
+				} else if (ch == '\n') { sRet += '\\'; sRet += 'n';
+				} else { sRet += ch; }
+
+				break;
+			case EHEXCOLON: {
+					sRet += tolower(szHex[ch >> 4]);
+					sRet += tolower(szHex[ch & 0xf]);
+					sRet += ":";
+				}
+				break;
 		}
 	}
 
-	sRet.reserve(0);
+	if (eTo == EHEXCOLON) {
+		sRet.TrimRight(":");
+	}
+
 	return sRet;
 }
 
@@ -1092,12 +1179,24 @@ bool CString::TrimSuffix(const CString& sSuffix) {
 	}
 }
 
-bool CString::StartsWith(const CString& sPrefix) const {
-	return Left(sPrefix.length()).Equals(sPrefix);
+size_t CString::Find(const CString& s, CaseSensitivity cs) const {
+	if (cs == CaseSensitive) {
+		return find(s);
+	} else {
+		return AsLower().find(s.AsLower());
+	}
 }
 
-bool CString::EndsWith(const CString& sSuffix) const {
-	return Right(sSuffix.length()).Equals(sSuffix);
+bool CString::StartsWith(const CString& sPrefix, CaseSensitivity cs) const {
+	return Left(sPrefix.length()).Equals(sPrefix, cs);
+}
+
+bool CString::EndsWith(const CString& sSuffix, CaseSensitivity cs) const {
+	return Right(sSuffix.length()).Equals(sSuffix, cs);
+}
+
+bool CString::Contains(const CString& s, CaseSensitivity cs) const {
+	return Find(s, cs) != npos;
 }
 
 

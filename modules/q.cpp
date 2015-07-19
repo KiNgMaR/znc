@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public:
 	MODCONSTRUCTOR(CQModule) {}
 	virtual ~CQModule() {}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage) {
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override {
 		if (!sArgs.empty()) {
 			SetUsername(sArgs.Token(0));
 			SetPassword(sArgs.Token(1));
@@ -56,7 +56,7 @@ public:
 
 		if (IsIRCConnected()) {
 			// check for usermode +x if we are already connected
-			set<unsigned char> scUserModes = m_pNetwork->GetIRCSock()->GetUserModes();
+			set<unsigned char> scUserModes = GetNetwork()->GetIRCSock()->GetUserModes();
 			if (scUserModes.find('x') != scUserModes.end())
 				m_bCloaked = true;
 
@@ -82,7 +82,7 @@ public:
 		return true;
 	}
 
-	virtual void OnIRCDisconnected() {
+	virtual void OnIRCDisconnected() override {
 		m_bCloaked = false;
 		m_bAuthed  = false;
 		m_bRequestedWhoami    = false;
@@ -90,13 +90,13 @@ public:
 		m_bCatchResponse = false;
 	}
 
-	virtual void OnIRCConnected() {
+	virtual void OnIRCConnected() override {
 		if (m_bUseCloakedHost)
 			Cloak();
 		WhoAmI();
 	}
 
-	virtual void OnModCommand(const CString& sLine) {
+	virtual void OnModCommand(const CString& sLine) override {
 		CString sCommand = sLine.Token(0).AsLower();
 
 		if (sCommand == "help") {
@@ -252,61 +252,64 @@ public:
 		}
 	}
 
-	virtual EModRet OnRaw(CString& sLine) {
+	virtual EModRet OnRaw(CString& sLine) override {
 		// use OnRaw because OnUserMode is not defined (yet?)
 		if (sLine.Token(1) == "396" && sLine.Token(3).find("users.quakenet.org") != CString::npos) {
 			m_bCloaked = true;
 			PutModule("Cloak successful: Your hostname is now cloaked.");
 
-			// Join channels immediately after our spoof is set.
+			// Join channels immediately after our spoof is set, but only if
+			// both UseCloakedHost and JoinAfterCloaked is enabled. See #602.
 			if (m_bJoinAfterCloaked) {
-				m_pNetwork->JoinChans();
+				GetNetwork()->JoinChans();
 			}
 		}
 		return CONTINUE;
 	}
 
-	virtual EModRet OnPrivMsg(CNick& Nick, CString& sMessage) {
+	virtual EModRet OnPrivMsg(CNick& Nick, CString& sMessage) override {
 		return HandleMessage(Nick, sMessage);
 	}
 
-	virtual EModRet OnPrivNotice(CNick& Nick, CString& sMessage) {
+	virtual EModRet OnPrivNotice(CNick& Nick, CString& sMessage) override {
 		return HandleMessage(Nick, sMessage);
 	}
 
-	virtual EModRet OnJoining(CChan& Channel) {
-		if (m_bJoinAfterCloaked && !m_bCloaked)
+	virtual EModRet OnJoining(CChan& Channel) override {
+		// Halt if are not already cloaked, but the user requres that we delay
+		// channel join till after we are cloaked.
+		if (!m_bCloaked && m_bUseCloakedHost && m_bJoinAfterCloaked)
 			return HALT;
 
 		return CONTINUE;
 	}
 
-	virtual void OnJoin(const CNick& Nick, CChan& Channel) {
+	virtual void OnJoin(const CNick& Nick, CChan& Channel) override {
 		if (m_bRequestPerms && IsSelf(Nick))
 			HandleNeed(Channel, "ov");
 	}
 
-	virtual void OnDeop2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) {
+	virtual void OnDeop2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) override {
 		if (m_bRequestPerms && IsSelf(Nick) && (!pOpNick || !IsSelf(*pOpNick)))
 			HandleNeed(Channel, "o");
 	}
 
-	virtual void OnDevoice2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) {
+	virtual void OnDevoice2(const CNick* pOpNick, const CNick& Nick, CChan& Channel, bool bNoChange) override {
 		if (m_bRequestPerms && IsSelf(Nick) && (!pOpNick || !IsSelf(*pOpNick)))
 			HandleNeed(Channel, "v");
 	}
 
-	virtual EModRet OnInvite(const CNick& Nick, const CString& sChan) {
+	virtual EModRet OnInvite(const CNick& Nick, const CString& sChan) override {
 		if (!Nick.NickEquals("Q") || !Nick.GetHost().Equals("CServe.quakenet.org"))
 			return CONTINUE;
 		if (m_bJoinOnInvite)
-			m_pNetwork->AddChan(sChan, false);
+			GetNetwork()->AddChan(sChan, false);
 		return CONTINUE;
 	}
 
-	virtual CString GetWebMenuTitle() { return "Q"; }
+	virtual CString GetWebMenuTitle() override { return "Q"; }
 
-	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) {
+	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) override {
 		if (sPageName == "index") {
 			bool bSubmitted = (WebSock.GetParam("submitted").ToInt() != 0);
 
@@ -388,7 +391,7 @@ private:
 			return;
 
 		PutModule("Cloak: Trying to cloak your hostname, setting +x...");
-		PutIRC("MODE " + m_pNetwork->GetIRCSock()->GetNick() + " +x");
+		PutIRC("MODE " + GetNetwork()->GetIRCSock()->GetNick() + " +x");
 	}
 
 	void WhoAmI() {
@@ -538,12 +541,12 @@ private:
 
 /* Utility Functions */
 	bool IsIRCConnected() {
-		CIRCSock* pIRCSock = m_pNetwork->GetIRCSock();
+		CIRCSock* pIRCSock = GetNetwork()->GetIRCSock();
 		return pIRCSock && pIRCSock->IsAuthed();
 	}
 
 	bool IsSelf(const CNick& Nick) {
-		return Nick.NickEquals(m_pNetwork->GetCurNick());
+		return Nick.NickEquals(GetNetwork()->GetCurNick());
 	}
 
 	bool PackHex(const CString& sHex, CString& sPackedHex) {

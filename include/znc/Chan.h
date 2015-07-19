@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,12 +60,12 @@ public:
 	~CChan();
 
 	void Reset();
-	CConfig ToConfig();
+	CConfig ToConfig() const;
 	void Clone(CChan& chan);
 	void Cycle() const;
-	void JoinUser(bool bForce = false, const CString& sKey = "", CClient* pClient = NULL);
+	void JoinUser(const CString& sKey = "");
+	void AttachUser(CClient* pClient = NULL);
 	void DetachUser();
-	void AttachUser();
 
 	void OnWho(const CString& sNick, const CString& sIdent, const CString& sHost);
 
@@ -92,7 +92,8 @@ public:
 	// Buffer
 	const CBuffer& GetBuffer() const { return m_Buffer; }
 	unsigned int GetBufferCount() const { return m_Buffer.GetLineCount(); }
-	bool SetBufferCount(unsigned int u, bool bForce = false) { return m_Buffer.SetLineCount(u, bForce); };
+	bool SetBufferCount(unsigned int u, bool bForce = false) { m_bHasBufferCountSet = true; return m_Buffer.SetLineCount(u, bForce); }
+	void InheritBufferCount(unsigned int u, bool bForce = false) { if (!m_bHasBufferCountSet) m_Buffer.SetLineCount(u, bForce); }
 	size_t AddBuffer(const CString& sFormat, const CString& sText = "", const timeval* ts = NULL) { return m_Buffer.AddLine(sFormat, sText, ts); }
 	void ClearBuffer() { m_Buffer.Clear(); }
 	void SendBuffer(CClient* pClient);
@@ -109,14 +110,15 @@ public:
 	// Setters
 	void SetModeKnown(bool b) { m_bModeKnown = b; }
 	void SetIsOn(bool b) { m_bIsOn = b; if (!b) { Reset(); } }
-	void SetKey(const CString& s) { m_sKey = s; }
+	void SetKey(const CString& s);
 	void SetTopic(const CString& s) { m_sTopic = s; }
 	void SetTopicOwner(const CString& s) { m_sTopicOwner = s; }
 	void SetTopicDate(unsigned long u) { m_ulTopicDate = u; }
 	void SetDefaultModes(const CString& s) { m_sDefaultModes = s; }
 	void SetAutoClearChanBuffer(bool b);
+	void InheritAutoClearChanBuffer(bool b);
 	void SetDetached(bool b = true) { m_bDetached = b; }
-	void SetInConfig(bool b) { m_bInConfig = b; }
+	void SetInConfig(bool b);
 	void SetCreationDate(unsigned long u) { m_ulCreationDate = u; }
 	void Disable() { m_bDisabled = true; }
 	void Enable();
@@ -146,6 +148,8 @@ public:
 	unsigned long GetCreationDate() const { return m_ulCreationDate; }
 	bool IsDisabled() const { return m_bDisabled; }
 	unsigned int GetJoinTries() const { return m_uJoinTries; }
+	bool HasBufferCountSet() const { return m_bHasBufferCountSet; }
+	bool HasAutoClearChanBufferSet() const { return m_bHasAutoClearChanBufferSet; }
 	// !Getters
 private:
 protected:
@@ -154,6 +158,8 @@ protected:
 	bool                         m_bAutoClearChanBuffer;
 	bool                         m_bInConfig;
 	bool                         m_bDisabled;
+	bool                         m_bHasBufferCountSet;
+	bool                         m_bHasAutoClearChanBufferSet;
 	CString                      m_sName;
 	CString                      m_sKey;
 	CString                      m_sTopic;

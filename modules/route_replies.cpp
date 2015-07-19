@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ struct reply {
 // TODO this list is far from complete, no errors are handled
 static const struct {
 	const char *szRequest;
-	struct reply vReplies[18];
+	struct reply vReplies[19];
 } vRouteReplies[] = {
 	{"WHO", {
 		{"402", true},  /* rfc1459 ERR_NOSUCHSERVER */
@@ -76,6 +76,7 @@ static const struct {
 		{"671", false},  /* RPL_WHOISSECURE */
 		{"307", false},  /* RPL_WHOISREGNICK */
 		{"379", false},  /* RPL_WHOISMODES */
+		{"760", false},  /* ircv3.2 RPL_WHOISKEYVALUE */
 		{"318", true},  /* rfc1459 RPL_ENDOFWHOIS */
 		{"401", true},  /* rfc1459 ERR_NOSUCHNICK */
 		{"402", true},  /* rfc1459 ERR_NOSUCHSERVER */
@@ -154,6 +155,16 @@ static const struct {
 		{"446", true},  /* rfc1459 ERR_USERSDISABLED */
 		{NULL, true},
 	}},
+	{"METADATA", {
+		{"761", false},  /* ircv3.2 RPL_KEYVALUE */
+		{"762", true},  /* ircv3.2 RPL_METADATAEND */
+		{"765", true},  /* ircv3.2 ERR_TARGETINVALID */
+		{"766", true},  /* ircv3.2 ERR_NOMATCHINGKEYS */
+		{"767", true},  /* ircv3.2 ERR_KEYINVALID */
+		{"768", true},  /* ircv3.2 ERR_KEYNOTSET */
+		{"769", true},  /* ircv3.2 ERR_KEYNOPERMISSION */
+		{NULL, true},
+	}},
 	// This is just a list of all possible /mode replies stuffed together.
 	// Since there should never be more than one of these going on, this
 	// should work fine and makes the code simpler.
@@ -187,7 +198,7 @@ public:
 	virtual ~CRouteTimeout() {}
 
 protected:
-	virtual void RunJob();
+	virtual void RunJob() override;
 };
 
 struct queued_req {
@@ -225,7 +236,7 @@ public:
 		}
 	}
 
-	virtual void OnIRCConnected()
+	virtual void OnIRCConnected() override
 	{
 		m_pDoing = NULL;
 		m_pReplies = NULL;
@@ -235,16 +246,16 @@ public:
 		RemTimer("RouteTimeout");
 	}
 
-	virtual void OnIRCDisconnected()
+	virtual void OnIRCDisconnected() override
 	{
 		OnIRCConnected(); // Let's keep it in one place
 	}
 
-	virtual void OnClientDisconnect()
+	virtual void OnClientDisconnect() override
 	{
 		requestQueue::iterator it;
 
-		if (m_pClient == m_pDoing) {
+		if (GetClient() == m_pDoing) {
 			// The replies which aren't received yet will be
 			// broadcasted to everyone, but at least nothing breaks
 			RemTimer("RouteTimeout");
@@ -252,7 +263,7 @@ public:
 			m_pReplies = NULL;
 		}
 
-		it = m_vsPending.find(m_pClient);
+		it = m_vsPending.find(GetClient());
 
 		if (it != m_vsPending.end())
 			m_vsPending.erase(it);
@@ -260,7 +271,7 @@ public:
 		SendRequest();
 	}
 
-	virtual EModRet OnRaw(CString& sLine)
+	virtual EModRet OnRaw(CString& sLine) override
 	{
 		CString sCmd = sLine.Token(1).AsUpper();
 		size_t i = 0;
@@ -296,11 +307,11 @@ public:
 		return CONTINUE;
 	}
 
-	virtual EModRet OnUserRaw(CString& sLine)
+	virtual EModRet OnUserRaw(CString& sLine) override
 	{
 		CString sCmd = sLine.Token(0).AsUpper();
 
-		if (!m_pNetwork->GetIRCSock())
+		if (!GetNetwork()->GetIRCSock())
 			return CONTINUE;
 
 		if (sCmd.Equals("MODE")) {
@@ -343,7 +354,7 @@ public:
 				struct queued_req req = {
 					sLine, vRouteReplies[i].vReplies
 				};
-				m_vsPending[m_pClient].push_back(req);
+				m_vsPending[GetClient()].push_back(req);
 				SendRequest();
 
 				return HALTCORE;
@@ -386,7 +397,7 @@ private:
 
 		// 353 needs special treatment due to NAMESX and UHNAMES
 		if (bIsRaw353)
-			m_pNetwork->GetIRCSock()->ForwardRaw353(sLine, m_pDoing);
+			GetNetwork()->GetIRCSock()->ForwardRaw353(sLine, m_pDoing);
 		else
 			m_pDoing->PutClient(sLine);
 
@@ -458,7 +469,7 @@ private:
 
 void CRouteTimeout::RunJob()
 {
-	CRouteRepliesMod *pMod = (CRouteRepliesMod *) m_pModule;
+	CRouteRepliesMod *pMod = (CRouteRepliesMod *) GetModule();
 	pMod->Timeout();
 }
 

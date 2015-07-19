@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,16 @@ using std::vector;
 class CAutoCycleMod : public CModule {
 public:
 	MODCONSTRUCTOR(CAutoCycleMod) {
+		AddHelpCommand();
+		AddCommand("Add", static_cast<CModCommand::ModCmdFunc>(&CAutoCycleMod::OnAddCommand), "[!]<#chan>", "Add an entry, use !#chan to negate and * for wildcards");
+		AddCommand("Del", static_cast<CModCommand::ModCmdFunc>(&CAutoCycleMod::OnDelCommand), "[!]<#chan>", "Remove an entry, needs to be an exact match");
+		AddCommand("List", static_cast<CModCommand::ModCmdFunc>(&CAutoCycleMod::OnListCommand), "", "List all entries");
 		m_recentlyCycled.SetTTL(15 * 1000);
 	}
 
 	virtual ~CAutoCycleMod() {}
 
-	virtual bool OnLoad(const CString& sArgs, CString& sMessage) {
+	virtual bool OnLoad(const CString& sArgs, CString& sMessage) override {
 		VCString vsChans;
 		sArgs.Split(" ", vsChans, false);
 
@@ -50,80 +54,58 @@ public:
 		return true;
 	}
 
-	virtual void OnModCommand(const CString& sLine) {
-		CString sCommand = sLine.Token(0);
+	void OnAddCommand(const CString& sLine) {
+		CString sChan = sLine.Token(1);
 
-		if (sCommand.Equals("ADD")) {
-			CString sChan = sLine.Token(1);
-
-			if (AlreadyAdded(sChan)) {
-				PutModule(sChan + " is already added");
-			} else if (Add(sChan)) {
-				PutModule("Added " + sChan + " to list");
-			} else {
-				PutModule("Usage: Add [!]<#chan>");
-			}
-		} else if (sCommand.Equals("DEL")) {
-			CString sChan = sLine.Token(1);
-
-			if (Del(sChan))
-				PutModule("Removed " + sChan + " from list");
-			else
-				PutModule("Usage: Del [!]<#chan>");
-		} else if (sCommand.Equals("LIST")) {
-			CTable Table;
-			Table.AddColumn("Chan");
-
-			for (unsigned int a = 0; a < m_vsChans.size(); a++) {
-				Table.AddRow();
-				Table.SetCell("Chan", m_vsChans[a]);
-			}
-
-			for (unsigned int b = 0; b < m_vsNegChans.size(); b++) {
-				Table.AddRow();
-				Table.SetCell("Chan", "!" + m_vsNegChans[b]);
-			}
-
-			if (Table.size()) {
-				PutModule(Table);
-			} else {
-				PutModule("You have no entries.");
-			}
+		if (AlreadyAdded(sChan)) {
+			PutModule(sChan + " is already added");
+		} else if (Add(sChan)) {
+			PutModule("Added " + sChan + " to list");
 		} else {
-			CTable Table;
-			Table.AddColumn("Command");
-			Table.AddColumn("Description");
-
-			Table.AddRow();
-			Table.SetCell("Command", "Add");
-			Table.SetCell("Description", "Add an entry, use !#chan to negate and * for wildcards");
-
-			Table.AddRow();
-			Table.SetCell("Command", "Del");
-			Table.SetCell("Description", "Remove an entry, needs to be an exact match");
-
-			Table.AddRow();
-			Table.SetCell("Command", "List");
-			Table.SetCell("Description", "List all entries");
-
-			if (Table.size()) {
-				PutModule(Table);
-			} else {
-				PutModule("You have no entries.");
-			}
+			PutModule("Usage: Add [!]<#chan>");
 		}
 	}
 
-	virtual void OnPart(const CNick& Nick, CChan& Channel, const CString& sMessage) {
+	void OnDelCommand(const CString& sLine) {
+		CString sChan = sLine.Token(1);
+
+		if (Del(sChan))
+			PutModule("Removed " + sChan + " from list");
+		else
+			PutModule("Usage: Del [!]<#chan>");
+	}
+
+	void OnListCommand(const CString& sLine) {
+		CTable Table;
+		Table.AddColumn("Chan");
+
+		for (unsigned int a = 0; a < m_vsChans.size(); a++) {
+			Table.AddRow();
+			Table.SetCell("Chan", m_vsChans[a]);
+		}
+
+		for (unsigned int b = 0; b < m_vsNegChans.size(); b++) {
+			Table.AddRow();
+			Table.SetCell("Chan", "!" + m_vsNegChans[b]);
+		}
+
+		if (Table.size()) {
+			PutModule(Table);
+		} else {
+			PutModule("You have no entries.");
+		}
+	}
+
+	virtual void OnPart(const CNick& Nick, CChan& Channel, const CString& sMessage) override {
 		AutoCycle(Channel);
 	}
 
-	virtual void OnQuit(const CNick& Nick, const CString& sMessage, const vector<CChan*>& vChans) {
+	virtual void OnQuit(const CNick& Nick, const CString& sMessage, const vector<CChan*>& vChans) override {
 		for (unsigned int i = 0; i < vChans.size(); i++)
 			AutoCycle(*vChans[i]);
 	}
 
-	virtual void OnKick(const CNick& Nick, const CString& sOpNick, CChan& Channel, const CString& sMessage) {
+	virtual void OnKick(const CNick& Nick, const CString& sOpNick, CChan& Channel, const CString& sMessage) override {
 		AutoCycle(Channel);
 	}
 
@@ -142,7 +124,7 @@ protected:
 
 		// Is that person us and we don't have op?
 		const CNick& pNick = Channel.GetNicks().begin()->second;
-		if (!pNick.HasPerm(CChan::Op) && pNick.NickEquals(m_pNetwork->GetCurNick())) {
+		if (!pNick.HasPerm(CChan::Op) && pNick.NickEquals(GetNetwork()->GetCurNick())) {
 			Channel.Cycle();
 			m_recentlyCycled.AddItem(Channel.GetName());
 		}

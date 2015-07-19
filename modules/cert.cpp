@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public:
 			PutModule("You have a certificate in: " + PemFile());
 		} else {
 			PutModule("You do not have a certificate. Please use the web interface to add a certificate");
-			if (m_pUser->IsAdmin()) {
+			if (GetUser()->IsAdmin()) {
 				PutModule("Alternatively you can either place one at " + PemFile());
 			}
 		}
@@ -59,7 +59,7 @@ public:
 		return (CFile::Exists(PemFile()));
 	}
 
-	virtual EModRet OnIRCConnecting(CIRCSock *pIRCSock) {
+	virtual EModRet OnIRCConnecting(CIRCSock *pIRCSock) override {
 		if (HasPemFile()) {
 			pIRCSock->SetPemLocation(PemFile());
 		}
@@ -67,9 +67,9 @@ public:
 		return CONTINUE;
 	}
 
-	virtual CString GetWebMenuTitle() { return "Certificate"; }
+	virtual CString GetWebMenuTitle() override { return "Certificate"; }
 
-	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) {
+	virtual bool OnWebRequest(CWebSock& WebSock, const CString& sPageName, CTemplate& Tmpl) override {
 		if (sPageName == "index") {
 			Tmpl["Cert"] = CString(HasPemFile());
 			return true;

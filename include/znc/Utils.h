@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 ZNC, see the NOTICE file for details.
+ * Copyright (C) 2004-2015 ZNC, see the NOTICE file for details.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,7 @@ public:
 	static CString FormatTime(time_t t, const CString& sFormat, const CString& sTZ);
 	static CString FormatServerTime(const timeval& tv);
 	static SCString GetTimezones();
+	static SCString GetEncodings();
 
 	static MCString GetMessageTags(const CString& sLine);
 	static void SetMessageTags(CString& sLine, const MCString& mssTags);
@@ -148,16 +149,21 @@ protected:
  */
 class ZNC_API CTable : protected std::vector<std::vector<CString> > {
 public:
-	CTable() {}
+	/** Constructor
+	 *
+	 *  @param uPreferredWidth If width of table is bigger than this, text in cells will be wrapped to several lines, if possible
+	 */
+	explicit CTable(size_type uPreferredWidth = 110) : m_uPreferredWidth(uPreferredWidth) {}
 	virtual ~CTable() {}
 
 	/** Adds a new column to the table.
 	 *  Please note that you should add all columns before starting to fill
 	 *  the table!
 	 *  @param sName The name of the column.
+	 *  @param bWrappable True if long lines can be wrapped in the same cell.
 	 *  @return false if a column by that name already existed.
 	 */
-	bool AddColumn(const CString& sName);
+	bool AddColumn(const CString& sName, bool bWrappable = true);
 
 	/** Adds a new row to the table.
 	 *  After calling this you can fill the row with content.
@@ -199,10 +205,16 @@ public:
 	using std::vector<std::vector<CString> >::empty;
 private:
 	unsigned int GetColumnIndex(const CString& sName) const;
+	VCString Render() const;
+	static VCString WrapWords(const CString& s, size_type uWidth);
 
 protected:
-	std::vector<CString>            m_vsHeaders;
-	std::map<CString, CString::size_type> m_msuWidths;  // Used to cache the width of a column
+	VCString m_vsHeaders;
+	std::vector<CString::size_type> m_vuMaxWidths;  // Column don't need to be bigger than this
+	std::vector<CString::size_type> m_vuMinWidths;  // Column can't be thiner than this
+	std::vector<bool> m_vbWrappable;
+	size_type m_uPreferredWidth;
+	mutable VCString m_vsOutput;  // Rendered table
 };
 
 
@@ -364,155 +376,4 @@ protected:
 	unsigned int         m_uTTL;     //!< Default time-to-live duration
 };
 
-/**
- * @class CSmartPtr
- * @author prozac <prozac@rottenboy.com>
- * @brief This is a standard reference counting pointer.  Be careful not to have two of these point to the same raw pointer or one will be deleted while the other still thinks it is valid.
- */
-template<typename T>
-class CSmartPtr {
-public:
-	/**
-	 * @brief Standard constructor, points to nothing
-	 */
-	CSmartPtr() {
-		m_pType = NULL;
-		m_puCount = NULL;
-	}
-
-	/**
-	 * @brief Attach to an existing raw pointer, be CAREFUL not to have more than one CSmartPtr attach to the same raw pointer or bad things will happen
-	 * @param pRawPtr The raw pointer to attach to
-	 */
-	CSmartPtr(T* pRawPtr) {
-		m_pType = NULL;
-		m_puCount = NULL;
-
-		Attach(pRawPtr);
-	}
-
-	/**
-	 * @brief Copy constructor, will copy the raw pointer and counter locations and increment the reference counter
-	 * @param CopyFrom A reference of another CSmartPtr to copy from
-	 */
-	CSmartPtr(const CSmartPtr<T>& CopyFrom) {
-		m_pType = NULL;
-		m_puCount = NULL;
-
-		*this = CopyFrom;
-	}
-
-	/**
-	 * @brief Destructor will Release() the raw pointer and delete it if this was the last reference
-	 */
-	~CSmartPtr() {
-		Release();
-	}
-
-	// Overloaded operators
-	T& operator *() const { assert(m_pType); return *m_pType; }
-	T* operator ->() const { assert(m_pType); return m_pType; }
-
-	/**
-	 * @brief Attach() to a raw pointer
-	 * @param pRawPtr The raw pointer to keep track of, ***WARNING*** Do _NOT_ allow more than one CSmartPtr keep track of the same raw pointer
-	 * @return Reference to self
-	 */
-	CSmartPtr<T>& operator =(T* pRawPtr) { Attach(pRawPtr); return *this; }
-
-	/**
-	 * @brief Copies an existing CSmartPtr adding another reference to the counter
-	 * @param CopyFrom A reference to another CSmartPtr to be copied
-	 * @return Reference to self
-	 */
-	CSmartPtr<T>& operator =(const CSmartPtr<T>& CopyFrom) {
-		if (&CopyFrom != this) {              // Check for assignment to self
-			Release();                    // Release the current pointer
-
-			if (CopyFrom.IsNull()) {      // If the source raw pointer is null
-				return *this;         // Then just bail out
-			}
-
-			m_pType = CopyFrom.m_pType;   // Make our pointers reference the same raw pointer and counter
-			m_puCount = CopyFrom.m_puCount;
-
-			assert(m_puCount);            // We now point to something valid, so increment the counter
-			(*m_puCount)++;
-		}
-
-		return *this;
-	}
-	// !Overloaded operators
-
-	/**
-	 * @brief Implicit type conversion to bool for things like if (!ptr) {} and if (ptr) {}
-	 * @return @see IsNull()
-	 */
-	operator bool() const {
-		return !IsNull();
-	}
-
-	/**
-	 * @brief Check to see if the underlying raw pointer is null
-	 * @return Whether or not underlying raw pointer is null
-	 */
-	bool IsNull() const {
-		return (m_pType == NULL);
-	}
-
-	/**
-	 * @brief Attach to a given raw pointer, it will Release() the current raw pointer and assign the new one
-	 * @param pRawPtr The raw pointer to keep track of, ***WARNING*** Do _NOT_ allow more than one CSmartPtr keep track of the same raw pointer
-	 * @return Reference to self
-	 */
-	CSmartPtr<T>& Attach(T* pRawPtr) {
-		if (pRawPtr != m_pType) {                        // Check for assignment to self
-			Release();                               // Release the current pointer
-			m_pType = pRawPtr;                       // Point to the passed raw pointer
-
-			if (m_pType) {                           // If the passed pointer was valid
-				m_puCount = new unsigned int(1); // Create a new counter starting at 1 (us)
-			}
-		}
-
-		return *this;
-	}
-
-	/**
-	 * @brief Releases the underlying raw pointer and cleans up if we were the last reference to said pointer
-	 */
-	void Release() {
-		if (m_pType) {              // Only release if there is something to be released
-			assert(m_puCount);
-			(*m_puCount)--;     // Decrement our counter
-
-			if (!*m_puCount) {  // If we were the last reference to this pointer, then clean up
-				delete m_puCount;
-				delete m_pType;
-			}
-
-			m_pType = NULL;     // Get rid of our references
-			m_puCount = NULL;
-		}
-	}
-
-	// Getters
-	T* GetPtr() const { return m_pType; }
-	unsigned int GetCount() const { return (m_puCount) ? *m_puCount : 0; }
-	// !Getters
-private:
-	T*            m_pType;      //!< Raw pointer to the class being referenced
-	unsigned int* m_puCount;    //!< Counter of how many CSmartPtr's are referencing the same raw pointer
-};
-
-template<typename T>
-bool operator ==(T* lhs, const CSmartPtr<T>& rhs) { return (lhs == rhs.GetPtr()); }
-
-template<typename T>
-bool operator ==(const CSmartPtr<T>& lhs, T* rhs) { return (lhs.GetPtr() == rhs); }
-
-template<typename T>
-bool operator ==(const CSmartPtr<T>& lhs, const CSmartPtr<T>& rhs) { return (lhs.GetPtr() == rhs.GetPtr()); }
-
 #endif // !_UTILS_H
-
