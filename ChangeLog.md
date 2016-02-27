@@ -1,3 +1,118 @@
+# ZNC 1.6.3 (2016-02-16)
+
+## Core
+* New character encoding is now applied immediately, without reconnect.
+* Fixed build with LibreSSL.
+* Fixed error 404 when accessing the web UI with the configured URI prefix,
+  but without the `/` in the end.
+* `znc-buildmod` now exits with non-zero exit code when the .cpp file is not found.
+* Fixed `znc-buildmod` on Cygwin.
+* ExpandString got expanded. It now expands `%znc%` to
+  `ZNC <version> - http://znc.in`, honoring the global "Hide version" setting.
+* Default quit message is switched from `ZNC <version> - http://znc.in` to `%znc%`,
+  which is the same, but "automatically" changes the shown version when ZNC gets upgraded.
+  Before, the old version was recorded in the user's quit message, and stayed the same
+  regardless of the current version of ZNC.
+
+## Modules
+* modperl:
+    * Fixed a memory leak.
+* sasl:
+    * Added an option to show which mechanisms failed or succeeded.
+* webadmin:
+    * Fixed an error message on invalid user settings to say what exactly was invalid.
+    * No more autocomplete password in user settings. It led to an error when ZNC
+      thought the user is going to change a password, but the passwords didn't match.
+
+
+
+# ZNC 1.6.2 (2015-11-15)
+
+## Fixes
+
+* Fixed a use-after-delete in webadmin. It was already partially fixed in ZNC 1.4; since 1.4 it has been still possible to trigger, but much harder.
+* Fixed a startup failure when awaynick and simple_away were both loaded, and simple_away had arguments.
+* Fixed a build failure when using an ancient OpenSSL version.
+* Fixed a build failure when using OpenSSL which was built without SSLv3 support.
+* Bindhost was sometimes used as ident.
+* `CAP :END` wasn't parsed correctly, causing timeout during login for some clients.
+* Fixed channel keys if client joined several channels in single command.
+* Fixed memory leak when reading an invalid config.
+
+## Modules
+
+* autovoice:
+    * Check for autovoices when we are opped.
+* controlpanel:
+    * Fixed `DelCTCPReply` case-insensitivity.
+* dcc:
+    * Add missing return statement. It was harmless.
+* modpython:
+    * Fixed a memory leak.
+* modules_online:
+    * Wrong ident was used before.
+* stickychan:
+    * Fixed to unstick inaccessible channels to avoid infinite join loops.
+
+## Internal
+
+* Fixed the nick passed to `CModule::OnChanMsg()` so it has channel permissions set.
+* Fixed noisy `-Winconsistent-missing-override` compilation warnings.
+* Initialized some fields in constructors of modules before `OnLoad()`.
+
+## Cosmetic
+
+* Various modules had commands with empty descriptions.
+* perform:
+    * Say "number" instead of "nr".
+* route_replies:
+    * Make the timeout error message more clear.
+
+
+
+# ZNC 1.6.1 (2015-08-04)
+
+## Fixes
+
+* Fixed the problem that channels were no longer removed from the config despite of chansaver being loaded.
+* Fixed query buffer size for users who have the default channel buffer size set to 0.
+* Fixed a startup failure when simple_away was loaded after awaynick.
+* Fixed channel matching commands, such as DETACH, to be case insensitive.
+* Specified the required compiler versions in the configure script.
+* Fixed a rare conflict of HTTP-Basic auth and cookies.
+* Hid local IP address from the 404 page.
+* Fixed a build failure for users who have `-Werror=missing-declarations` in their `CXXFLAGS`.
+* Fixed `CXXFLAGS=-DVERSION_EXTRA="foo"` which is used by some distros to package ZNC.
+* Fixed `znc-buildmod` on Cygwin.
+
+## Modules
+
+* chansaver:
+    * Fixed random loading behavior due to an uninitialized member variable.
+* modpython:
+    * Fixed access to `CUser::GetUserClients()` and `CUser::GetAllClients()`.
+* sasl:
+    * Improved help texts for the SET and REQUIREAUTH commands.
+* savebuff:
+    * Fixed periodical writes on the disk when the module is loaded after startup.
+* webadmin:
+    * Fixed module checkboxes not to claim that all networks/users have loaded a module when there are no networks/users.
+    * Added an explanation that ZNC was built without ICU support, when encoding settings are disabled for that reason.
+    * Improved the breadcrumbs.
+    * Mentioned ExpandString in CTCP replies.
+    * Added an explanation how to delete port which is used to access webadmin.
+
+## Internal
+
+* Fixed `CThreadPool` destructor to handle spurious wakeups.
+* Fixed `make distclean` to remove `zncconfig.h`.
+* Improved the error message about `--datadir`.
+* Fixed a compilation warning when `HAVE_LIBSSL` is not defined.
+* Fixed 'comparision' typos in CString documentation.
+* Added a non-minified version of the jQuery source code to make Linux distributions (Debian) happy, even though the jQuery license does not require this.
+
+
+
 # ZNC 1.6.0 (2015-02-12)
 
 ## New

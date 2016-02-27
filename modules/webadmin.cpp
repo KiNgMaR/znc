@@ -707,7 +707,7 @@ public:
 			}
 
 			if (!pNetwork->AddChan(pChan)) {
-				WebSock.PrintErrorPage("Could not add channel [" + pChan->GetName() + "]");
+				WebSock.PrintErrorPage("Could not add channel [" + sChanName + "]");
 				return true;
 			}
 		}
@@ -1454,7 +1454,7 @@ public:
 
 		CUser* pNewUser = GetNewUser(WebSock, pUser);
 		if (!pNewUser) {
-			WebSock.PrintErrorPage("Invalid user settings");
+			// GetNewUser already called WebSock.PrintErrorPage()
 			return true;
 		}
 

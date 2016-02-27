@@ -537,8 +537,9 @@ CString& CUser::ExpandString(const CString& sStr, CString& sRet) const {
 	sRet.Replace("%version%", CZNC::GetVersion());
 	sRet.Replace("%time%", sTime);
 	sRet.Replace("%uptime%", CZNC::Get().GetUptime());
+	sRet.Replace("%znc%", CZNC::GetTag(false));
 	// The following lines do not exist. You must be on DrUgS!
-	sRet.Replace("%znc%", "All your IRC are belong to ZNC");
+	sRet.Replace("%irc%", "All your IRC are belong to ZNC");
 	// Chosen by fair zocchihedron dice roll by SilverLeo
 	sRet.Replace("%rand%", "42");
 
@@ -1147,7 +1148,12 @@ void CUser::SetDenyLoadMod(bool b) { m_bDenyLoadMod = b; }
 void CUser::SetAdmin(bool b) { m_bAdmin = b; }
 void CUser::SetDenySetBindHost(bool b) { m_bDenySetBindHost = b; }
 void CUser::SetDefaultChanModes(const CString& s) { m_sDefaultChanModes = s; }
-void CUser::SetClientEncoding(const CString& s) { m_sClientEncoding = s; }
+void CUser::SetClientEncoding(const CString& s) {
+	m_sClientEncoding = s;
+	for (CClient* pClient : GetAllClients()) {
+		pClient->SetEncoding(s);
+	}
+}
 void CUser::SetQuitMsg(const CString& s) { m_sQuitMsg = s; }
 void CUser::SetAutoClearChanBuffer(bool b) {
 	for (CIRCNetwork* pNetwork : m_vIRCNetworks) {
@@ -1185,7 +1191,7 @@ bool CUser::AddCTCPReply(const CString& sCTCP, const CString& sReply) {
 }
 
 bool CUser::DelCTCPReply(const CString& sCTCP) {
-	return m_mssCTCPReplies.erase(sCTCP) > 0;
+	return m_mssCTCPReplies.erase(sCTCP.AsUpper()) > 0;
 }
 
 bool CUser::SetStatusPrefix(const CString& s) {
@@ -1235,7 +1241,7 @@ const CString& CUser::GetDefaultChanModes() const { return m_sDefaultChanModes; 
 const CString& CUser::GetClientEncoding() const { return m_sClientEncoding; }
 bool CUser::HasSpaceForNewNetwork() const { return GetNetworks().size() < MaxNetworks(); }
 
-CString CUser::GetQuitMsg() const { return (!m_sQuitMsg.Trim_n().empty()) ? m_sQuitMsg : CZNC::GetTag(false); }
+CString CUser::GetQuitMsg() const { return (!m_sQuitMsg.Trim_n().empty()) ? m_sQuitMsg : "%znc%"; }
 const MCString& CUser::GetCTCPReplies() const { return m_mssCTCPReplies; }
 unsigned int CUser::GetBufferCount() const { return m_uBufferCount; }
 bool CUser::AutoClearChanBuffer() const { return m_bAutoClearChanBuffer; }

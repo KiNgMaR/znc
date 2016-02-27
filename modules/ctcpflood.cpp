@@ -20,9 +20,6 @@
 class CCtcpFloodMod : public CModule {
 public:
 	MODCONSTRUCTOR(CCtcpFloodMod) {
-		m_tLastCTCP = 0;
-		m_iNumCTCP = 0;
-
 		AddHelpCommand();
 		AddCommand("Secs", static_cast<CModCommand::ModCmdFunc>(&CCtcpFloodMod::OnSecsCommand), "<limit>", "Set seconds limit");
 		AddCommand("Lines", static_cast<CModCommand::ModCmdFunc>(&CCtcpFloodMod::OnLinesCommand), "<limit>", "Set lines limit");
@@ -42,7 +39,7 @@ public:
 		SetArgs(CString(m_iThresholdMsgs) + " " + CString(m_iThresholdSecs));
 	}
 
-	bool OnLoad(const CString& sArgs, CString& sMessage) {
+	bool OnLoad(const CString& sArgs, CString& sMessage) override {
 		m_iThresholdMsgs = sArgs.Token(0).ToUInt();
 		m_iThresholdSecs = sArgs.Token(1).ToUInt();
 
@@ -130,11 +127,11 @@ public:
 	}
 
 private:
-	time_t m_tLastCTCP;
-	unsigned int m_iNumCTCP;
+	time_t m_tLastCTCP = 0;
+	unsigned int m_iNumCTCP = 0;
 
-	time_t m_iThresholdSecs;
-	unsigned int m_iThresholdMsgs;
+	time_t m_iThresholdSecs{};
+	unsigned int m_iThresholdMsgs{};
 };
 
 template<> void TModInfo<CCtcpFloodMod>(CModInfo& Info) {
