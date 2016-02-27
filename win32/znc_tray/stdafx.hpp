@@ -28,6 +28,7 @@
 #define WIN32_LEAN_AND_MEAN
 #define VC_EXTRALEAN
 #define _CRT_RAND_S
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 
 // define to empty:
 #define ZNC_API
