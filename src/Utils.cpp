@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
+#ifdef __CYGWIN__
+#ifndef _XOPEN_SOURCE
+// strptime() wants this
+#define _XOPEN_SOURCE 600
+#endif
+#endif
+
 #include <znc/Utils.h>
 #include <znc/ZNCDebug.h>
 #include <znc/FileUtils.h>
 #ifdef HAVE_LIBSSL
 #include <openssl/ssl.h>
+#include <memory>
 #endif /* HAVE_LIBSSL */
 #include <unistd.h>
+#include <time.h>
 
 #ifdef HAVE_ICU
 #include <unicode/ucnv.h>
@@ -51,79 +60,68 @@ const char* szDefaultDH2048 =
 	"-----END DH PARAMETERS-----\n";
 
 void CUtils::GenerateCert(FILE *pOut, const CString& sHost) {
-	EVP_PKEY *pKey = NULL;
-	X509 *pCert = NULL;
-	X509_NAME *pName = NULL;
 	const int days = 365;
 	const int years = 10;
 
 	unsigned int uSeed = (unsigned int)time(NULL);
 	int serial = (rand_r(&uSeed) % 9999);
 
-	RSA *pRSA = RSA_generate_key(2048, 0x10001, NULL, NULL);
-	if ((pKey = EVP_PKEY_new())) {
-		if (!EVP_PKEY_assign_RSA(pKey, pRSA)) {
-			EVP_PKEY_free(pKey);
-			return;
-		}
+	std::unique_ptr<BIGNUM, void (*)(BIGNUM*)> pExponent(BN_new(), ::BN_free);
+	if (!pExponent || !BN_set_word(pExponent.get(), 0x10001))
+		return;
 
-		PEM_write_RSAPrivateKey(pOut, pRSA, NULL, NULL, 0, NULL, NULL);
+	std::unique_ptr<RSA, void (*)(RSA*)> pRSA(RSA_new(), ::RSA_free);
+	if (!pRSA || !RSA_generate_key_ex(pRSA.get(), 2048, pExponent.get(), NULL))
+		return;
 
-		if (!(pCert = X509_new())) {
-			EVP_PKEY_free(pKey);
-			return;
-		}
+	std::unique_ptr<EVP_PKEY, void (*)(EVP_PKEY*)> pKey(EVP_PKEY_new(), ::EVP_PKEY_free);
+	if (!pKey || !EVP_PKEY_set1_RSA(pKey.get(), pRSA.get()))
+		return;
 
-		X509_set_version(pCert, 2);
-		ASN1_INTEGER_set(X509_get_serialNumber(pCert), serial);
-		X509_gmtime_adj(X509_get_notBefore(pCert), 0);
-		X509_gmtime_adj(X509_get_notAfter(pCert), (long)60*60*24*days*years);
-		X509_set_pubkey(pCert, pKey);
+	std::unique_ptr<X509, void (*)(X509*)> pCert(X509_new(), ::X509_free);
+	if (!pCert)
+		return;
 
-		pName = X509_get_subject_name(pCert);
+	X509_set_version(pCert.get(), 2);
+	ASN1_INTEGER_set(X509_get_serialNumber(pCert.get()), serial);
+	X509_gmtime_adj(X509_get_notBefore(pCert.get()), 0);
+	X509_gmtime_adj(X509_get_notAfter(pCert.get()), (long)60*60*24*days*years);
+	X509_set_pubkey(pCert.get(), pKey.get());
 
-		const char *pLogName = getenv("LOGNAME");
-		const char *pHostName = NULL;
+	const char *pLogName = getenv("LOGNAME");
+	const char *pHostName = NULL;
 
-		if (!sHost.empty()) {
-			pHostName = sHost.c_str();
-		}
+	if (!pLogName)
+		pLogName = "Unknown";
 
-		if (!pHostName) {
-			pHostName = getenv("HOSTNAME");
-		}
+	if (!sHost.empty())
+		pHostName = sHost.c_str();
 
-		if (!pLogName) {
-			pLogName = "Unknown";
-		}
+	if (!pHostName)
+		pHostName = getenv("HOSTNAME");
 
-		if (!pHostName) {
-			pHostName = "host.unknown";
-		}
+	if (!pHostName)
+		pHostName = "host.unknown";
 
-		CString sEmailAddr = pLogName;
-		sEmailAddr += "@";
-		sEmailAddr += pHostName;
+	CString sEmailAddr = pLogName;
+	sEmailAddr += "@";
+	sEmailAddr += pHostName;
 
-		X509_NAME_add_entry_by_txt(pName, "OU", MBSTRING_ASC, (unsigned char *)pLogName, -1, -1, 0);
-		X509_NAME_add_entry_by_txt(pName, "CN", MBSTRING_ASC, (unsigned char *)pHostName, -1, -1, 0);
-		X509_NAME_add_entry_by_txt(pName, "emailAddress", MBSTRING_ASC, (unsigned char *)sEmailAddr.c_str(), -1, -1, 0);
+	X509_NAME *pName = X509_get_subject_name(pCert.get());
+	X509_NAME_add_entry_by_txt(pName, "OU", MBSTRING_ASC, (unsigned char *)pLogName, -1, -1, 0);
+	X509_NAME_add_entry_by_txt(pName, "CN", MBSTRING_ASC, (unsigned char *)pHostName, -1, -1, 0);
+	X509_NAME_add_entry_by_txt(pName, "emailAddress", MBSTRING_ASC, (unsigned char *)sEmailAddr.c_str(), -1, -1, 0);
 
-		X509_set_subject_name(pCert, pName);
-		X509_set_issuer_name(pCert, pName);
+	X509_set_subject_name(pCert.get(), pName);
+	X509_set_issuer_name(pCert.get(), pName);
 
-		if (!X509_sign(pCert, pKey, EVP_sha256())) {
-			X509_free(pCert);
-			EVP_PKEY_free(pKey);
-			return;
-		}
+	if (!X509_sign(pCert.get(), pKey.get(), EVP_sha256()))
+		return;
 
-		PEM_write_X509(pOut, pCert);
-		X509_free(pCert);
-		EVP_PKEY_free(pKey);
+	PEM_write_RSAPrivateKey(pOut, pRSA.get(), NULL, NULL, 0, NULL, NULL);
+	PEM_write_X509(pOut, pCert.get());
 
-		fprintf(pOut, "%s", szDefaultDH2048);
-	}
+	fprintf(pOut, "%s", szDefaultDH2048);
 }
 #endif /* HAVE_LIBSSL */
 
@@ -882,7 +880,7 @@ CBlowfish::~CBlowfish() {
 }
 
 //! output must be freed
-unsigned char *CBlowfish::MD5(const unsigned char *input, u_int ilen) {
+unsigned char *CBlowfish::MD5(const unsigned char *input, unsigned int ilen) {
 	unsigned char *output = (unsigned char *)malloc(MD5_DIGEST_LENGTH);
 	::MD5(input, ilen, output);
 	return output;
@@ -907,12 +905,12 @@ CString CBlowfish::MD5(const CString & sInput, bool bHexEncode) {
 }
 
 //! output must be the same size as input
-void CBlowfish::Crypt(unsigned char *input, unsigned char *output, u_int uBytes) {
+void CBlowfish::Crypt(unsigned char *input, unsigned char *output, unsigned int uBytes) {
 	BF_cfb64_encrypt(input, output, uBytes, &m_bkey, m_ivec, &m_num, m_iEncrypt);
 }
 
 //! must free result
-unsigned char * CBlowfish::Crypt(unsigned char *input, u_int uBytes) {
+unsigned char * CBlowfish::Crypt(unsigned char *input, unsigned int uBytes) {
 	unsigned char *buff = (unsigned char *)malloc(uBytes);
 	Crypt(input, buff, uBytes);
 	return buff;
